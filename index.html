@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Church Activity Planner</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col justify-between items-center gap-4">
+            
+            <div class="w-full flex justify-between items-center">
+                <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click to manage">
+                    <span class="text-2xl">📖</span>
+                    <span class="font-bold text-lg tracking-wide">Grace Church Planner</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded hidden">🛠️ Admin Active</span>
+                    <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow hidden">
+                        ⚙️ Admin Panel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="w-full overflow-x-auto pb-1 flex justify-start sm:justify-center">
+                <div class="flex bg-indigo-950/60 p-1 rounded-xl border border-indigo-800 whitespace-nowrap">
+                    <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white">📅 Daily</button>
+                    <button id="tab-monthly-btn" onclick="switchTab('monthly')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🗓️ Monthly Calendar</button>
+                    <button id="tab-blessings-btn" onclick="switchTab('blessings')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">✨ Blessings</button>
+                    <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🕊️ Sabbath</button>
+                    <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🌅 Third-Day</button>
+                    <button id="tab-feast-btn" onclick="switchTab('feast')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🎉 Feast Worship</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-6">
+        
+        <div id="loading-spinner" class="text-center py-12">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-900 border-t-transparent"></div>
+            <p class="text-slate-500 text-sm mt-2">Syncing latest church schedule...</p>
+        </div>
+
+        <div id="main-content" class="space-y-6">
+            <div id="view-daily" class="space-y-6">
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900" id="display-date-title">Today's Schedule</h1>
+                        <p class="text-slate-500 text-sm" id="display-date-sub">Loading...</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">← Prev</button>
+                        <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                        <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
+                    </div>
+                </div>
+                
+                <div id="announcements-section" class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl shadow-sm hidden h-auto w-full">
+                    <h3 class="font-bold text-amber-900 text-lg flex items-center gap-2 mb-2">📢 Announcements</h3>
+                    <p class="text-amber-900 leading-relaxed text-sm whitespace-pre-wrap break-words overflow-visible" id="announcements-text"></p>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">⏱️ Activities & Times</h2>
+                        <div id="activities-container" class="space-y-3"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">📋 Preaching Teams</h2>
+                        <div id="preaching-container" class="space-y-4"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">🛠️ Duties & Roles</h2>
+                        <div id="duties-container" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-monthly" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
+                        <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day cell box below to read the full schedule details!</p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">← Prev Month</button>
+                        <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">Next Month →</button>
+                    </div>
+                </div>
+                <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 overflow-x-auto">
+                    <div class="min-w-[700px]">
+                        <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 uppercase text-xs tracking-wider mb-2">
+                            <div class="py-2 bg-slate-50 rounded-lg">Sun</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Mon</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Tue</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Wed</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Thu</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Fri</div>
+                            <div class="py-2 bg-slate-50 rounded-lg">Sat</div>
+                        </div>
+                        <div id="calendar-grid-cells" class="grid grid-cols-7 gap-2"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-blessings" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <h1 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6">✨ Blessings & Thanksgiving</h1>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="blessings-container"></div>
+                </div>
+            </div>
+
+            <div id="view-sabbath" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">🕊️ Holy Sabbath Schedule</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
+                            <div id="sabbath-activities" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
+                            <div id="sabbath-duties" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-thirdday" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">🌅 Third-Day Schedule</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
+                            <div id="thirdday-activities" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
+                            <div id="thirdday-duties" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-feast" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+                    <h1 class="text-2xl font-bold text-slate-900 mb-6">🎉 Feast Worship Schedule</h1>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
+                            <div id="feast-activities" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
+                            <div id="feast-duties" class="space-y-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="calendar-view-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl flex flex-col border border-slate-100 overflow-hidden">
+            <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
+                <div>
+                    <h3 id="cv-modal-date-title" class="font-bold text-lg">Date Details</h3>
+                </div>
+                <button type="button" onclick="closeCalendarViewModal()" class="text-2xl font-bold hover:text-slate-300 focus:outline-none">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Events</h4>
+                <div id="cv-modal-events-content" class="space-y-2">
+                    </div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button id="cv-modal-edit-btn" type="button" class="bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors hidden">
+                    ✏️ Edit Day Events
+                </button>
+                <button type="button" onclick="closeCalendarViewModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-xs font-medium hover:bg-slate-100 transition-colors">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+            <div class="bg-indigo-900 text-white p-4 rounded-t-2xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-lg font-bold">Admin Controls Panel</h2>
+                    <button type="button" onclick="toggleAdminModal()" class="text-2xl font-bold hover:text-slate-300">&times;</button>
+                </div>
+                <div class="flex flex-wrap gap-1 bg-indigo-950/60 p-1 rounded-xl">
+                    <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700">Daily</button>
+                    <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
+                    <button onclick="switchAdminSubTab('sabbath')" id="as-sabbath" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Sabbath</button>
+                    <button onclick="switchAdminSubTab('thirdday')" id="as-thirdday" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Third-Day</button>
+                    <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Feast</button>
+                </div>
+            </div>
+            
+            <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div id="ap-daily" class="space-y-4">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="block text-sm font-bold text-slate-700">Daily Announcements</label>
+                            <span id="word-count-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">0 / 300 words</span>
+                        </div>
+                        <textarea id="input-announcements" rows="4" oninput="validateAnnouncementWords(this)" placeholder="Type announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities (Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching (Team | Time | Location)</label><textarea id="input-preaching" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties (Role: Name)</label><textarea id="input-duties" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                </div>
+
+                <div id="ap-blessings" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">Blessings List</label>
+                        <p class="text-[11px] text-slate-400 mb-2">Format: Name : Description : Status (Full, Low, Empty)</p>
+                        <textarea id="input-blessings" rows="8" placeholder="John Doe : Healing Recovery : Full" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                </div>
+
+                <div id="ap-sabbath" class="space-y-4 hidden">
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Sabbath Activities (Format: Time - Activity)</label><textarea id="input-sabbath-act" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Sabbath Worship Duties (Format -> Name : Assignment Duty)</label><textarea id="input-sabbath-dut" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                </div>
+
+                <div id="ap-thirdday" class="space-y-4 hidden">
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Third-Day Activities (Format: Time - Activity)</label><textarea id="input-thirdday-act" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Third-Day Worship Duties (Format -> Name : Assignment Duty)</label><textarea id="input-thirdday-dut" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                </div>
+
+                <div id="ap-feast" class="space-y-4 hidden">
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Feast Activities (Format: Time - Activity)</label><textarea id="input-feast-act" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Feast Worship Duties (Format -> Name : Assignment Duty)</label><textarea id="input-feast-dut" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                </div>
+
+                <div class="pt-4 border-t border-slate-100 flex justify-end space-x-2">
+                    <button type="button" onclick="toggleAdminModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-sm hover:bg-slate-50 font-medium">Cancel</button>
+                    <button type="submit" id="admin-save-btn" class="px-4 py-2 bg-indigo-900 hover:bg-indigo-800 text-white text-sm rounded-lg font-medium shadow">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "Grace2026";
+        
+        const CLOUD_URL = "https://clever-python-151784.upstash.io";
+        const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
+        
+        let appState = {
+            database: {},
+            calendarEventsDb: {},
+            blessingsList: [],
+            sabbathSchedule: { activities: [], duties: [] },
+            thirddaySchedule: { activities: [], duties: [] },
+            feastSchedule: { activities: [], duties: [] }
+        };
+        
+        let currentSelectedDate = "";
+        let currentCalendarYear = 2026;
+        let currentCalendarMonth = 5; 
+        let isAdminAuthenticated = false; 
+
+        async function loadDataFromCloud() {
+            document.getElementById('loading-spinner').classList.add('hidden');
+            handleDateChange(getLocalDateString(new Date()));
+
+            try {
+                const response = await fetch(`${CLOUD_URL}/get/church_state`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` }
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result && result.result) {
+                        const parsed = JSON.parse(result.result);
+                        if (parsed.database) appState.database = parsed.database;
+                        if (parsed.calendarEventsDb) appState.calendarEventsDb = parsed.calendarEventsDb;
+                        if (parsed.blessingsList) appState.blessingsList = parsed.blessingsList;
+                        if (parsed.sabbathSchedule) appState.sabbathSchedule = parsed.sabbathSchedule;
+                        if (parsed.thirddaySchedule) appState.thirddaySchedule = parsed.thirddaySchedule;
+                        if (parsed.feastSchedule) appState.feastSchedule = parsed.feastSchedule;
+                        
+                        handleDateChange(currentSelectedDate);
+                    }
+                }
+            } catch (err) {
+                console.log("Database fetch offline, running on local cache fallback.", err);
+            }
+        }
+
+        async function saveDataToCloud() {
+            try {
+                await fetch(`${CLOUD_URL}/set/church_state`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
+                    body: JSON.stringify(appState)
+                });
+                console.log("Schedule synchronized live!");
+            } catch (err)
