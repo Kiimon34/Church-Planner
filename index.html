@@ -305,4 +305,342 @@
                     body: JSON.stringify(appState)
                 });
                 console.log("Schedule synchronized live!");
-            } catch (err)
+            } catch (err) {
+                console.error("Cloud synchronization error:", err);
+            }
+        }
+
+        function validateAnnouncementWords(textarea) {
+            const maxWords = 300;
+            const text = textarea.value.trim();
+            const words = text === "" ? [] : text.split(/\s+/);
+            const wordCount = words.length;
+            const badge = document.getElementById('word-count-badge');
+            badge.innerText = `${wordCount} / ${maxWords} words`;
+
+            if (wordCount > maxWords) {
+                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-600 animate-pulse";
+                textarea.value = words.slice(0, maxWords).join(' ');
+                badge.innerText = `${maxWords} / ${maxWords} words`;
+            } else {
+                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500";
+            }
+        }
+
+        function revealAdminButton() {
+            document.getElementById('admin-trigger-btn').classList.remove('hidden');
+            alert("Admin features unlocked! Click 'Admin Panel' to continue.");
+        }
+
+        function checkPasswordAndOpen() {
+            if (isAdminAuthenticated) { toggleAdminModal(); return; }
+            const attempt = prompt("Please enter the Admin Password:");
+            if (attempt === ADMIN_PASSWORD) {
+                isAdminAuthenticated = true;
+                document.getElementById('admin-status').classList.remove('hidden');
+                toggleAdminModal();
+                renderMonthlyCalendar(); 
+            } else if (attempt !== null) alert("Incorrect password. Access denied.");
+        }
+
+        function switchTab(viewName) {
+            const tabs = ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast'];
+            tabs.forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}-btn`).className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white";
+            });
+            document.getElementById(`view-${viewName}`).classList.remove('hidden');
+            document.getElementById(`tab-${viewName}-btn`).className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white";
+            
+            if (viewName === 'monthly') renderMonthlyCalendar();
+            if (viewName === 'blessings') renderBlessings();
+            if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
+            if (viewName === 'thirdday') renderSabbathAndFeast('thirdday');
+            if (viewName === 'feast') renderSabbathAndFeast('feast');
+        }
+
+        function switchAdminSubTab(subTab) {
+            const subs = ['daily', 'blessings', 'sabbath', 'thirdday', 'feast'];
+            subs.forEach(s => {
+                document.getElementById(`ap-${s}`).classList.add('hidden');
+                document.getElementById(`as-${s}`).className = "px-3 py-1 text-xs font-bold rounded-lg text-indigo-200";
+            });
+            document.getElementById(`ap-${subTab}`).classList.remove('hidden');
+            document.getElementById(`as-${subTab}`).className = "px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
+        }
+
+        // POP OVER BIG TEXT MODAL DISPLAY TRIGGER
+        function openCalendarViewModal(dateKey) {
+            const dateObj = new Date(dateKey + 'T00:00:00');
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('cv-modal-date-title').innerText = dateObj.toLocaleDateString('en-US', options);
+
+            const eventsText = appState.calendarEventsDb[dateKey] || "";
+            const contentContainer = document.getElementById('cv-modal-events-content');
+            contentContainer.innerHTML = "";
+
+            if (eventsText.trim() === "") {
+                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4">No events or preaching items mapped for this day.</p>`;
+            } else {
+                eventsText.split(',').forEach(item => {
+                    const lineCard = document.createElement('div');
+                    lineCard.className = "p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-950 font-semibold text-sm shadow-sm leading-relaxed";
+                    lineCard.innerText = item.trim();
+                    contentContainer.appendChild(lineCard);
+                });
+            }
+
+            // Expose admin edit action options inline inside modal layout if logged in
+            const editBtn = document.getElementById('cv-modal-edit-btn');
+            if (isAdminAuthenticated) {
+                editBtn.classList.remove('hidden');
+                editBtn.setAttribute('onclick', `inlineEditCalendarCell('${dateKey}')`);
+            } else {
+                editBtn.classList.add('hidden');
+            }
+
+            document.getElementById('calendar-view-modal').classList.remove('hidden');
+        }
+
+        function closeCalendarViewModal() {
+            document.getElementById('calendar-view-modal').classList.add('hidden');
+        }
+
+        async function inlineEditCalendarCell(dateKey) {
+            closeCalendarViewModal();
+            const existingText = appState.calendarEventsDb[dateKey] || "";
+            const newText = prompt(`Modify details for ${dateKey} (separate values with a comma):`, existingText);
+            if (newText !== null) {
+                if (newText.trim() === "") delete appState.calendarEventsDb[dateKey];
+                else appState.calendarEventsDb[dateKey] = newText.trim();
+                renderMonthlyCalendar();
+                await saveDataToCloud();
+                // Reopen showing freshly saved values instantly
+                openCalendarViewModal(dateKey);
+            }
+        }
+
+        function renderMonthlyCalendar() {
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            document.getElementById('monthly-calendar-title').innerText = `${mNames[currentCalendarMonth]} ${currentCalendarYear}`;
+            const gridContainer = document.getElementById('calendar-grid-cells');
+            gridContainer.innerHTML = ""; 
+            const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+
+            for (let i = 0; i < firstDayIndex; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = "bg-slate-100/40 border border-slate-100 rounded-xl min-h-[105px]";
+                gridContainer.appendChild(emptyCell);
+            }
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const cell = document.createElement('div');
+                cell.className = `bg-white border border-slate-200 rounded-xl p-2 min-h-[105px] flex flex-col justify-between transition-all hover:border-indigo-400 hover:bg-indigo-50/10 cursor-pointer shadow-sm`;
+                cell.setAttribute('onclick', `openCalendarViewModal('${dateKey}')`);
+
+                const topRow = document.createElement('div');
+                topRow.className = "flex justify-between items-center";
+                const numSpan = document.createElement('span');
+                numSpan.className = "font-bold text-sm text-slate-400";
+                numSpan.innerText = day;
+                topRow.appendChild(numSpan);
+                cell.appendChild(topRow);
+
+                const eventsContainer = document.createElement('div');
+                eventsContainer.className = "text-[11px] text-indigo-950 font-medium overflow-hidden max-h-[70px] mt-1 space-y-1";
+                const cellContentText = appState.calendarEventsDb[dateKey] || "";
+                if (cellContentText) {
+                    cellContentText.split(',').forEach(item => {
+                        const bullet = document.createElement('div');
+                        bullet.className = "bg-indigo-50 border border-indigo-100/60 rounded px-1 py-0.5 truncate";
+                        bullet.innerText = `• ${item.trim()}`;
+                        eventsContainer.appendChild(bullet);
+                    });
+                }
+                cell.appendChild(eventsContainer);
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        function renderBlessings() {
+            const container = document.getElementById('blessings-container');
+            if (!appState.blessingsList || !appState.blessingsList.length) {
+                container.innerHTML = `<p class="text-slate-400 text-xs italic py-2 col-span-2">No items listed.</p>`;
+                return;
+            }
+
+            container.innerHTML = appState.blessingsList.map((b) => {
+                const chunks = b.split(':');
+                const name = chunks[0] ? chunks[0].trim() : 'Member';
+                const details = chunks[1] ? chunks[1].trim() : '';
+                let status = chunks[2] ? chunks[2].trim().toLowerCase() : 'full';
+
+                if (status !== 'full' && status !== 'low' && status !== 'empty') status = 'full';
+
+                let colorClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                if (status === 'low') colorClass = "bg-amber-100 text-amber-800 border-amber-200";
+                if (status === 'empty') colorClass = "bg-rose-100 text-rose-800 border-rose-200";
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="flex divide-x divide-slate-100 flex-1">
+                            <div class="w-1/3 p-3 bg-indigo-50/30 font-bold text-indigo-900 text-sm flex items-center break-words">${name}</div>
+                            <div class="w-2/3 p-3 text-sm text-slate-700 flex items-center break-words">${details}</div>
+                        </div>
+                        <div class="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Current Status:</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full border font-semibold uppercase ${colorClass}">${status}</span>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function getLocalDateString(dateObj) {
+            let offset = dateObj.getTimezoneOffset();
+            let localDate = new Date(dateObj.getTime() - (offset*60*1000));
+            return localDate.toISOString().split('T')[0];
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const todayObj = new Date();
+            currentCalendarYear = todayObj.getFullYear();
+            currentCalendarMonth = todayObj.getMonth();
+            loadDataFromCloud();
+        });
+
+        function handleDateChange(dateString) {
+            currentSelectedDate = dateString;
+            const picker = document.getElementById('date-picker');
+            if (picker) picker.value = dateString;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
+            renderDashboardData();
+        }
+
+        function changeDate(offset) {
+            let d = new Date(currentSelectedDate + 'T00:00:00');
+            d.setDate(d.getDate() + offset);
+            handleDateChange(getLocalDateString(d));
+        }
+
+        function changeMonth(offset) {
+            currentCalendarMonth += offset;
+            if (currentCalendarMonth > 11) { currentCalendarMonth = 0; currentCalendarYear += 1; }
+            else if (currentCalendarMonth < 0) { currentCalendarMonth = 11; currentCalendarYear -= 1; }
+            renderMonthlyCalendar();
+        }
+
+        function renderDashboardData() {
+            const dayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
+            const ab = document.getElementById('announcements-section');
+            if (dayData.announcements && dayData.announcements.trim() !== "") {
+                ab.classList.remove('hidden');
+                document.getElementById('announcements-text').innerText = dayData.announcements;
+            } else ab.classList.add('hidden');
+
+            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
+                const p = act.split(' - ');
+                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic">No activities listed.</p>`;
+
+            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
+                <div class="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-sm"><div class="flex justify-between items-center mb-1"><span class="font-bold text-indigo-900">${p.team}</span><span class="text-xs bg-indigo-200 text-indigo-900 font-semibold px-2 py-0.5 rounded">${p.time}</span></div><div class="text-xs text-slate-600">📍 ${p.location}</div></div>
+            `).join('') : `<p class="text-slate-400 text-xs italic">No preaching teams assigned.</p>`;
+
+            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
+                const idx = d.indexOf(':');
+                return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic">No duties listed.</p>`;
+        }
+
+        function renderSabbathAndFeast(type) {
+            let source = appState.sabbathSchedule;
+            if (type === 'thirdday') source = appState.thirddaySchedule;
+            if (type === 'feast') source = appState.feastSchedule;
+            
+            if (!source) source = { activities: [], duties: [] };
+
+            document.getElementById(`${type}-activities`).innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
+                const parts = a.split(' - ');
+                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic">No schedule details saved.</p>`;
+
+            document.getElementById(`${type}-duties`).innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
+                const idx = d.indexOf(':');
+                const name = idx !== -1 ? d.substring(0, idx).trim() : 'Assigned';
+                const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
+                return `<div class="grid grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-200"><div class="col-span-1 p-3 bg-emerald-50/50 font-bold text-emerald-900 text-sm flex items-center font-semibold">${name}</div><div class="col-span-2 p-3 text-sm text-slate-700 flex items-center">${duty}</div></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic">No assignment details saved.</p>`;
+        }
+
+        function toggleAdminModal() {
+            const m = document.getElementById('admin-modal');
+            m.classList.toggle('hidden');
+            if (!m.classList.contains('hidden')) {
+                switchAdminSubTab('daily');
+                const dData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
+                
+                const announceTextarea = document.getElementById('input-announcements');
+                announceTextarea.value = dData.announcements || "";
+                validateAnnouncementWords(announceTextarea);
+
+                document.getElementById('input-activities').value = (dData.activities || []).join('\n');
+                document.getElementById('input-duties').value = (dData.duties || []).join('\n');
+                document.getElementById('input-preaching').value = (dData.preaching || []).map(p => `${p.team} | ${p.time} | ${p.location}`).join('\n');
+
+                document.getElementById('input-blessings').value = (appState.blessingsList || []).join('\n');
+                
+                if (!appState.sabbathSchedule) appState.sabbathSchedule = { activities: [], duties: [] };
+                if (!appState.thirddaySchedule) appState.thirddaySchedule = { activities: [], duties: [] };
+                if (!appState.feastSchedule) appState.feastSchedule = { activities: [], duties: [] };
+
+                document.getElementById('input-sabbath-act').value = (appState.sabbathSchedule.activities || []).join('\n');
+                document.getElementById('input-sabbath-dut').value = (appState.sabbathSchedule.duties || []).join('\n');
+                document.getElementById('input-thirdday-act').value = (appState.thirddaySchedule.activities || []).join('\n');
+                document.getElementById('input-thirdday-dut').value = (appState.thirddaySchedule.duties || []).join('\n');
+                document.getElementById('input-feast-act').value = (appState.feastSchedule.activities || []).join('\n');
+                document.getElementById('input-feast-dut').value = (appState.feastSchedule.duties || []).join('\n');
+            }
+        }
+
+        async function saveAdminData(e) {
+            e.preventDefault();
+            const dData = appState.database[currentSelectedDate] || {};
+            dData.announcements = document.getElementById('input-announcements').value;
+            dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+            dData.duties = document.getElementById('input-duties').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+            dData.preaching = document.getElementById('input-preaching').value.split('\n').map(l=>l.trim()).filter(l=>l.length).map(l => {
+                const c = l.split('|').map(x=>x.trim());
+                return { team: c[0]||'Team', time: c[1]||'TBD', location: c[2]||'TBD' };
+            });
+            appState.database[currentSelectedDate] = dData;
+
+            appState.blessingsList = document.getElementById('input-blessings').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+            
+            appState.sabbathSchedule = {
+                activities: document.getElementById('input-sabbath-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
+                duties: document.getElementById('input-sabbath-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
+            };
+            appState.thirddaySchedule = {
+                activities: document.getElementById('input-thirdday-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
+                duties: document.getElementById('input-thirdday-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
+            };
+            appState.feastSchedule = {
+                activities: document.getElementById('input-feast-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
+                duties: document.getElementById('input-feast-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
+            };
+
+            toggleAdminModal();
+            renderDashboardData();
+            renderBlessings();
+            renderSabbathAndFeast('sabbath');
+            renderSabbathAndFeast('thirdday');
+            renderSabbathAndFeast('feast');
+
+            await saveDataToCloud();
+        }
+    </script>
+</body>
+</html>
