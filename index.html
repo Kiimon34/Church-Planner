@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Church Activity Planner</title>
+    <!-- Tailwind CSS for modern, clean styling -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
@@ -11,14 +12,17 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
+    <!-- NAVIGATION BAR -->
     <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col justify-between items-center gap-4">
             
             <div class="w-full flex justify-between items-center">
+                <!-- DOUBLE CLICK THE BIBLE EMOJI FOR ADMIN BUTTON -->
                 <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click to manage">
                     <span class="text-2xl">📖</span>
                     <span class="font-bold text-lg tracking-wide">Grace Church Planner</span>
                 </div>
+                <!-- Hidden Admin Status Banner / Button -->
                 <div class="flex items-center space-x-2">
                     <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded hidden">🛠️ Admin Active</span>
                     <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow hidden">
@@ -27,6 +31,7 @@
                 </div>
             </div>
             
+            <!-- APP TABS NAVIGATION -->
             <div class="w-full overflow-x-auto pb-1 flex justify-start sm:justify-center">
                 <div class="flex bg-indigo-950/60 p-1 rounded-xl border border-indigo-800 whitespace-nowrap">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white">📅 Daily View</button>
@@ -40,14 +45,18 @@
         </div>
     </nav>
 
+    <!-- MAIN APP SCREEN CONTAINER -->
     <main class="max-w-6xl mx-auto px-4 py-6">
         
+        <!-- LOADING OVERLAY -->
         <div id="loading-spinner" class="text-center py-12">
             <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-900 border-t-transparent"></div>
             <p class="text-slate-500 text-sm mt-2">Syncing latest church schedule...</p>
         </div>
 
+        <!-- MAIN CONTENT -->
         <div id="main-content" class="space-y-6">
+            <!-- TAB 1: DAILY VIEW (RESTORED TO 3-COLUMNS) -->
             <div id="view-daily" class="space-y-6">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
@@ -66,14 +75,23 @@
                     <p class="text-amber-900 leading-relaxed text-sm whitespace-pre-wrap break-words overflow-visible" id="announcements-text"></p>
                 </div>
                 
-                <div class="grid grid-cols-1 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                         <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">⏱️ Activities & Times</h2>
                         <div id="activities-container" class="space-y-3"></div>
                     </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">📋 Preaching Teams</h2>
+                        <div id="preaching-container" class="space-y-4"></div>
+                    </div>
+                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                        <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">🛠️ Duties & Roles</h2>
+                        <div id="duties-container" class="space-y-3"></div>
+                    </div>
                 </div>
             </div>
 
+            <!-- TAB 2: MONTHLY GRID CALENDAR VIEW -->
             <div id="view-monthly" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
@@ -101,6 +119,7 @@
                 </div>
             </div>
 
+            <!-- TAB 3: BLESSINGS VIEW -->
             <div id="view-blessings" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <h1 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6">✨ Blessings & Thanksgiving</h1>
@@ -108,6 +127,7 @@
                 </div>
             </div>
 
+            <!-- TAB 4: SABBATH VIEW -->
             <div id="view-sabbath" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">🕊️ Holy Sabbath Schedule</h1>
@@ -124,6 +144,7 @@
                 </div>
             </div>
 
+            <!-- TAB 5: THIRD-DAY VIEW -->
             <div id="view-thirdday" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">🌅 Third-Day Schedule</h1>
@@ -140,6 +161,7 @@
                 </div>
             </div>
 
+            <!-- TAB 6: FEAST WORSHIP VIEW -->
             <div id="view-feast" class="space-y-6 hidden">
                 <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
                     <h1 class="text-2xl font-bold text-slate-900 mb-6">🎉 Feast Worship Schedule</h1>
@@ -158,6 +180,7 @@
         </div>
     </main>
 
+    <!-- POPUP MODAL: EXPANDED CALENDAR CELL VIEW -->
     <div id="calendar-view-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl flex flex-col border border-slate-100 overflow-hidden">
             <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
@@ -177,6 +200,7 @@
         </div>
     </div>
 
+    <!-- POPUP MODAL: ADMIN FORMATTING HELP GUIDE -->
     <div id="help-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-3">
@@ -184,19 +208,17 @@
                 <button type="button" onclick="toggleHelpModal()" class="text-2xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
             </div>
             <p class="text-xs text-slate-500 leading-relaxed">
-                Use these distinct formatting keys to input items correctly so the application renders your data sets seamlessly:
+                Use these structural keys to format entries perfectly across the application tabs:
             </p>
             
             <div class="space-y-3 pt-1 text-xs">
-                <div class="border-t pt-2"><span class="font-bold text-indigo-900 text-sm">🗓️ Calendar Inputs (Auto-Feeds Daily View)</span></div>
-                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-indigo-600 block mb-0.5">⏱️ Activities & General Entries:</b> Separate title elements with a single dash <code class="bg-slate-200 px-1 rounded font-bold">-</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: 9:00 AM - Morning Devotion</span></div>
-                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-emerald-700 block mb-0.5">📋 Preaching Teams:</b> Separate using vertical bars <code class="bg-slate-200 px-1 rounded font-bold">|</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: Team Alpha | Evening Shift | Main Campus</span></div>
-                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-purple-600 block mb-0.5">🛠️ Duties / Roles:</b> Separate assignment descriptors with a colon <code class="bg-slate-200 px-1 rounded font-bold">:</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: Usher: Brother John</span></div>
+                <div class="border-t pt-2"><span class="font-bold text-indigo-900 text-sm">🗓️ Monthly Calendar View Inputs</span></div>
+                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-indigo-600 block mb-0.5">Entries:</b> Separate multiple unique events inside a single box using commas <code class="bg-slate-200 px-1 rounded font-bold">,</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: 10:00 AM Worship, Youth Study, Evening prayer</span></div>
                 
                 <div class="border-t pt-2"><span class="font-bold text-indigo-900 text-sm">✨ Blessings Tab Inputs</span></div>
                 <div class="p-2.5 bg-slate-50 border rounded-xl">
                     <b class="text-indigo-900 block mb-0.5">Format: Name : Description : Status</b>
-                    Separate the member's name, their thanksgiving item, and their current badge status flag using colons <code class="bg-slate-200 px-1 rounded font-bold">:</code>.<br>
+                    Separate the member's name, their thanksgiving item, and their badge status flag using colons <code class="bg-slate-200 px-1 rounded font-bold">:</code>.<br>
                     <span class="block mt-1 font-semibold text-slate-600">Available Status Flags:</span>
                     <ul class="list-disc pl-4 mt-0.5 space-y-0.5 text-[11px] text-slate-600">
                         <li><code class="font-bold text-emerald-700">Full</code> (Renders a green success badge)</li>
@@ -212,6 +234,7 @@
         </div>
     </div>
 
+    <!-- MAIN ADMIN PANEL CONFIGURATION MODAL -->
     <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="bg-indigo-900 text-white p-4 rounded-t-2xl flex flex-col gap-3">
@@ -234,6 +257,7 @@
             </div>
             
             <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+                <!-- INDEPENDENT DAILY INPUT BLOCKS -->
                 <div id="ap-daily" class="space-y-4">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -242,9 +266,9 @@
                         </div>
                         <textarea id="input-announcements" rows="3" oninput="validateAnnouncementWords(this)" placeholder="Type announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities (Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching (Team | Time | Location)</label><textarea id="input-preaching" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties (Role: Name)</label><textarea id="input-duties" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities (Format: Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching Assignments (Format: Team | Time | Location)</label><textarea id="input-preaching" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties & Roles (Format: Role: Name)</label><textarea id="input-duties" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
                 </div>
 
                 <div id="ap-blessings" class="space-y-4 hidden">
@@ -278,6 +302,7 @@
         </div>
     </div>
 
+    <!-- APPLICATION JAVASCRIPT LOGIC -->
     <script>
         const ADMIN_PASSWORD = "Grace2026";
         
@@ -387,6 +412,7 @@
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
+            if (viewName === 'daily') renderDashboardData();
             if (viewName === 'monthly') renderMonthlyCalendar();
             if (viewName === 'blessings') renderBlessings();
             if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
@@ -448,7 +474,6 @@
                 else appState.calendarEventsDb[dateKey] = newText.trim();
                 renderMonthlyCalendar();
                 await saveDataToCloud();
-                handleDateChange(currentSelectedDate);
                 openCalendarViewModal(dateKey);
             }
         }
@@ -565,85 +590,35 @@
             renderMonthlyCalendar();
         }
 
-        // MASTER INTEGRATION PARSER ENGINE: Merges explicit Daily fields AND Monthly Calendar tokens into one list box
+        // ORIGINAL RESTORED DASHBOARD RENDER: Map 3 columns explicitly without any calendar cross-pulls
         function renderDashboardData() {
-            // 1. Check for specific text entries typed in the explicit Daily Admin view parameters
-            const localDayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
+            const dayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
             
-            // Render explicit text announcements if they exist
+            // Render Announcements Section
             const ab = document.getElementById('announcements-section');
-            if (localDayData.announcements && localDayData.announcements.trim() !== "") {
+            if (dayData.announcements && dayData.announcements.trim() !== "") {
                 ab.classList.remove('hidden');
-                document.getElementById('announcements-text').innerText = localDayData.announcements;
+                document.getElementById('announcements-text').innerText = dayData.announcements;
             } else {
                 ab.classList.add('hidden');
             }
 
-            let masterActivitiesList = [];
+            // Render Card Column 1: Activities & Times
+            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
+                const p = act.split(' - ');
+                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
 
-            // Compile the explicitly typed Daily Tab activities
-            if (localDayData.activities && localDayData.activities.length) {
-                localDayData.activities.forEach(act => masterActivitiesList.push(act));
-            }
-            // Compile explicitly typed Preaching assignments
-            if (localDayData.preaching && localDayData.preaching.length) {
-                localDayData.preaching.forEach(p => {
-                    masterActivitiesList.push(`${p.time} - 📋 Preaching: ${p.team} at 📍 ${p.location}`);
-                });
-            }
-            // Compile explicitly typed Duties parameters
-            if (localDayData.duties && localDayData.duties.length) {
-                localDayData.duties.forEach(dut => {
-                    if(dut.includes(':')) {
-                        const idx = dut.indexOf(':');
-                        masterActivitiesList.push(`Duty Assignment - 🛠️ ${dut.substring(0, idx).trim()}: ${dut.substring(idx+1).trim()}`);
-                    } else {
-                        masterActivitiesList.push(`Duty Assignment - 🛠️ ${dut}`);
-                    }
-                });
-            }
+            // Render Card Column 2: Preaching Teams
+            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
+                <div class="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-sm shadow-sm"><div class="flex justify-between items-center mb-1"><span class="font-bold text-indigo-900">${p.team}</span><span class="text-xs bg-indigo-200 text-indigo-900 font-semibold px-2 py-0.5 rounded">${p.time}</span></div><div class="text-xs text-slate-600">📍 ${p.location}</div></div>
+            `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
 
-            // 2. Scan for row records written in the Monthly Calendar cell box for this same date matrix
-            const rawCalendarText = appState.calendarEventsDb[currentSelectedDate] || "";
-            if (rawCalendarText.trim() !== "") {
-                rawCalendarText.split(',').forEach(item => {
-                    const cleanedItem = item.trim();
-                    if (!cleanedItem) return;
-
-                    // Skip announcements if mapped on calendar cell row strings
-                    if (cleanedItem.includes('📢')) return;
-
-                    if (cleanedItem.includes('|')) {
-                        const chunks = cleanedItem.split('|').map(x => x.trim());
-                        masterActivitiesList.push(`${chunks[1] || 'Scheduled'} - 📋 ${chunks[0] || 'Team'} at 📍 ${chunks[2] || 'Main Campus'}`);
-                    } 
-                    else if (cleanedItem.includes(':')) {
-                        const colonIdx = cleanedItem.indexOf(':');
-                        masterActivitiesList.push(`Duty Assignment - 🛠️ ${cleanedItem.substring(0, colonIdx).trim()}: ${cleanedItem.substring(colonIdx + 1).trim()}`);
-                    } 
-                    else if (cleanedItem.includes(' - ')) {
-                        masterActivitiesList.push(cleanedItem);
-                    } 
-                    else {
-                        masterActivitiesList.push(`Calendar Event - ${cleanedItem}`);
-                    }
-                });
-            }
-
-            // Render out unified elements safely onto the DOM layout card
-            const container = document.getElementById('activities-container');
-            container.innerHTML = masterActivitiesList.length ? masterActivitiesList.map(act => {
-                const dashIdx = act.indexOf(' - ');
-                const badgeLabel = dashIdx !== -1 ? act.substring(0, dashIdx) : 'Scheduled';
-                const mainDescription = dashIdx !== -1 ? act.substring(dashIdx + 3) : act;
-                return `
-                    <div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm">
-                        <span class="bg-indigo-100 text-indigo-800 text-[11px] font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap uppercase tracking-wider">
-                            ${badgeLabel}
-                        </span>
-                        <span class="text-sm font-medium text-slate-700 leading-relaxed">${mainDescription}</span>
-                    </div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-6 text-center">No active schedules, sermon allocations, or operational roles logged for this calendar date.</p>`;
+            // Render Card Column 3: Duties & Roles
+            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
+                const idx = d.indexOf(':');
+                return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
         }
 
         function renderSabbathAndFeast(type) {
@@ -656,14 +631,14 @@
             document.getElementById(`${type}-activities`).innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
                 const parts = a.split(' - ');
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No custom recurring timeline details saved yet.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
 
             document.getElementById(`${type}-duties`).innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
                 const idx = d.indexOf(':');
                 const name = idx !== -1 ? d.substring(0, idx).trim() : 'Assigned';
                 const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
                 return `<div class="grid grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-200"><div class="col-span-1 p-3 bg-emerald-50/50 font-bold text-emerald-900 text-sm flex items-center font-semibold">${name}</div><div class="col-span-2 p-3 text-sm text-slate-700 flex items-center">${duty}</div></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No standard static assignment details saved.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
         }
 
         function toggleAdminModal() {
@@ -672,7 +647,6 @@
             if (!m.classList.contains('hidden')) {
                 switchAdminSubTab('daily');
                 
-                // Repopulate explicitly tracked parameters for local single day instances
                 const dData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
                 const announceTextarea = document.getElementById('input-announcements');
                 if (announceTextarea) {
@@ -705,7 +679,6 @@
             saveBtn.disabled = true;
             saveBtn.innerText = "Synchronizing...";
 
-            // Read variables directly out of restored explicit Daily sub-tab structure 
             const dData = appState.database[currentSelectedDate] || {};
             dData.announcements = document.getElementById('input-announcements').value;
             dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
