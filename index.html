@@ -29,7 +29,7 @@
             
             <div class="w-full overflow-x-auto pb-1 flex justify-start sm:justify-center">
                 <div class="flex bg-indigo-950/60 p-1 rounded-xl border border-indigo-800 whitespace-nowrap">
-                    <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white">📅 Daily</button>
+                    <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white">📅 Daily View</button>
                     <button id="tab-monthly-btn" onclick="switchTab('monthly')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🗓️ Monthly Calendar</button>
                     <button id="tab-blessings-btn" onclick="switchTab('blessings')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">✨ Blessings</button>
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🕊️ Sabbath</button>
@@ -86,7 +86,7 @@
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
                         <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
-                        <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day cell box below to read the full schedule details!</p>
+                        <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to edit or view its complete live schedule details!</p>
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">← Prev Month</button>
@@ -169,15 +169,12 @@
     <div id="calendar-view-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl flex flex-col border border-slate-100 overflow-hidden">
             <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
-                <div>
-                    <h3 id="cv-modal-date-title" class="font-bold text-lg">Date Details</h3>
-                </div>
+                <div><h3 id="cv-modal-date-title" class="font-bold text-lg">Date Details</h3></div>
                 <button type="button" onclick="closeCalendarViewModal()" class="text-2xl font-bold hover:text-slate-300 focus:outline-none">&times;</button>
             </div>
             <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Scheduled Events</h4>
-                <div id="cv-modal-events-content" class="space-y-2">
-                    </div>
+                <div id="cv-modal-events-content" class="space-y-2"></div>
             </div>
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end space-x-2">
                 <button id="cv-modal-edit-btn" type="button" class="bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors hidden">
@@ -188,16 +185,41 @@
         </div>
     </div>
 
+    <div id="help-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 border border-slate-100 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-indigo-950 flex items-center gap-2">💡 Formatting Key Guide</h3>
+                <button type="button" onclick="toggleHelpModal()" class="text-2xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            <p class="text-xs text-slate-500 leading-relaxed">
+                When modifying events directly on calendar cells, use these distinct syntax symbols to organize rows automatically across the dashboards:
+            </p>
+            <div class="space-y-3 pt-1 text-xs">
+                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-amber-600 block mb-0.5">📢 Announcements:</b> Start any line with a 📢 emoji.<br><span class="font-mono text-[11px] text-slate-400">Example: 📢 Church picnic this Sunday!</span></div>
+                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-indigo-600 block mb-0.5">⏱️ Activities:</b> Separate time and event with a single dash <code class="bg-slate-200 px-1 rounded font-bold">-</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: 9:00 AM - Morning Devotion</span></div>
+                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-emerald-700 block mb-0.5">📋 Preaching:</b> Separate Team, Time, and Location with vertical bars <code class="bg-slate-200 px-1 rounded font-bold">|</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: Team Alpha | 11:00 AM | Sanctuary</span></div>
+                <div class="p-2.5 bg-slate-50 border rounded-xl"><b class="text-purple-600 block mb-0.5">🛠️ Duties / Roles:</b> Separate the duty assignment and name with a colon <code class="bg-slate-200 px-1 rounded font-bold">:</code>.<br><span class="font-mono text-[11px] text-slate-400">Example: Usher: Brother John</span></div>
+            </div>
+            <div class="pt-2 flex justify-end">
+                <button type="button" onclick="toggleHelpModal()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-semibold py-2 rounded-xl transition-colors shadow">Got It</button>
+            </div>
+        </div>
+    </div>
+
     <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="bg-indigo-900 text-white p-4 rounded-t-2xl flex flex-col gap-3">
                 <div class="flex justify-between items-center">
-                    <h2 class="text-lg font-bold">Admin Controls Panel</h2>
+                    <div class="flex items-center space-x-3">
+                        <h2 class="text-lg font-bold">Admin Controls Panel</h2>
+                        <button type="button" onclick="toggleHelpModal()" class="bg-indigo-950/60 hover:bg-indigo-950 border border-indigo-700/60 px-2.5 py-1 rounded-lg text-xs font-bold transition-all text-indigo-300 hover:text-white flex items-center gap-1 shadow-sm">
+                            💡 Format Key Guide
+                        </button>
+                    </div>
                     <button type="button" onclick="toggleAdminModal()" class="text-2xl font-bold hover:text-slate-300">&times;</button>
                 </div>
                 <div class="flex flex-wrap gap-1 bg-indigo-950/60 p-1 rounded-xl">
-                    <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700">Daily</button>
-                    <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
+                    <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700">Blessings</button>
                     <button onclick="switchAdminSubTab('sabbath')" id="as-sabbath" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Sabbath</button>
                     <button onclick="switchAdminSubTab('thirdday')" id="as-thirdday" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Third-Day</button>
                     <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Feast</button>
@@ -205,20 +227,7 @@
             </div>
             
             <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
-                <div id="ap-daily" class="space-y-4">
-                    <div>
-                        <div class="flex justify-between items-center mb-1">
-                            <label class="block text-sm font-bold text-slate-700">Daily Announcements</label>
-                            <span id="word-count-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">0 / 300 words</span>
-                        </div>
-                        <textarea id="input-announcements" rows="4" oninput="validateAnnouncementWords(this)" placeholder="Type announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
-                    </div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities (Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching (Team | Time | Location)</label><textarea id="input-preaching" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties (Role: Name)</label><textarea id="input-duties" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                </div>
-
-                <div id="ap-blessings" class="space-y-4 hidden">
+                <div id="ap-blessings" class="space-y-4">
                     <div>
                         <label class="block text-sm font-bold text-slate-700 mb-1">Blessings List</label>
                         <p class="text-[11px] text-slate-400 mb-2">Format: Name : Description : Status (Full, Low, Empty)</p>
@@ -256,7 +265,6 @@
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
         
         let appState = {
-            database: {},
             calendarEventsDb: {},
             blessingsList: [],
             sabbathSchedule: { activities: [], duties: [] },
@@ -282,7 +290,6 @@
                     const result = await response.json();
                     if (result && result.result) {
                         const parsed = JSON.parse(result.result);
-                        if (parsed.database) appState.database = parsed.database;
                         if (parsed.calendarEventsDb) appState.calendarEventsDb = parsed.calendarEventsDb;
                         if (parsed.blessingsList) appState.blessingsList = parsed.blessingsList;
                         if (parsed.sabbathSchedule) appState.sabbathSchedule = parsed.sabbathSchedule;
@@ -310,21 +317,8 @@
             }
         }
 
-        function validateAnnouncementWords(textarea) {
-            const maxWords = 300;
-            const text = textarea.value.trim();
-            const words = text === "" ? [] : text.split(/\s+/);
-            const wordCount = words.length;
-            const badge = document.getElementById('word-count-badge');
-            badge.innerText = `${wordCount} / ${maxWords} words`;
-
-            if (wordCount > maxWords) {
-                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-600 animate-pulse";
-                textarea.value = words.slice(0, maxWords).join(' ');
-                badge.innerText = `${maxWords} / ${maxWords} words`;
-            } else {
-                badge.className = "text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500";
-            }
+        function toggleHelpModal() {
+            document.getElementById('help-modal').classList.toggle('hidden');
         }
 
         function revealAdminButton() {
@@ -352,6 +346,9 @@
             document.getElementById(`view-${viewName}`).classList.remove('hidden');
             document.getElementById(`tab-${viewName}-btn`).className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-indigo-700 text-white";
             
+            // Auto scroll to top to maximize interface view layout fields
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
             if (viewName === 'monthly') renderMonthlyCalendar();
             if (viewName === 'blessings') renderBlessings();
             if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
@@ -360,7 +357,7 @@
         }
 
         function switchAdminSubTab(subTab) {
-            const subs = ['daily', 'blessings', 'sabbath', 'thirdday', 'feast'];
+            const subs = ['blessings', 'sabbath', 'thirdday', 'feast'];
             subs.forEach(s => {
                 document.getElementById(`ap-${s}`).classList.add('hidden');
                 document.getElementById(`as-${s}`).className = "px-3 py-1 text-xs font-bold rounded-lg text-indigo-200";
@@ -369,7 +366,6 @@
             document.getElementById(`as-${subTab}`).className = "px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
         }
 
-        // POP OVER BIG TEXT MODAL DISPLAY TRIGGER
         function openCalendarViewModal(dateKey) {
             const dateObj = new Date(dateKey + 'T00:00:00');
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -380,7 +376,7 @@
             contentContainer.innerHTML = "";
 
             if (eventsText.trim() === "") {
-                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4">No events or preaching items mapped for this day.</p>`;
+                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4 text-center">No distinct events written for this day cell.</p>`;
             } else {
                 eventsText.split(',').forEach(item => {
                     const lineCard = document.createElement('div');
@@ -390,7 +386,6 @@
                 });
             }
 
-            // Expose admin edit action options inline inside modal layout if logged in
             const editBtn = document.getElementById('cv-modal-edit-btn');
             if (isAdminAuthenticated) {
                 editBtn.classList.remove('hidden');
@@ -415,7 +410,7 @@
                 else appState.calendarEventsDb[dateKey] = newText.trim();
                 renderMonthlyCalendar();
                 await saveDataToCloud();
-                // Reopen showing freshly saved values instantly
+                handleDateChange(currentSelectedDate);
                 openCalendarViewModal(dateKey);
             }
         }
@@ -467,7 +462,7 @@
         function renderBlessings() {
             const container = document.getElementById('blessings-container');
             if (!appState.blessingsList || !appState.blessingsList.length) {
-                container.innerHTML = `<p class="text-slate-400 text-xs italic py-2 col-span-2">No items listed.</p>`;
+                container.innerHTML = `<p class="text-slate-400 text-xs italic py-6 text-center col-span-2">No blessings or thanksgiving items listed currently.</p>`;
                 return;
             }
 
@@ -533,26 +528,62 @@
         }
 
         function renderDashboardData() {
-            const dayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
-            const ab = document.getElementById('announcements-section');
-            if (dayData.announcements && dayData.announcements.trim() !== "") {
-                ab.classList.remove('hidden');
-                document.getElementById('announcements-text').innerText = dayData.announcements;
-            } else ab.classList.add('hidden');
+            const rawCalendarText = appState.calendarEventsDb[currentSelectedDate] || "";
+            
+            let announcementsList = [];
+            let activitiesList = [];
+            let preachingList = [];
+            let dutiesList = [];
 
-            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
+            if (rawCalendarText.trim() !== "") {
+                rawCalendarText.split(',').forEach(item => {
+                    const cleanedItem = item.trim();
+                    if (!cleanedItem) return;
+
+                    if (cleanedItem.includes('📢')) {
+                        announcementsList.push(cleanedItem.replace('📢', '').trim());
+                    } 
+                    else if (cleanedItem.includes('|')) {
+                        const chunks = cleanedItem.split('|').map(x => x.trim());
+                        preachingList.push({
+                            team: chunks[0] || "Team",
+                            time: chunks[1] || "Scheduled",
+                            location: chunks[2] || "Main Campus"
+                        });
+                    } 
+                    else if (cleanedItem.includes(' - ')) {
+                        activitiesList.push(cleanedItem);
+                    } 
+                    else if (cleanedItem.includes(':')) {
+                        dutiesList.push(cleanedItem);
+                    } 
+                    else {
+                        activitiesList.push(`Scheduled - ${cleanedItem}`);
+                    }
+                });
+            }
+
+            const ab = document.getElementById('announcements-section');
+            if (announcementsList.length > 0) {
+                ab.classList.remove('hidden');
+                document.getElementById('announcements-text').innerText = announcementsList.join('\n\n');
+            } else {
+                ab.classList.add('hidden');
+            }
+
+            document.getElementById('activities-container').innerHTML = activitiesList.length ? activitiesList.map(act => {
                 const p = act.split(' - ');
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic">No activities listed.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No specific standalone activities assigned for this calendar date.</p>`;
 
-            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
+            document.getElementById('preaching-container').innerHTML = preachingList.length ? preachingList.map(p => `
                 <div class="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-sm"><div class="flex justify-between items-center mb-1"><span class="font-bold text-indigo-900">${p.team}</span><span class="text-xs bg-indigo-200 text-indigo-900 font-semibold px-2 py-0.5 rounded">${p.time}</span></div><div class="text-xs text-slate-600">📍 ${p.location}</div></div>
-            `).join('') : `<p class="text-slate-400 text-xs italic">No preaching teams assigned.</p>`;
+            `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No personnel preaching allocations written for this date.</p>`;
 
-            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
+            document.getElementById('duties-container').innerHTML = dutiesList.length ? dutiesList.map(d => {
                 const idx = d.indexOf(':');
                 return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic">No duties listed.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No active duty roles logged for this date.</p>`;
         }
 
         function renderSabbathAndFeast(type) {
@@ -565,31 +596,21 @@
             document.getElementById(`${type}-activities`).innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
                 const parts = a.split(' - ');
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic">No schedule details saved.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No custom recurring timeline details saved yet.</p>`;
 
             document.getElementById(`${type}-duties`).innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
                 const idx = d.indexOf(':');
                 const name = idx !== -1 ? d.substring(0, idx).trim() : 'Assigned';
                 const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
                 return `<div class="grid grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-200"><div class="col-span-1 p-3 bg-emerald-50/50 font-bold text-emerald-900 text-sm flex items-center font-semibold">${name}</div><div class="col-span-2 p-3 text-sm text-slate-700 flex items-center">${duty}</div></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic">No assignment details saved.</p>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No standard static assignment details saved.</p>`;
         }
 
         function toggleAdminModal() {
             const m = document.getElementById('admin-modal');
             m.classList.toggle('hidden');
             if (!m.classList.contains('hidden')) {
-                switchAdminSubTab('daily');
-                const dData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
-                
-                const announceTextarea = document.getElementById('input-announcements');
-                announceTextarea.value = dData.announcements || "";
-                validateAnnouncementWords(announceTextarea);
-
-                document.getElementById('input-activities').value = (dData.activities || []).join('\n');
-                document.getElementById('input-duties').value = (dData.duties || []).join('\n');
-                document.getElementById('input-preaching').value = (dData.preaching || []).map(p => `${p.team} | ${p.time} | ${p.location}`).join('\n');
-
+                switchAdminSubTab('blessings');
                 document.getElementById('input-blessings').value = (appState.blessingsList || []).join('\n');
                 
                 if (!appState.sabbathSchedule) appState.sabbathSchedule = { activities: [], duties: [] };
@@ -607,15 +628,11 @@
 
         async function saveAdminData(e) {
             e.preventDefault();
-            const dData = appState.database[currentSelectedDate] || {};
-            dData.announcements = document.getElementById('input-announcements').value;
-            dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-            dData.duties = document.getElementById('input-duties').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-            dData.preaching = document.getElementById('input-preaching').value.split('\n').map(l=>l.trim()).filter(l=>l.length).map(l => {
-                const c = l.split('|').map(x=>x.trim());
-                return { team: c[0]||'Team', time: c[1]||'TBD', location: c[2]||'TBD' };
-            });
-            appState.database[currentSelectedDate] = dData;
+            
+            // Safeguard state action submission trigger lock
+            const saveBtn = document.getElementById('admin-save-btn');
+            saveBtn.disabled = true;
+            saveBtn.innerText = "Synchronizing...";
 
             appState.blessingsList = document.getElementById('input-blessings').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
             
@@ -640,6 +657,9 @@
             renderSabbathAndFeast('feast');
 
             await saveDataToCloud();
+            
+            saveBtn.disabled = false;
+            saveBtn.innerText = "Save Changes";
         }
     </script>
 </body>
