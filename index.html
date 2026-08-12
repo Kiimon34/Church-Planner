@@ -1,4 +1,4 @@
-    <!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -97,7 +97,7 @@
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
                         <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
-                        <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to edit or view its complete live schedule details!</p>
+                        <p class="text-slate-500 text-xs font-semibold">💡 Synced live with Google Sheets! Click directly on any day box below to view details.</p>
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">← Prev Month</button>
@@ -345,6 +345,9 @@
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
         
+        // PUBLISHED GOOGLE SHEET CSV LINK
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQqpqRhXUgCluXMtIQVirhj59IRQjxly1tHtItu_RVbaI0VUVkPnixvHCxgPpr2nyjwjJSPyRWEmsZb/pub?gid=468666178&single=true&output=csv";
+
         let appState = {
             persistentAnnouncement: "",
             database: {},
@@ -357,16 +360,71 @@
         
         let currentSelectedDate = "";
         let currentCalendarYear = 2026;
-        let currentCalendarMonth = 5; 
+        let currentCalendarMonth = 6; // Default July (0-indexed month 6)
         let isAdminAuthenticated = false; 
 
-        // Utility: Convert text links into clickable HTML anchors
         function linkifyText(text) {
             if (!text) return "";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
             return text.replace(urlRegex, function(url) {
                 return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`;
             });
+        }
+
+        // FETCH LIVE GOOGLE SHEETS CALENDAR CSV
+        async function fetchGoogleSheetCalendar() {
+            try {
+                const response = await fetch(GOOGLE_SHEET_CSV_URL);
+                if (!response.ok) return;
+                const csvText = await response.text();
+                
+                // Parse CSV text safely
+                const lines = csvText.split(/\r?\n/);
+                let parsedEvents = {};
+
+                lines.forEach(line => {
+                    if (!line.trim()) return;
+                    
+                    // Simple CSV row parser (handles quoted values and commas)
+                    const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+                    if (matches && matches.length >= 2) {
+                        const rawDate = matches[0].replace(/"/g, '').trim();
+                        const rawEvents = matches.slice(1).map(m => m.replace(/"/g, '').trim()).filter(Boolean).join(', ');
+
+                        // Standardize YYYY-MM-DD
+                        if (rawDate && rawEvents) {
+                            let formattedDate = rawDate;
+                            
+                            // If M/D or MM/DD format, prepend current year
+                            if (rawDate.includes('/')) {
+                                const parts = rawDate.split('/');
+                                if (parts.length === 2) {
+                                    const month = String(parts[0]).padStart(2, '0');
+                                    const day = String(parts[1]).padStart(2, '0');
+                                    formattedDate = `${currentCalendarYear}-${month}-${day}`;
+                                } else if (parts.length === 3) {
+                                    const month = String(parts[0]).padStart(2, '0');
+                                    const day = String(parts[1]).padStart(2, '0');
+                                    const yr = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
+                                    formattedDate = `${yr}-${month}-${day}`;
+                                }
+                            }
+
+                            if (formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                                parsedEvents[formattedDate] = rawEvents;
+                            }
+                        }
+                    }
+                });
+
+                if (Object.keys(parsedEvents).length > 0) {
+                    // Merge live Google Sheet rows directly into calendar memory
+                    appState.calendarEventsDb = { ...appState.calendarEventsDb, ...parsedEvents };
+                    console.log("Successfully synchronized Monthly Calendar directly from Google Sheets!");
+                }
+            } catch (err) {
+                console.log("Could not pull live Google Sheet CSV, relying on cloud backup:", err);
+            }
         }
 
         async function loadDataFromCloud() {
@@ -389,13 +447,16 @@
                         if (parsed.sabbathSchedule) appState.sabbathSchedule = parsed.sabbathSchedule;
                         if (parsed.thirddaySchedule) appState.thirddaySchedule = parsed.thirddaySchedule;
                         if (parsed.feastSchedule) appState.feastSchedule = parsed.feastSchedule;
-                        
-                        handleDateChange(currentSelectedDate);
-                        triggerInitialAnnouncementPopup();
                     }
                 }
             } catch (err) {
                 console.log("Database fetch offline, running on local cache fallback.", err);
+            } finally {
+                // Fetch live Google Sheets updates right after cloud initialization
+                await fetchGoogleSheetCalendar();
+                handleDateChange(currentSelectedDate);
+                renderMonthlyCalendar();
+                triggerInitialAnnouncementPopup();
             }
         }
 
@@ -652,7 +713,6 @@
         }
 
         function renderDashboardData() {
-            // Display Persistent Church Announcements if set
             const ab = document.getElementById('announcements-section');
             if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim() !== "") {
                 ab.classList.remove('hidden');
@@ -778,5 +838,6 @@
     </script>
 </body>
 </html>
+
 
  
