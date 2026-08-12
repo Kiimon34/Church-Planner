@@ -1,3 +1,7 @@
+            Here is your updated, complete code file!
+I have added a brand new 🔧 Maintenance tab to the navigation bar. When members click it, they will see a clean card displaying your message along with a styled "📋 Submit Maintenance Ticket" button that opens your Google Form link in a new tab.
+The Complete Updated Master Code File
+Replace everything in your local index.html file with this code, save it, and push it live to your GitHub repository to update your Vercel site:
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,6 +44,7 @@
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🕊️ Sabbath</button>
                     <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🌅 Third-Day</button>
                     <button id="tab-feast-btn" onclick="switchTab('feast')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🎉 Feast Worship</button>
+                    <button id="tab-maintenance-btn" onclick="switchTab('maintenance')" class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white">🔧 Maintenance</button>
                 </div>
             </div>
         </div>
@@ -56,7 +61,7 @@
 
         <!-- MAIN CONTENT -->
         <div id="main-content" class="space-y-6">
-            <!-- TAB 1: DAILY VIEW (RESTORED TO 3-COLUMNS) -->
+            <!-- TAB 1: DAILY VIEW -->
             <div id="view-daily" class="space-y-6">
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
@@ -177,6 +182,24 @@
                     </div>
                 </div>
             </div>
+
+            <!-- TAB 7: MAINTENANCE VIEW -->
+            <div id="view-maintenance" class="space-y-6 hidden">
+                <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-2xl mx-auto text-center space-y-6">
+                    <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-full text-3xl">
+                        🔧
+                    </div>
+                    <h1 class="text-2xl font-bold text-slate-900">Zion Maintenance & Projects</h1>
+                    <p class="text-slate-600 leading-relaxed text-base">
+                        Let us keep Zion beautiful. If you see something that needs to be fixed or a project in mind that would glorify Father and Mother, please click on the link below and submit a ticket.
+                    </p>
+                    <div class="pt-2">
+                        <a href="https://forms.gle/bqpGJnzz65u9iDBW8" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-indigo-900 hover:bg-indigo-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all hover:scale-105">
+                            📋 Submit Maintenance Ticket ↗
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </main>
 
@@ -257,7 +280,6 @@
             </div>
             
             <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
-                <!-- INDEPENDENT DAILY INPUT BLOCKS -->
                 <div id="ap-daily" class="space-y-4">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -402,7 +424,7 @@
         }
 
         function switchTab(viewName) {
-            const tabs = ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast'];
+            const tabs = ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'maintenance'];
             tabs.forEach(t => {
                 document.getElementById(`view-${t}`).classList.add('hidden');
                 document.getElementById(`tab-${t}-btn`).className = "px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-colors text-indigo-200 hover:text-white";
@@ -590,11 +612,9 @@
             renderMonthlyCalendar();
         }
 
-        // ORIGINAL RESTORED DASHBOARD RENDER: Map 3 columns explicitly without any calendar cross-pulls
         function renderDashboardData() {
             const dayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
             
-            // Render Announcements Section
             const ab = document.getElementById('announcements-section');
             if (dayData.announcements && dayData.announcements.trim() !== "") {
                 ab.classList.remove('hidden');
@@ -603,18 +623,15 @@
                 ab.classList.add('hidden');
             }
 
-            // Render Card Column 1: Activities & Times
             document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
                 const p = act.split(' - ');
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
 
-            // Render Card Column 2: Preaching Teams
             document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
                 <div class="p-3 bg-indigo-50/50 border border-indigo-100 rounded-xl text-sm shadow-sm"><div class="flex justify-between items-center mb-1"><span class="font-bold text-indigo-900">${p.team}</span><span class="text-xs bg-indigo-200 text-indigo-900 font-semibold px-2 py-0.5 rounded">${p.time}</span></div><div class="text-xs text-slate-600">📍 ${p.location}</div></div>
             `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
 
-            // Render Card Column 3: Duties & Roles
             document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
                 const idx = d.indexOf(':');
                 return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
@@ -719,3 +736,4 @@
     </script>
 </body>
 </html>
+
