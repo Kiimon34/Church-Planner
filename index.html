@@ -1,4 +1,4 @@
-        <!DOCTYPE html>
+    <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -73,7 +73,7 @@
                 
                 <div id="announcements-section" class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl shadow-sm hidden h-auto w-full">
                     <h3 class="font-bold text-amber-900 text-lg flex items-center gap-2 mb-2">📢 Announcements</h3>
-                    <p class="text-amber-900 leading-relaxed text-sm whitespace-pre-wrap break-words overflow-visible" id="announcements-text"></p>
+                    <div class="text-amber-900 leading-relaxed text-sm whitespace-pre-wrap break-words overflow-visible" id="announcements-text"></div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -199,6 +199,24 @@
         </div>
     </main>
 
+    <!-- POPUP MODAL: AUTO ANNOUNCEMENT ON LOAD -->
+    <div id="announcement-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-amber-200">
+            <div class="bg-amber-500 text-slate-900 px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">📢 Church Announcement</h3>
+                <button type="button" onclick="closeAnnouncementPopup()" class="text-2xl font-bold hover:text-slate-700">&times;</button>
+            </div>
+            <div class="p-6">
+                <div id="popup-announcement-content" class="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap break-words max-h-[60vh] overflow-y-auto"></div>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end">
+                <button type="button" onclick="closeAnnouncementPopup()" class="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all">
+                    Close / Got It
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- POPUP MODAL: EXPANDED CALENDAR CELL VIEW -->
     <div id="calendar-view-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl flex flex-col border border-slate-100 overflow-hidden">
@@ -279,14 +297,14 @@
                 <div id="ap-daily" class="space-y-4">
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <label class="block text-sm font-bold text-slate-700">Daily Announcements</label>
+                            <label class="block text-sm font-bold text-slate-700">Persistent Church Announcement (Stays until changed)</label>
                             <span id="word-count-badge" class="text-[11px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-500">0 / 300 words</span>
                         </div>
-                        <textarea id="input-announcements" rows="3" oninput="validateAnnouncementWords(this)" placeholder="Type announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        <textarea id="input-announcements" rows="3" oninput="validateAnnouncementWords(this)" placeholder="Type persistent announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities (Format: Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching Assignments (Format: Team | Time | Location)</label><textarea id="input-preaching" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
-                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties & Roles (Format: Role: Name)</label><textarea id="input-duties" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Activities for Selected Date (Format: Time - Activity)</label><textarea id="input-activities" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Preaching Assignments for Selected Date (Format: Team | Time | Location)</label><textarea id="input-preaching" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
+                    <div><label class="block text-sm font-bold text-slate-700 mb-1">Duties & Roles for Selected Date (Format: Role: Name)</label><textarea id="input-duties" rows="2" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea></div>
                 </div>
 
                 <div id="ap-blessings" class="space-y-4 hidden">
@@ -328,6 +346,7 @@
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
         
         let appState = {
+            persistentAnnouncement: "",
             database: {},
             calendarEventsDb: {},
             blessingsList: [],
@@ -340,6 +359,15 @@
         let currentCalendarYear = 2026;
         let currentCalendarMonth = 5; 
         let isAdminAuthenticated = false; 
+
+        // Utility: Convert text links into clickable HTML anchors
+        function linkifyText(text) {
+            if (!text) return "";
+            const urlRegex = /(https?:\/\/[^\s]+)/g;
+            return text.replace(urlRegex, function(url) {
+                return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`;
+            });
+        }
 
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
@@ -354,6 +382,7 @@
                     const result = await response.json();
                     if (result && result.result) {
                         const parsed = JSON.parse(result.result);
+                        if (parsed.persistentAnnouncement !== undefined) appState.persistentAnnouncement = parsed.persistentAnnouncement;
                         if (parsed.database) appState.database = parsed.database;
                         if (parsed.calendarEventsDb) appState.calendarEventsDb = parsed.calendarEventsDb;
                         if (parsed.blessingsList) appState.blessingsList = parsed.blessingsList;
@@ -362,6 +391,7 @@
                         if (parsed.feastSchedule) appState.feastSchedule = parsed.feastSchedule;
                         
                         handleDateChange(currentSelectedDate);
+                        triggerInitialAnnouncementPopup();
                     }
                 }
             } catch (err) {
@@ -380,6 +410,19 @@
             } catch (err) {
                 console.error("Cloud synchronization error:", err);
             }
+        }
+
+        function triggerInitialAnnouncementPopup() {
+            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim() !== "") {
+                const modal = document.getElementById('announcement-popup-modal');
+                const contentContainer = document.getElementById('popup-announcement-content');
+                contentContainer.innerHTML = linkifyText(appState.persistentAnnouncement);
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeAnnouncementPopup() {
+            document.getElementById('announcement-popup-modal').classList.add('hidden');
         }
 
         function toggleHelpModal() {
@@ -609,15 +652,16 @@
         }
 
         function renderDashboardData() {
-            const dayData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
-            
+            // Display Persistent Church Announcements if set
             const ab = document.getElementById('announcements-section');
-            if (dayData.announcements && dayData.announcements.trim() !== "") {
+            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim() !== "") {
                 ab.classList.remove('hidden');
-                document.getElementById('announcements-text').innerText = dayData.announcements;
+                document.getElementById('announcements-text').innerHTML = linkifyText(appState.persistentAnnouncement);
             } else {
                 ab.classList.add('hidden');
             }
+
+            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
 
             document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
                 const p = act.split(' - ');
@@ -660,12 +704,13 @@
             if (!m.classList.contains('hidden')) {
                 switchAdminSubTab('daily');
                 
-                const dData = appState.database[currentSelectedDate] || { announcements: "", activities: [], preaching: [], duties: [] };
                 const announceTextarea = document.getElementById('input-announcements');
                 if (announceTextarea) {
-                    announceTextarea.value = dData.announcements || "";
+                    announceTextarea.value = appState.persistentAnnouncement || "";
                     validateAnnouncementWords(announceTextarea);
                 }
+
+                const dData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
                 document.getElementById('input-activities').value = (dData.activities || []).join('\n');
                 document.getElementById('input-duties').value = (dData.duties || []).join('\n');
                 document.getElementById('input-preaching').value = (dData.preaching || []).map(p => `${p.team} | ${p.time} | ${p.location}`).join('\n');
@@ -692,8 +737,9 @@
             saveBtn.disabled = true;
             saveBtn.innerText = "Synchronizing...";
 
+            appState.persistentAnnouncement = document.getElementById('input-announcements').value;
+
             const dData = appState.database[currentSelectedDate] || {};
-            dData.announcements = document.getElementById('input-announcements').value;
             dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
             dData.duties = document.getElementById('input-duties').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
             dData.preaching = document.getElementById('input-preaching').value.split('\n').map(l=>l.trim()).filter(l=>l.length).map(l => {
@@ -732,4 +778,5 @@
     </script>
 </body>
 </html>
+
  
