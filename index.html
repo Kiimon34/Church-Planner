@@ -97,7 +97,7 @@
                 <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                     <div>
                         <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
-                        <p class="text-slate-500 text-xs font-semibold">💡 Synced live with Google Sheets! Click directly on any day box below to view details.</p>
+                        <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to view details or edit!</p>
                     </div>
                     <div class="flex space-x-2">
                         <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">← Prev Month</button>
@@ -199,6 +199,30 @@
         </div>
     </main>
 
+    <!-- POPUP MODAL: BULK MONTHLY CALENDAR UPDATE -->
+    <div id="bulk-calendar-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-indigo-200">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 class="font-bold text-lg flex items-center gap-2">⚡ Bulk Monthly Calendar Input</h3>
+                <button type="button" onclick="toggleBulkCalendarModal()" class="text-2xl font-bold hover:text-indigo-200">&times;</button>
+            </div>
+            <div class="p-6 space-y-3">
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Paste your entire month's events line by line. <br>
+                    <b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded font-mono">Month Day: Event 1, Event 2</code><br>
+                    <i>Example: August 9: WM Meeting, 2:00pm Preaching</i>
+                </p>
+                <textarea id="bulk-calendar-input" rows="12" placeholder="August 9: WM Meeting in NPV, 2:00-5:30pm Preaching in Main&#10;August 10: Preaching (Group by Group), 7:00pm Dinner&#10;August 11: 11:00-1:30pm Preaching" class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"></textarea>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button type="button" onclick="toggleBulkCalendarModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-xs font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+                <button type="button" onclick="processBulkCalendarData()" class="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all">
+                    Apply Bulk Update
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- POPUP MODAL: AUTO ANNOUNCEMENT ON LOAD -->
     <div id="announcement-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-amber-200">
@@ -284,12 +308,18 @@
                     </div>
                     <button type="button" onclick="toggleAdminModal()" class="text-2xl font-bold hover:text-slate-300">&times;</button>
                 </div>
-                <div class="flex flex-wrap gap-1 bg-indigo-950/60 p-1 rounded-xl">
-                    <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700">Daily</button>
-                    <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
-                    <button onclick="switchAdminSubTab('sabbath')" id="as-sabbath" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Sabbath</button>
-                    <button onclick="switchAdminSubTab('thirdday')" id="as-thirdday" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Third-Day</button>
-                    <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Feast</button>
+                <div class="flex flex-wrap gap-1 bg-indigo-950/60 p-1 rounded-xl items-center justify-between">
+                    <div class="flex flex-wrap gap-1">
+                        <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700">Daily</button>
+                        <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
+                        <button onclick="switchAdminSubTab('sabbath')" id="as-sabbath" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Sabbath</button>
+                        <button onclick="switchAdminSubTab('thirdday')" id="as-thirdday" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Third-Day</button>
+                        <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Feast</button>
+                    </div>
+                    <!-- NEW BULK UPDATE TRIGGER -->
+                    <button type="button" onclick="toggleBulkCalendarModal()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 shadow-sm transition-all">
+                        ⚡ Batch Update Month
+                    </button>
                 </div>
             </div>
             
@@ -344,9 +374,6 @@
         
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
-        
-        // PUBLISHED GOOGLE SHEET CSV LINK
-        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQqpqRhXUgCluXMtIQVirhj59IRQjxly1tHtItu_RVbaI0VUVkPnixvHCxgPpr2nyjwjJSPyRWEmsZb/pub?gid=468666178&single=true&output=csv";
 
         let appState = {
             persistentAnnouncement: "",
@@ -360,7 +387,7 @@
         
         let currentSelectedDate = "";
         let currentCalendarYear = 2026;
-        let currentCalendarMonth = 6; // Default July (0-indexed month 6)
+        let currentCalendarMonth = 7; // Default August (0-indexed month 7)
         let isAdminAuthenticated = false; 
 
         function linkifyText(text) {
@@ -369,62 +396,6 @@
             return text.replace(urlRegex, function(url) {
                 return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`;
             });
-        }
-
-        // FETCH LIVE GOOGLE SHEETS CALENDAR CSV
-        async function fetchGoogleSheetCalendar() {
-            try {
-                const response = await fetch(GOOGLE_SHEET_CSV_URL);
-                if (!response.ok) return;
-                const csvText = await response.text();
-                
-                // Parse CSV text safely
-                const lines = csvText.split(/\r?\n/);
-                let parsedEvents = {};
-
-                lines.forEach(line => {
-                    if (!line.trim()) return;
-                    
-                    // Simple CSV row parser (handles quoted values and commas)
-                    const matches = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-                    if (matches && matches.length >= 2) {
-                        const rawDate = matches[0].replace(/"/g, '').trim();
-                        const rawEvents = matches.slice(1).map(m => m.replace(/"/g, '').trim()).filter(Boolean).join(', ');
-
-                        // Standardize YYYY-MM-DD
-                        if (rawDate && rawEvents) {
-                            let formattedDate = rawDate;
-                            
-                            // If M/D or MM/DD format, prepend current year
-                            if (rawDate.includes('/')) {
-                                const parts = rawDate.split('/');
-                                if (parts.length === 2) {
-                                    const month = String(parts[0]).padStart(2, '0');
-                                    const day = String(parts[1]).padStart(2, '0');
-                                    formattedDate = `${currentCalendarYear}-${month}-${day}`;
-                                } else if (parts.length === 3) {
-                                    const month = String(parts[0]).padStart(2, '0');
-                                    const day = String(parts[1]).padStart(2, '0');
-                                    const yr = parts[2].length === 2 ? `20${parts[2]}` : parts[2];
-                                    formattedDate = `${yr}-${month}-${day}`;
-                                }
-                            }
-
-                            if (formattedDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                                parsedEvents[formattedDate] = rawEvents;
-                            }
-                        }
-                    }
-                });
-
-                if (Object.keys(parsedEvents).length > 0) {
-                    // Merge live Google Sheet rows directly into calendar memory
-                    appState.calendarEventsDb = { ...appState.calendarEventsDb, ...parsedEvents };
-                    console.log("Successfully synchronized Monthly Calendar directly from Google Sheets!");
-                }
-            } catch (err) {
-                console.log("Could not pull live Google Sheet CSV, relying on cloud backup:", err);
-            }
         }
 
         async function loadDataFromCloud() {
@@ -452,8 +423,6 @@
             } catch (err) {
                 console.log("Database fetch offline, running on local cache fallback.", err);
             } finally {
-                // Fetch live Google Sheets updates right after cloud initialization
-                await fetchGoogleSheetCalendar();
                 handleDateChange(currentSelectedDate);
                 renderMonthlyCalendar();
                 triggerInitialAnnouncementPopup();
@@ -470,6 +439,68 @@
                 console.log("Schedule synchronized live!");
             } catch (err) {
                 console.error("Cloud synchronization error:", err);
+            }
+        }
+
+        function toggleBulkCalendarModal() {
+            document.getElementById('bulk-calendar-modal').classList.toggle('hidden');
+        }
+
+        // BATCH PROCESSOR: Parses entire month list inputs at once
+        async function processBulkCalendarData() {
+            const rawText = document.getElementById('bulk-calendar-input').value;
+            if (!rawText.trim()) return;
+
+            const lines = rawText.split('\n');
+            const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+            let updatedCount = 0;
+
+            lines.forEach(line => {
+                let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
+                if (!cleaned || !cleaned.includes(':')) return;
+
+                const colonIdx = cleaned.indexOf(':');
+                const datePart = cleaned.substring(0, colonIdx).trim().toLowerCase();
+                const eventsPart = cleaned.substring(colonIdx + 1).trim();
+
+                let matchedMonth = currentCalendarMonth + 1;
+                let matchedDay = null;
+
+                // Match Month Name & Day (e.g. "August 9" or "August 09")
+                mNames.forEach((mName, idx) => {
+                    if (datePart.includes(mName)) {
+                        matchedMonth = idx + 1;
+                        const dayMatch = datePart.match(/\d+/);
+                        if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                    }
+                });
+
+                // Fallback numeric dates (e.g., "8/9" or "08/09")
+                if (!matchedDay && datePart.includes('/')) {
+                    const parts = datePart.split('/');
+                    matchedMonth = parseInt(parts[0]);
+                    matchedDay = parseInt(parts[1]);
+                } else if (!matchedDay) {
+                    const dayMatch = datePart.match(/\d+/);
+                    if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                }
+
+                if (matchedDay) {
+                    const dateKey = `${currentCalendarYear}-${String(matchedMonth).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
+                    if (eventsPart && eventsPart.toLowerCase() !== '(blank)') {
+                        appState.calendarEventsDb[dateKey] = eventsPart;
+                        updatedCount++;
+                    }
+                }
+            });
+
+            if (updatedCount > 0) {
+                renderMonthlyCalendar();
+                await saveDataToCloud();
+                toggleBulkCalendarModal();
+                alert(`Successfully imported and saved ${updatedCount} daily calendar entries!`);
+            } else {
+                alert("Could not parse dates automatically. Make sure lines follow 'Month Day: Events' format (e.g., August 9: Event 1, Event 2)");
             }
         }
 
@@ -838,6 +869,3 @@
     </script>
 </body>
 </html>
-
-
-I will keep this as current app code, for future references.
