@@ -67,9 +67,9 @@
                         <span class="font-bold text-lg tracking-wide">Grace Church Planner</span>
                     </div>
                     
-                    <!-- ACTION BUTTONS: INSTALL PWA, LOCK, ADMIN -->
+                    <!-- ACTION BUTTONS: ALWAYS VISIBLE INSTALL PWA, LOCK, ADMIN -->
                     <div class="flex items-center space-x-2">
-                        <button id="pwa-install-btn" type="button" onclick="triggerPwaInstall()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow hidden">
+                        <button id="pwa-install-btn" type="button" onclick="togglePwaInstructionsModal()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow">
                             📱 Install App
                         </button>
                         <button type="button" onclick="lockApp()" class="bg-indigo-950/80 hover:bg-indigo-950 text-indigo-200 border border-indigo-700/60 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all">
@@ -116,16 +116,11 @@
                             <p class="text-slate-500 text-sm" id="display-date-sub">Loading...</p>
                         </div>
                         
-                        <!-- DATE CONTROLS & EXPORT TO CALENDAR -->
-                        <div class="flex flex-wrap items-center gap-2">
-                            <button onclick="exportToIcsCalendar()" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1">
-                                📅 Sync to Calendar
-                            </button>
-                            <div class="flex items-center space-x-2">
-                                <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">← Prev</button>
-                                <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
-                                <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
-                            </div>
+                        <!-- DATE CONTROLS -->
+                        <div class="flex items-center space-x-2">
+                            <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">← Prev</button>
+                            <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                            <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
                         </div>
                     </div>
 
@@ -133,7 +128,7 @@
                     <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center gap-3">
                         <span class="text-lg pl-2">🔍</span>
                         <input type="text" id="daily-search-input" oninput="filterDailyView(this.value)" placeholder="Search names or roles (e.g. Ezequiel, Sound, Choir)..." class="w-full text-sm outline-none text-slate-800 placeholder-slate-400 font-medium">
-                        <button type="button" onclick="clearDailySearch()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                        <button type="button" onclick="clearSearch('daily-search-input', filterDailyView)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
                     </div>
                     
                     <div id="announcements-section" class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl shadow-sm hidden h-auto w-full">
@@ -164,9 +159,13 @@
                             <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
                             <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to view details or edit!</p>
                         </div>
-                        <div class="flex space-x-2">
-                            <button onclick="changeMonth(-1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">← Prev Month</button>
-                            <button onclick="changeMonth(1)" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-sm font-bold shadow-sm">Next Month →</button>
+                        <div class="flex items-center space-x-2">
+                            <!-- EXPORT TO CALENDAR BUTTON MOVED HERE -->
+                            <button onclick="exportToIcsCalendar()" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1">
+                                📅 Sync to Calendar
+                            </button>
+                            <button onclick="changeMonth(-1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm">← Prev</button>
+                            <button onclick="changeMonth(1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm">Next →</button>
                         </div>
                     </div>
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 overflow-x-auto">
@@ -187,16 +186,32 @@
 
                 <!-- TAB 3: BLESSINGS VIEW -->
                 <div id="view-blessings" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h1 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3 mb-6">✨ Blessings & Thanksgiving</h1>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h1 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3">✨ Blessings & Thanksgiving</h1>
+                        
+                        <!-- BLESSINGS TAB SEARCH BAR -->
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="blessings-search-input" oninput="filterBlessingsView(this.value)" placeholder="Search member name or item (e.g. Toilet Paper, James)..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('blessings-search-input', filterBlessingsView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                        </div>
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="blessings-container"></div>
                     </div>
                 </div>
 
                 <!-- TAB 4: SABBATH VIEW -->
                 <div id="view-sabbath" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h1 class="text-2xl font-bold text-slate-900 mb-6">🕊️ Holy Sabbath Schedule</h1>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h1 class="text-2xl font-bold text-slate-900">🕊️ Holy Sabbath Schedule</h1>
+                        
+                        <!-- SABBATH TAB SEARCH BAR -->
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="sabbath-search-input" oninput="filterSabbathView(this.value)" placeholder="Search Sabbath duties or names..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('sabbath-search-input', filterSabbathView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
@@ -212,8 +227,16 @@
 
                 <!-- TAB 5: THIRD-DAY VIEW -->
                 <div id="view-thirdday" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h1 class="text-2xl font-bold text-slate-900 mb-6">🌅 Third-Day Schedule</h1>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h1 class="text-2xl font-bold text-slate-900">🌅 Third-Day Schedule</h1>
+                        
+                        <!-- THIRD DAY TAB SEARCH BAR -->
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="thirdday-search-input" oninput="filterThirdDayView(this.value)" placeholder="Search Third-Day duties or names..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('thirdday-search-input', filterThirdDayView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
@@ -263,6 +286,36 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- POPUP MODAL: ADD TO HOME SCREEN INSTRUCTIONS -->
+    <div id="pwa-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-100 space-y-4 p-6">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="text-lg font-bold text-indigo-950 flex items-center gap-2">📱 Add Planner to Home Screen</h3>
+                <button type="button" onclick="togglePwaInstructionsModal()" class="text-2xl font-bold text-slate-400 hover:text-slate-600">&times;</button>
+            </div>
+            
+            <div class="space-y-4 text-xs leading-relaxed text-slate-600">
+                <div class="bg-indigo-50 border border-indigo-100 p-3 rounded-xl text-indigo-900">
+                    <b class="block text-sm font-bold mb-1">🍎 iPhone / iPad (Safari)</b>
+                    1. Tap the <b>Share</b> icon (box with up arrow) at the bottom of Safari.<br>
+                    2. Scroll down and tap <b>"Add to Home Screen"</b>.<br>
+                    3. Tap <b>Add</b> at the top right.
+                </div>
+                
+                <div class="bg-slate-50 border border-slate-200 p-3 rounded-xl text-slate-800">
+                    <b class="block text-sm font-bold mb-1">🤖 Android (Chrome)</b>
+                    1. Tap the <b>3 dots menu</b> at the top right of Chrome.<br>
+                    2. Tap <b>"Add to Home screen"</b> or <b>"Install app"</b>.<br>
+                    3. Confirm by tapping <b>Add</b>.
+                </div>
+            </div>
+
+            <button type="button" onclick="togglePwaInstructionsModal()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-2.5 rounded-xl transition-all text-xs">
+                Got It
+            </button>
+        </div>
     </div>
 
     <!-- POPUP MODAL: BULK MONTHLY CALENDAR UPDATE -->
@@ -455,28 +508,9 @@
         let currentCalendarYear = 2026;
         let currentCalendarMonth = 7; // Default August (0-indexed month 7)
         let isAdminAuthenticated = false;
-        let pwaDeferredPrompt = null;
 
-        // -------------------------------------------------------------
-        // PWA PROMPT LISTENER
-        // -------------------------------------------------------------
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            pwaDeferredPrompt = e;
-            const btn = document.getElementById('pwa-install-btn');
-            if (btn) btn.classList.remove('hidden');
-        });
-
-        function triggerPwaInstall() {
-            if (pwaDeferredPrompt) {
-                pwaDeferredPrompt.prompt();
-                pwaDeferredPrompt.userChoice.then((choiceResult) => {
-                    if (choiceResult.outcome === 'accepted') {
-                        document.getElementById('pwa-install-btn').classList.add('hidden');
-                    }
-                    pwaDeferredPrompt = null;
-                });
-            }
+        function togglePwaInstructionsModal() {
+            document.getElementById('pwa-modal').classList.toggle('hidden');
         }
 
         // -------------------------------------------------------------
@@ -603,8 +637,16 @@
         }
 
         // -------------------------------------------------------------
-        // INSTANT SEARCH & FILTER LOGIC
+        // INSTANT SEARCH & FILTER LOGIC FOR ALL TABS
         // -------------------------------------------------------------
+        function clearSearch(inputId, filterFunc) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = "";
+                filterFunc("");
+            }
+        }
+
         function filterDailyView(query) {
             const q = query.trim().toLowerCase();
             const actContainer = document.getElementById('activities-container');
@@ -613,25 +655,53 @@
 
             [actContainer, preachContainer, dutyContainer].forEach(container => {
                 if (!container) return;
-                const cards = container.children;
-                Array.from(cards).forEach(card => {
+                Array.from(container.children).forEach(card => {
                     if (card.tagName === 'P') return; 
                     const cardText = card.innerText.toLowerCase();
-                    if (q === "" || cardText.includes(q)) {
-                        card.style.display = "";
-                    } else {
-                        card.style.display = "none";
-                    }
+                    card.style.display = (q === "" || cardText.includes(q)) ? "" : "none";
                 });
             });
         }
 
-        function clearDailySearch() {
-            const input = document.getElementById('daily-search-input');
-            if (input) {
-                input.value = "";
-                filterDailyView("");
-            }
+        function filterBlessingsView(query) {
+            const q = query.trim().toLowerCase();
+            const container = document.getElementById('blessings-container');
+            if (!container) return;
+            Array.from(container.children).forEach(card => {
+                if (card.tagName === 'P') return;
+                const text = card.innerText.toLowerCase();
+                card.style.display = (q === "" || text.includes(q)) ? "" : "none";
+            });
+        }
+
+        function filterSabbathView(query) {
+            const q = query.trim().toLowerCase();
+            const actContainer = document.getElementById('sabbath-activities');
+            const dutyContainer = document.getElementById('sabbath-duties');
+
+            [actContainer, dutyContainer].forEach(container => {
+                if (!container) return;
+                Array.from(container.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    const text = card.innerText.toLowerCase();
+                    card.style.display = (q === "" || text.includes(q)) ? "" : "none";
+                });
+            });
+        }
+
+        function filterThirdDayView(query) {
+            const q = query.trim().toLowerCase();
+            const actContainer = document.getElementById('thirdday-activities');
+            const dutyContainer = document.getElementById('thirdday-duties');
+
+            [actContainer, dutyContainer].forEach(container => {
+                if (!container) return;
+                Array.from(container.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    const text = card.innerText.toLowerCase();
+                    card.style.display = (q === "" || text.includes(q)) ? "" : "none";
+                });
+            });
         }
 
         // -------------------------------------------------------------
@@ -649,7 +719,6 @@
 
             const formattedDateStr = currentSelectedDate.replace(/-/g, '');
 
-            // Add activities
             if (dayData.activities && dayData.activities.length) {
                 dayData.activities.forEach((act, idx) => {
                     icsLines.push("BEGIN:VEVENT");
@@ -661,7 +730,6 @@
                 });
             }
 
-            // Add duties
             if (dayData.duties && dayData.duties.length) {
                 dayData.duties.forEach((duty, idx) => {
                     icsLines.push("BEGIN:VEVENT");
@@ -953,6 +1021,9 @@
                         </div>
                     </div>`;
             }).join('');
+
+            const searchVal = document.getElementById('blessings-search-input')?.value || "";
+            if (searchVal.trim() !== "") filterBlessingsView(searchVal);
         }
 
         function getLocalDateString(dateObj) {
@@ -1015,7 +1086,6 @@
                 return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
 
-            // Apply active search filter string if typed
             const searchVal = document.getElementById('daily-search-input')?.value || "";
             if (searchVal.trim() !== "") filterDailyView(searchVal);
         }
@@ -1038,6 +1108,15 @@
                 const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
                 return `<div class="grid grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-200"><div class="col-span-1 p-3 bg-emerald-50/50 font-bold text-emerald-900 text-sm flex items-center font-semibold">${name}</div><div class="col-span-2 p-3 text-sm text-slate-700 flex items-center">${duty}</div></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
+
+            if (type === 'sabbath') {
+                const searchVal = document.getElementById('sabbath-search-input')?.value || "";
+                if (searchVal.trim() !== "") filterSabbathView(searchVal);
+            }
+            if (type === 'thirdday') {
+                const searchVal = document.getElementById('thirdday-search-input')?.value || "";
+                if (searchVal.trim() !== "") filterThirdDayView(searchVal);
+            }
         }
 
         function toggleAdminModal() {
