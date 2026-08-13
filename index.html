@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-title" content="Zion Planner">
     <meta name="theme-color" content="#1e1b4b">
     
-    <!-- Tailwind CSS for modern styling -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
@@ -23,6 +23,27 @@
             40%, 80% { transform: translateX(8px); }
         }
         .animate-shake { animation: shake 0.4s ease-in-out; }
+
+        /* MOBILE DROPDOWN & INPUT ENHANCEMENTS */
+        select, input[list], input[type="text"] {
+            background-color: #ffffff !important;
+            color: #0f172a !important;
+            opacity: 1 !important;
+            font-size: 14px !important;
+        }
+
+        /* Prevent Flex Collapsing on Small Mobile Screens */
+        .preaching-row, .duty-row, .blessing-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            min-width: 0;
+        }
+
+        .preaching-row input, .duty-row input, .blessing-row select {
+            flex: 1 1 auto;
+            min-width: 110px;
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
@@ -84,7 +105,7 @@
             <!-- PRIMARY TABS SLIDER BAR -->
             <div class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
-                    <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white">📅 Daily View</button>
+                    <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold">📅 Daily View</button>
                     <button id="tab-monthly-btn" onclick="switchTab('monthly')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🗓️ Monthly Calendar</button>
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🕊️ Sabbath</button>
                     <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🌅 Third-Day</button>
@@ -93,7 +114,7 @@
             </div>
         </nav>
 
-        <!-- HAMBURGER EXPANDABLE SIDE/OVERLAY MENU SHEET -->
+        <!-- HAMBURGER EXPANDABLE SIDE SHEET -->
         <div id="hamburger-drawer" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[95] hidden transition-all" onclick="toggleHamburgerMenu()">
             <div class="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 flex flex-col justify-between space-y-6" onclick="event.stopPropagation()">
                 <div class="space-y-6">
@@ -173,11 +194,11 @@
                         </div>
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                             <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">📋 Preaching Teams</h2>
-                            <div id="preaching-container" class="space-y-4"></div>
+                            <div id="preaching-container" class="space-y-3 h-auto min-h-[60px] w-full overflow-visible transition-all"></div>
                         </div>
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                             <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">🛠️ Duties & Roles</h2>
-                            <div id="duties-container" class="space-y-3"></div>
+                            <div id="duties-container" class="space-y-3 h-auto min-h-[60px] w-full overflow-visible transition-all"></div>
                         </div>
                     </div>
                 </div>
@@ -293,7 +314,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 8: SABBATH DAY DINNER BLESSING (COOKING SCHEDULE) -->
+                <!-- TAB 8: COOKING SCHEDULE -->
                 <div id="view-cooking" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
                         <div class="bg-purple-800 text-white p-4 rounded-xl text-center">
@@ -316,7 +337,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 9: GROUP CLEANING RESPONSIBILITIES -->
+                <!-- TAB 9: CLEANING RESPONSIBILITIES -->
                 <div id="view-cleaning" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
                         <div class="text-center space-y-1">
@@ -514,7 +535,7 @@
                             <label class="block text-sm font-bold text-slate-700">✨ Blessings & Thanksgiving Inventory</label>
                             <p class="text-[11px] text-slate-400">Select Evangelist/Member & set supply status dropdown.</p>
                         </div>
-                        <button type="button" onclick="addBlessingBuilderRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800 transition-all">+ Add Item</button>
+                        <button type="button" onclick="addBlessingBuilderRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800 transition-all master-only">+ Add Item</button>
                     </div>
                     <div id="blessings-builder-rows" class="space-y-2"></div>
                     <textarea id="input-blessings" rows="4" class="hidden"></textarea>
@@ -672,6 +693,7 @@
         let currentCalendarYear = 2026;
         let currentCalendarMonth = 7; 
         let currentAdminRole = null; 
+        let lastKnownLocalDate = "";
 
         function toggleHamburgerMenu() {
             document.getElementById('hamburger-drawer').classList.toggle('hidden');
@@ -746,6 +768,76 @@
         }
 
         // -------------------------------------------------------------
+        // AUTOMATED MIDNIGHT (12:00 AM) RESET & DATE TRACKING
+        // -------------------------------------------------------------
+        function checkAndResetForNewDay() {
+            const todayStr = getLocalDateString(new Date());
+            
+            if (lastKnownLocalDate && lastKnownLocalDate !== todayStr) {
+                console.log(`Midnight reset triggered. Date changed from ${lastKnownLocalDate} to ${todayStr}`);
+                
+                if (!appState.database[todayStr]) {
+                    appState.database[todayStr] = { activities: [], preaching: [], duties: [] };
+                }
+                
+                handleDateChange(todayStr);
+            }
+            
+            lastKnownLocalDate = todayStr;
+        }
+
+        setInterval(checkAndResetForNewDay, 60000);
+
+        // -------------------------------------------------------------
+        // GRANULAR CLOUD HELPERS (5+ CONCURRENT ADMIN SAFE)
+        // -------------------------------------------------------------
+        async function saveKeyToCloud(keyName, dataPayload) {
+            try {
+                await fetch(`${CLOUD_URL}/set/${keyName}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
+                    body: JSON.stringify(dataPayload)
+                });
+                console.log(`Live sync successful for: ${keyName}`);
+            } catch (err) {
+                console.error(`Failed to sync ${keyName}:`, err);
+            }
+        }
+
+        async function loadKeyFromCloud(keyName) {
+            try {
+                const response = await fetch(`${CLOUD_URL}/get/${keyName}`, {
+                    method: 'GET',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` }
+                });
+                if (response.ok) {
+                    const result = await response.json();
+                    return result && result.result ? JSON.parse(result.result) : null;
+                }
+            } catch (err) {
+                console.error(`Error loading key ${keyName}:`, err);
+            }
+            return null;
+        }
+
+        // Background Silent Polling for Live 5-Admin Multi-Screen Sync
+        setInterval(async () => {
+            if (!document.getElementById('app-wrapper').classList.contains('hidden') && currentSelectedDate) {
+                const latestDaily = await loadKeyFromCloud(`daily_${currentSelectedDate}`);
+                if (latestDaily) {
+                    appState.database[currentSelectedDate] = latestDaily;
+                    renderDashboardData();
+                }
+
+                const latestBlessings = await loadKeyFromCloud('blessings_list');
+                if (latestBlessings) {
+                    appState.blessingsList = latestBlessings;
+                    renderBlessings();
+                }
+            }
+        }, 5000);
+
+        // -------------------------------------------------------------
         // APPLICATION CORE & DATA SYNC
         // -------------------------------------------------------------
         function linkifyText(text) {
@@ -758,7 +850,8 @@
 
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
-            handleDateChange(getLocalDateString(new Date()));
+            lastKnownLocalDate = getLocalDateString(new Date());
+            handleDateChange(lastKnownLocalDate);
 
             try {
                 const response = await fetch(`${CLOUD_URL}/get/church_state`, {
@@ -788,6 +881,7 @@
             } catch (err) {
                 console.log("Database fetch offline, running on local cache fallback.", err);
             } finally {
+                checkAndResetForNewDay();
                 handleDateChange(currentSelectedDate);
                 renderMonthlyCalendar();
                 renderCookingSchedule();
@@ -886,14 +980,14 @@
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
-            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm preaching-row";
+            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-white rounded-lg border border-indigo-100 shadow-sm preaching-row w-full";
             
             row.innerHTML = `
-                <input list="dl-evangelists" placeholder="Evangelist 1 *" value="${e1}" class="e1-input border border-slate-300 rounded p-1 text-xs w-28 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input list="dl-evangelists" placeholder="Evangelist 2" value="${e2}" class="e2-input border border-slate-300 rounded p-1 text-xs w-28 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input list="dl-evangelists" placeholder="Evangelist 3" value="${e3}" class="e3-input border border-slate-300 rounded p-1 text-xs w-28 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input type="text" placeholder="Time (11:00 AM - 1:30 PM)" value="${timeVal}" class="time-input border border-slate-300 rounded p-1 text-xs w-36 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input list="dl-locations" placeholder="Location" value="${loc}" class="loc-input border border-slate-300 rounded p-1 text-xs w-28 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-evangelists" placeholder="Evangelist 1 *" value="${e1}" class="e1-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-evangelists" placeholder="Evangelist 2" value="${e2}" class="e2-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-evangelists" placeholder="Evangelist 3" value="${e3}" class="e3-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input type="text" placeholder="Time (11:00 AM - 1:30 PM)" value="${timeVal}" class="time-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-locations" placeholder="Location" value="${loc}" class="loc-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
                 <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-1.5 py-0.5">✕</button>
             `;
             container.appendChild(row);
@@ -902,11 +996,11 @@
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
-            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-white rounded-lg border border-slate-200 shadow-sm duty-row";
+            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-white rounded-lg border border-slate-200 shadow-sm duty-row w-full";
 
             row.innerHTML = `
-                <input list="dl-duties" placeholder="Role (e.g. Sound) *" value="${roleVal}" class="role-input border border-slate-300 rounded p-1 text-xs w-36 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input list="dl-evangelists" placeholder="Assigned Member *" value="${nameVal}" class="name-input border border-slate-300 rounded p-1 text-xs w-36 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-duties" placeholder="Role (e.g. Sound) *" value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
+                <input list="dl-evangelists" placeholder="Assigned Member *" value="${nameVal}" class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none focus:ring-1 focus:ring-indigo-500">
                 <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-1.5 py-0.5">✕</button>
             `;
             container.appendChild(row);
@@ -915,19 +1009,26 @@
         function addBlessingBuilderRow(nameVal = "", descVal = "", statusVal = "Full") {
             const container = document.getElementById('blessings-builder-rows');
             const row = document.createElement('div');
-            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-white rounded-lg border border-slate-200 shadow-sm blessing-row";
+            row.className = "flex flex-wrap gap-2 items-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm blessing-row w-full";
 
             const st = (statusVal || 'Full').toLowerCase();
+            const isMaster = (currentAdminRole === 'master');
 
             row.innerHTML = `
-                <input list="dl-evangelists" placeholder="Evangelist / Member Name" value="${nameVal}" class="b-name-input border border-slate-300 rounded p-1 text-xs w-36 outline-none focus:ring-1 focus:ring-indigo-500">
-                <input type="text" placeholder="Supply Item / Blessing Description *" value="${descVal}" class="b-desc-input border border-slate-300 rounded p-1 text-xs flex-1 min-w-[140px] outline-none focus:ring-1 focus:ring-indigo-500">
-                <select class="b-status-input border border-slate-300 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-semibold">
+                <div class="flex-1 min-w-[130px]">
+                    ${isMaster ? 
+                        `<input type="text" placeholder="Item Description *" value="${descVal}" class="b-desc-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none font-bold text-slate-800">` : 
+                        `<span class="b-desc-text font-bold text-xs text-slate-800 px-1 block">${descVal || 'Supply Item'}</span>
+                         <input type="hidden" class="b-desc-input" value="${descVal}">`
+                    }
+                </div>
+                <input list="dl-evangelists" placeholder="Assigned Member" value="${nameVal}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-32 outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900">
+                <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-semibold text-slate-900">
                     <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
                     <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
-                    <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty / Urgent (Red)</option>
+                    <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty (Red)</option>
                 </select>
-                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-1.5 py-0.5">✕</button>
+                ${isMaster ? `<button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-1.5">✕</button>` : ''}
             `;
             container.appendChild(row);
         }
@@ -1054,7 +1155,6 @@
             document.getElementById('input-blessings').value = blessingLines.join('\n');
 
             if (currentAdminRole === 'master') {
-                // Cooking Builder
                 const cRows = document.querySelectorAll('.cooking-builder-row');
                 let updatedCooking = [];
                 cRows.forEach(r => {
@@ -1065,7 +1165,6 @@
                 });
                 if (updatedCooking.length) appState.cookingSchedule = updatedCooking;
 
-                // Cleaning Builder
                 const cgRows = document.querySelectorAll('.cleaning-group-builder-row');
                 cgRows.forEach(r => {
                     const idx = parseInt(r.getAttribute('data-idx'));
@@ -1084,7 +1183,6 @@
                     }
                 });
 
-                // Permanent Rosters
                 const sabRows = document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row');
                 let sabLines = [];
                 sabRows.forEach(r => {
@@ -1395,7 +1493,6 @@
         }
 
         function switchAdminSubTab(subTab) {
-            // Block limited admins from accessing restricted subtabs directly
             if (currentAdminRole === 'limited' && subTab !== 'daily' && subTab !== 'blessings') {
                 subTab = 'daily';
             }
@@ -1734,40 +1831,68 @@
 
             buildTextFromBuilders();
 
-            appState.blessingsList = document.getElementById('input-blessings').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+            const activeSubTab = document.querySelector('#admin-modal .bg-indigo-700')?.id;
+
+            // Granular Save Scoping to Support 5+ Simultaneous Admins
+            if (activeSubTab === 'as-daily') {
+                const dData = appState.database[currentSelectedDate] || {};
+                if (currentAdminRole === 'master') {
+                    dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                }
+                dData.duties = document.getElementById('input-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                dData.preaching = document.getElementById('input-preaching').value.split('\n').map(l=>l.trim()).filter(Boolean).map(l => {
+                    const c = l.split('|').map(x=>x.trim());
+                    return { team: c[0]||'Team', time: c[1]||'TBD', location: c[2]||'TBD' };
+                });
+                appState.database[currentSelectedDate] = dData;
+                await saveKeyToCloud(`daily_${currentSelectedDate}`, dData);
+            }
+
+            if (activeSubTab === 'as-blessings') {
+                appState.blessingsList = document.getElementById('input-blessings').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                await saveKeyToCloud('blessings_list', appState.blessingsList);
+            }
 
             if (currentAdminRole === 'master') {
                 appState.persistentAnnouncement = document.getElementById('input-announcements').value;
-                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-                appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
 
-                appState.sabbathSchedule = {
-                    activities: document.getElementById('input-sabbath-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
-                    duties: document.getElementById('input-sabbath-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
-                };
-                appState.thirddaySchedule = {
-                    activities: document.getElementById('input-thirdday-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
-                    duties: document.getElementById('input-thirdday-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
-                };
-                appState.feastSchedule = {
-                    activities: document.getElementById('input-feast-act').value.split('\n').map(l=>l.trim()).filter(l=>l.length),
-                    duties: document.getElementById('input-feast-dut').value.split('\n').map(l=>l.trim()).filter(l=>l.length)
-                };
-            }
+                if (activeSubTab === 'as-sabbath') {
+                    appState.sabbathSchedule = {
+                        activities: document.getElementById('input-sabbath-act').value.split('\n').map(l=>l.trim()).filter(Boolean),
+                        duties: document.getElementById('input-sabbath-dut').value.split('\n').map(l=>l.trim()).filter(Boolean)
+                    };
+                    await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
+                }
 
-            const dData = appState.database[currentSelectedDate] || {};
-            if (currentAdminRole === 'master') {
-                dData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
+                if (activeSubTab === 'as-thirdday') {
+                    appState.thirddaySchedule = {
+                        activities: document.getElementById('input-thirdday-act').value.split('\n').map(l=>l.trim()).filter(Boolean),
+                        duties: document.getElementById('input-thirdday-dut').value.split('\n').map(l=>l.trim()).filter(Boolean)
+                    };
+                    await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
+                }
+
+                if (activeSubTab === 'as-feast') {
+                    appState.feastSchedule = {
+                        activities: document.getElementById('input-feast-act').value.split('\n').map(l=>l.trim()).filter(Boolean),
+                        duties: document.getElementById('input-feast-dut').value.split('\n').map(l=>l.trim()).filter(Boolean)
+                    };
+                    await saveKeyToCloud('feast_schedule', appState.feastSchedule);
+                }
+
+                if (activeSubTab === 'as-cooking') {
+                    await saveKeyToCloud('cooking_schedule', appState.cookingSchedule);
+                }
+
+                if (activeSubTab === 'as-cleaning') {
+                    await saveKeyToCloud('cleaning_groups', appState.cleaningGroups);
+                    await saveKeyToCloud('cleaning_specials', appState.cleaningSpecials);
+                }
             }
-            
-            dData.duties = document.getElementById('input-duties').value.split('\n').map(l=>l.trim()).filter(l=>l.length);
-            dData.preaching = document.getElementById('input-preaching').value.split('\n').map(l=>l.trim()).filter(l=>l.length).map(l => {
-                const c = l.split('|').map(x=>x.trim());
-                return { team: c[0]||'Team', time: c[1]||'TBD', location: c[2]||'TBD' };
-            });
-            appState.database[currentSelectedDate] = dData;
 
             toggleAdminModal();
             renderDashboardData();
