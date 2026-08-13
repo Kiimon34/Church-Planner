@@ -160,9 +160,9 @@
                             <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to view details or edit!</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <!-- EXPORT TO CALENDAR BUTTON MOVED HERE -->
+                            <!-- EXPORT FULL MONTH TO CALENDAR -->
                             <button onclick="exportToIcsCalendar()" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1">
-                                📅 Sync to Calendar
+                                📅 Sync Month to Calendar
                             </button>
                             <button onclick="changeMonth(-1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm">← Prev</button>
                             <button onclick="changeMonth(1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm">Next →</button>
@@ -705,46 +705,81 @@
         }
 
         // -------------------------------------------------------------
-        // EXPORT TO ICAL / GOOGLE CALENDAR (.ICS) GENERATOR
+        // EXPORT ENTIRE MONTH TO ICAL / GOOGLE CALENDAR (.ICS)
         // -------------------------------------------------------------
         function exportToIcsCalendar() {
-            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthName = mNames[currentCalendarMonth];
+            const targetMonthPrefix = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`;
             
             let icsLines = [
                 "BEGIN:VCALENDAR",
                 "VERSION:2.0",
-                "PRODID:-//Grace Church Planner//EN",
+                `PRODID:-//Grace Church Planner - ${currentMonthName} ${currentCalendarYear}//EN`,
                 "CALSCALE:GREGORIAN"
             ];
 
-            const formattedDateStr = currentSelectedDate.replace(/-/g, '');
+            let eventsExported = 0;
 
-            if (dayData.activities && dayData.activities.length) {
-                dayData.activities.forEach((act, idx) => {
-                    icsLines.push("BEGIN:VEVENT");
-                    icsLines.push(`UID:act-${formattedDateStr}-${idx}@graceplanner.org`);
-                    icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
-                    icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
-                    icsLines.push(`SUMMARY:Church Activity: ${act.replace(/,/g, '\\,')}`);
-                    icsLines.push("END:VEVENT");
+            // 1. Export Grid Calendar Events for the Month
+            if (appState.calendarEventsDb) {
+                Object.keys(appState.calendarEventsDb).forEach((dateKey) => {
+                    if (dateKey.startsWith(targetMonthPrefix)) {
+                        const eventString = appState.calendarEventsDb[dateKey];
+                        if (eventString && eventString.trim()) {
+                            const formattedDateStr = dateKey.replace(/-/g, '');
+                            eventString.split(',').forEach((item, idx) => {
+                                icsLines.push("BEGIN:VEVENT");
+                                icsLines.push(`UID:cal-${formattedDateStr}-${idx}@graceplanner.org`);
+                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                                icsLines.push(`SUMMARY:${item.trim().replace(/,/g, '\\,')}`);
+                                icsLines.push("END:VEVENT");
+                                eventsExported++;
+                            });
+                        }
+                    }
                 });
             }
 
-            if (dayData.duties && dayData.duties.length) {
-                dayData.duties.forEach((duty, idx) => {
-                    icsLines.push("BEGIN:VEVENT");
-                    icsLines.push(`UID:duty-${formattedDateStr}-${idx}@graceplanner.org`);
-                    icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
-                    icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
-                    icsLines.push(`SUMMARY:Worship Duty: ${duty.replace(/,/g, '\\,')}`);
-                    icsLines.push("END:VEVENT");
+            // 2. Export Daily Dashboard Detailed Activities/Duties for the Month
+            if (appState.database) {
+                Object.keys(appState.database).forEach((dateKey) => {
+                    if (dateKey.startsWith(targetMonthPrefix)) {
+                        const dayData = appState.database[dateKey];
+                        const formattedDateStr = dateKey.replace(/-/g, '');
+
+                        if (dayData.activities && dayData.activities.length) {
+                            dayData.activities.forEach((act, idx) => {
+                                icsLines.push("BEGIN:VEVENT");
+                                icsLines.push(`UID:db-act-${formattedDateStr}-${idx}@graceplanner.org`);
+                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                                icsLines.push(`SUMMARY:Activity: ${act.replace(/,/g, '\\,')}`);
+                                icsLines.push("END:VEVENT");
+                                eventsExported++;
+                            });
+                        }
+
+                        if (dayData.duties && dayData.duties.length) {
+                            dayData.duties.forEach((duty, idx) => {
+                                icsLines.push("BEGIN:VEVENT");
+                                icsLines.push(`UID:db-duty-${formattedDateStr}-${idx}@graceplanner.org`);
+                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                                icsLines.push(`SUMMARY:Worship Duty: ${duty.replace(/,/g, '\\,')}`);
+                                icsLines.push("END:VEVENT");
+                                eventsExported++;
+                            });
+                        }
+                    }
                 });
             }
 
             icsLines.push("END:VCALENDAR");
 
-            if (!dayData.activities.length && !dayData.duties.length) {
-                alert("No scheduled duties or activities found on this date to export.");
+            if (eventsExported === 0) {
+                alert(`No scheduled calendar entries or duties found for ${currentMonthName} ${currentCalendarYear} to export.`);
                 return;
             }
 
@@ -753,7 +788,7 @@
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Church_Schedule_${currentSelectedDate}.ics`;
+            a.download = `Church_Calendar_${currentMonthName}_${currentCalendarYear}.ics`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
