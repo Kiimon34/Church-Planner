@@ -890,19 +890,6 @@
             }
         }
 
-        async function saveDataToCloud() {
-            try {
-                await fetch(`${CLOUD_URL}/set/church_state`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
-                    body: JSON.stringify(appState)
-                });
-                console.log("Schedule synchronized live!");
-            } catch (err) {
-                console.error("Cloud synchronization error:", err);
-            }
-        }
-
         function renderCookingSchedule() {
             const body = document.getElementById('cooking-schedule-body');
             if (!body) return;
@@ -1651,12 +1638,19 @@
             checkPinSession();
         });
 
-        function handleDateChange(dateString) {
+        async function handleDateChange(dateString) {
             currentSelectedDate = dateString;
             const picker = document.getElementById('date-picker');
             if (picker) picker.value = dateString;
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
+
+            // Fetch live date-specific key first to avoid stale data
+            const dateData = await loadKeyFromCloud(`daily_${dateString}`);
+            if (dateData) {
+                appState.database[dateString] = dateData;
+            }
+
             renderDashboardData();
         }
 
@@ -1833,7 +1827,7 @@
 
             const activeSubTab = document.querySelector('#admin-modal .bg-indigo-700')?.id;
 
-            // Granular Save Scoping to Support 5+ Simultaneous Admins
+            // Granular Save Operations (Strictly avoids whole-database overwrites)
             if (activeSubTab === 'as-daily') {
                 const dData = appState.database[currentSelectedDate] || {};
                 if (currentAdminRole === 'master') {
@@ -1854,11 +1848,10 @@
             }
 
             if (currentAdminRole === 'master') {
-                appState.persistentAnnouncement = document.getElementById('input-announcements').value;
-                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                if (activeSubTab === 'as-daily') {
+                    appState.persistentAnnouncement = document.getElementById('input-announcements').value;
+                    await saveKeyToCloud('persistent_announcement', appState.persistentAnnouncement);
+                }
 
                 if (activeSubTab === 'as-sabbath') {
                     appState.sabbathSchedule = {
@@ -1892,6 +1885,20 @@
                     await saveKeyToCloud('cleaning_groups', appState.cleaningGroups);
                     await saveKeyToCloud('cleaning_specials', appState.cleaningSpecials);
                 }
+
+                if (activeSubTab === 'as-settings') {
+                    appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                    appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                    appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                    appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
+
+                    await saveKeyToCloud('master_lists', {
+                        masterEvangelists: appState.masterEvangelists,
+                        masterGroups: appState.masterGroups,
+                        masterLocations: appState.masterLocations,
+                        masterDuties: appState.masterDuties
+                    });
+                }
             }
 
             toggleAdminModal();
@@ -1903,8 +1910,6 @@
             renderCookingSchedule();
             renderCleaningSchedule();
 
-            await saveDataToCloud();
-            
             saveBtn.disabled = false;
             saveBtn.innerText = "Save Changes";
         }
