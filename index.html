@@ -4,6 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Church Activity Planner</title>
+    
+    <!-- PWA Web App Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Grace Planner">
+    <meta name="theme-color" content="#1e1b4b">
+    
     <!-- Tailwind CSS for modern, clean styling -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style>
@@ -58,8 +66,12 @@
                         <span class="text-2xl">📖</span>
                         <span class="font-bold text-lg tracking-wide">Grace Church Planner</span>
                     </div>
-                    <!-- Hidden Admin Status Banner / Button / Manual Lock -->
+                    
+                    <!-- ACTION BUTTONS: INSTALL PWA, LOCK, ADMIN -->
                     <div class="flex items-center space-x-2">
+                        <button id="pwa-install-btn" type="button" onclick="triggerPwaInstall()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow hidden">
+                            📱 Install App
+                        </button>
                         <button type="button" onclick="lockApp()" class="bg-indigo-950/80 hover:bg-indigo-950 text-indigo-200 border border-indigo-700/60 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all">
                             🔒 Lock
                         </button>
@@ -103,11 +115,25 @@
                             <h1 class="text-2xl font-bold text-slate-900" id="display-date-title">Today's Schedule</h1>
                             <p class="text-slate-500 text-sm" id="display-date-sub">Loading...</p>
                         </div>
-                        <div class="flex items-center space-x-2">
-                            <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">← Prev</button>
-                            <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
-                            <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
+                        
+                        <!-- DATE CONTROLS & EXPORT TO CALENDAR -->
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="exportToIcsCalendar()" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1">
+                                📅 Sync to Calendar
+                            </button>
+                            <div class="flex items-center space-x-2">
+                                <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">← Prev</button>
+                                <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
+                                <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- INSTANT SEARCH & FILTER BAR -->
+                    <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center gap-3">
+                        <span class="text-lg pl-2">🔍</span>
+                        <input type="text" id="daily-search-input" oninput="filterDailyView(this.value)" placeholder="Search names or roles (e.g. Ezequiel, Sound, Choir)..." class="w-full text-sm outline-none text-slate-800 placeholder-slate-400 font-medium">
+                        <button type="button" onclick="clearDailySearch()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
                     </div>
                     
                     <div id="announcements-section" class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl shadow-sm hidden h-auto w-full">
@@ -429,6 +455,29 @@
         let currentCalendarYear = 2026;
         let currentCalendarMonth = 7; // Default August (0-indexed month 7)
         let isAdminAuthenticated = false;
+        let pwaDeferredPrompt = null;
+
+        // -------------------------------------------------------------
+        // PWA PROMPT LISTENER
+        // -------------------------------------------------------------
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            pwaDeferredPrompt = e;
+            const btn = document.getElementById('pwa-install-btn');
+            if (btn) btn.classList.remove('hidden');
+        });
+
+        function triggerPwaInstall() {
+            if (pwaDeferredPrompt) {
+                pwaDeferredPrompt.prompt();
+                pwaDeferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        document.getElementById('pwa-install-btn').classList.add('hidden');
+                    }
+                    pwaDeferredPrompt = null;
+                });
+            }
+        }
 
         // -------------------------------------------------------------
         // PIN LOCK & AUTHENTICATION ENGINE
@@ -442,7 +491,6 @@
                 inputs[index + 1].focus();
             }
 
-            // Auto submit when all 4 digits are filled
             const inputs = document.querySelectorAll('.pin-digit');
             let code = Array.from(inputs).map(i => i.value).join('');
             if (code.length === 4) {
@@ -552,6 +600,96 @@
             } catch (err) {
                 console.error("Cloud synchronization error:", err);
             }
+        }
+
+        // -------------------------------------------------------------
+        // INSTANT SEARCH & FILTER LOGIC
+        // -------------------------------------------------------------
+        function filterDailyView(query) {
+            const q = query.trim().toLowerCase();
+            const actContainer = document.getElementById('activities-container');
+            const preachContainer = document.getElementById('preaching-container');
+            const dutyContainer = document.getElementById('duties-container');
+
+            [actContainer, preachContainer, dutyContainer].forEach(container => {
+                if (!container) return;
+                const cards = container.children;
+                Array.from(cards).forEach(card => {
+                    if (card.tagName === 'P') return; 
+                    const cardText = card.innerText.toLowerCase();
+                    if (q === "" || cardText.includes(q)) {
+                        card.style.display = "";
+                    } else {
+                        card.style.display = "none";
+                    }
+                });
+            });
+        }
+
+        function clearDailySearch() {
+            const input = document.getElementById('daily-search-input');
+            if (input) {
+                input.value = "";
+                filterDailyView("");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // EXPORT TO ICAL / GOOGLE CALENDAR (.ICS) GENERATOR
+        // -------------------------------------------------------------
+        function exportToIcsCalendar() {
+            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
+            
+            let icsLines = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                "PRODID:-//Grace Church Planner//EN",
+                "CALSCALE:GREGORIAN"
+            ];
+
+            const formattedDateStr = currentSelectedDate.replace(/-/g, '');
+
+            // Add activities
+            if (dayData.activities && dayData.activities.length) {
+                dayData.activities.forEach((act, idx) => {
+                    icsLines.push("BEGIN:VEVENT");
+                    icsLines.push(`UID:act-${formattedDateStr}-${idx}@graceplanner.org`);
+                    icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                    icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                    icsLines.push(`SUMMARY:Church Activity: ${act.replace(/,/g, '\\,')}`);
+                    icsLines.push("END:VEVENT");
+                });
+            }
+
+            // Add duties
+            if (dayData.duties && dayData.duties.length) {
+                dayData.duties.forEach((duty, idx) => {
+                    icsLines.push("BEGIN:VEVENT");
+                    icsLines.push(`UID:duty-${formattedDateStr}-${idx}@graceplanner.org`);
+                    icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                    icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                    icsLines.push(`SUMMARY:Worship Duty: ${duty.replace(/,/g, '\\,')}`);
+                    icsLines.push("END:VEVENT");
+                });
+            }
+
+            icsLines.push("END:VCALENDAR");
+
+            if (!dayData.activities.length && !dayData.duties.length) {
+                alert("No scheduled duties or activities found on this date to export.");
+                return;
+            }
+
+            const icsData = icsLines.join("\r\n");
+            const blob = new Blob([icsData], { type: 'text/calendar;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Church_Schedule_${currentSelectedDate}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
 
         function toggleBulkCalendarModal() {
@@ -876,6 +1014,10 @@
                 const idx = d.indexOf(':');
                 return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
+
+            // Apply active search filter string if typed
+            const searchVal = document.getElementById('daily-search-input')?.value || "";
+            if (searchVal.trim() !== "") filterDailyView(searchVal);
         }
 
         function renderSabbathAndFeast(type) {
