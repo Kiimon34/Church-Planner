@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zion Church Planner (INDY)</title>
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA Meta Tags & Manifest -->
+    <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,7 +29,7 @@
             background-color: #ffffff !important;
             color: #0f172a !important;
             opacity: 1 !important;
-            font-size: 16px !important; /* Prevents mobile browser auto-zoom glitches */
+            font-size: 16px !important;
         }
 
         select {
@@ -387,6 +388,21 @@
         </main>
     </div>
 
+    <!-- PWA MANUAL INSTALL MODAL -->
+    <div id="pwa-instructions-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 border border-slate-200 text-center space-y-4">
+            <div class="text-4xl">📱</div>
+            <h3 class="text-lg font-bold text-indigo-950">How to Install</h3>
+            <div class="text-xs text-slate-600 text-left space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <p><b>iPhone / iPad (Safari):</b><br>1. Tap the <b>Share</b> button <span class="text-indigo-600">⎋</span> at the bottom of the screen.<br>2. Scroll down and tap <b>Add to Home Screen</b> ➕.</p>
+                <p><b>Android (Chrome):</b><br>1. Tap the three dots <b>⋮</b> in the top right corner.<br>2. Tap <b>Install app</b> or <b>Add to Home screen</b>.</p>
+            </div>
+            <button type="button" onclick="togglePwaInstructionsModal()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md transition-all">
+                Got It
+            </button>
+        </div>
+    </div>
+
     <!-- CALENDAR VIEW MODAL -->
     <div id="calendar-view-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-lg rounded-2xl shadow-xl flex flex-col border border-slate-100 overflow-hidden">
@@ -599,6 +615,15 @@
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
 
+        // Register Service Worker for PWA installability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(err => {
+                    console.log('SW registration error:', err);
+                });
+            });
+        }
+
         let deferredPrompt = null;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
@@ -608,8 +633,16 @@
         function triggerPwaInstall() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            } else {
+                togglePwaInstructionsModal();
             }
+        }
+
+        function togglePwaInstructionsModal() {
+            document.getElementById('pwa-instructions-modal').classList.toggle('hidden');
         }
 
         const PERMANENT_SABBATH_DUTIES = [
@@ -951,7 +984,6 @@
             return html;
         }
 
-        // PREACHING BUILDER ROW
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
@@ -991,7 +1023,6 @@
             }
         }
 
-        // DAILY DUTIES BUILDER
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
