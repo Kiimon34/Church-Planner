@@ -534,12 +534,12 @@
                         <div id="preaching-builder-rows" class="space-y-2 pt-2"></div>
                     </div>
 
-                    <!-- DAILY DUTIES & ROLES -->
+                    <!-- DAILY DUTIES & ROLES (UP TO 5 MEMBERS) -->
                     <div class="bg-slate-100/70 p-4 rounded-xl border border-slate-200 space-y-3">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                             <div>
                                 <label class="block text-sm font-bold text-slate-900">🛠️ Daily Duties & Roles</label>
-                                <p class="text-[11px] text-slate-500">Pick group to manage. Saves will not overwrite other groups.</p>
+                                <p class="text-[11px] text-slate-500">Assign up to 5 members per role.</p>
                             </div>
                             <button type="button" onclick="addDutyBuilderRow()" class="bg-slate-800 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-slate-700 transition-all">+ Assign Duty</button>
                         </div>
@@ -932,7 +932,6 @@
                 await loadDataFromCloud();
                 checkExistingAdminSession();
                 
-                // Show Announcement Pop up if an announcement exists
                 if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
                     openAnnouncementPopupModal();
                 }
@@ -985,7 +984,12 @@
                 });
                 if (response.ok) {
                     const result = await response.json();
-                    return result && result.result ? JSON.parse(result.result) : null;
+                    if (!result || result.result === undefined || result.result === null) return null;
+                    try {
+                        return JSON.parse(result.result);
+                    } catch {
+                        return result.result;
+                    }
                 }
             } catch (err) {
                 console.error(`Load error ${keyName}:`, err);
@@ -1142,7 +1146,7 @@
                 const time = r.querySelector('.time-input').value.trim() || 'TBD';
                 const loc = r.querySelector('.loc-input').value.trim() || 'Main Zion';
 
-                let teamMembers = [e1, e2, e3].filter(Boolean);
+                let teamMembers = [e1, e2, e3].map(m => m.replace(/&/g, '').trim()).filter(Boolean);
                 if (teamMembers.length > 0) {
                     harvested.push({ team: teamMembers.join(' & '), time, location: loc, group: currentPGroup });
                 }
@@ -1175,16 +1179,24 @@
             }
         }
 
-        // DAILY DUTIES BUILDER (TYPE & FILTER COMBIBOX)
-        function addDutyBuilderRow(roleVal = "", nameVal = "") {
+        // DAILY DUTIES BUILDER (TYPE & FILTER COMBIBOX, UP TO 5 MEMBERS)
+        function addDutyBuilderRow(roleVal = "", m1 = "", m2 = "", m3 = "", m4 = "", m5 = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
-            row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full";
+            row.className = "p-3 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full space-y-2";
 
             row.innerHTML = `
-                <input type="text" list="dl-duties" placeholder="Role..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                <input type="text" list="dl-evangelists" placeholder="Member..." value="${nameVal}" class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
+                <div class="flex items-center gap-2">
+                    <input type="text" list="dl-duties" placeholder="Role (e.g. Presider)..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-bold text-indigo-950">
+                    <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕ Remove</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-1.5">
+                    <input type="text" list="dl-evangelists" placeholder="Member 1..." value="${m1}" class="m1-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 2..." value="${m2}" class="m2-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 3..." value="${m3}" class="m3-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 4..." value="${m4}" class="m4-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 5..." value="${m5}" class="m5-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                </div>
             `;
             container.appendChild(row);
         }
@@ -1205,9 +1217,18 @@
             let harvested = [];
             document.querySelectorAll('.duty-row').forEach(r => {
                 const role = r.querySelector('.role-input').value.trim();
-                const name = r.querySelector('.name-input').value.trim();
-                if (role && name) {
-                    harvested.push({ role, name, group: currentDGroup });
+                const m1 = r.querySelector('.m1-input').value.trim();
+                const m2 = r.querySelector('.m2-input').value.trim();
+                const m3 = r.querySelector('.m3-input').value.trim();
+                const m4 = r.querySelector('.m4-input').value.trim();
+                const m5 = r.querySelector('.m5-input').value.trim();
+
+                const members = [m1, m2, m3, m4, m5]
+                    .map(m => m.replace(/&/g, '').trim())
+                    .filter(Boolean);
+
+                if (role && members.length > 0) {
+                    harvested.push({ role, name: members.join(' & '), group: currentDGroup });
                 }
             });
 
@@ -1235,7 +1256,8 @@
 
             if (groupDuties.length > 0) {
                 groupDuties.forEach(d => {
-                    addDutyBuilderRow(d.role || "", d.name || "");
+                    const members = (d.name || '').split(' & ').map(m => m.trim());
+                    addDutyBuilderRow(d.role || "", members[0] || "", members[1] || "", members[2] || "", members[3] || "", members[4] || "");
                 });
             } else {
                 addDutyBuilderRow();
@@ -1533,6 +1555,12 @@
 
         function openBatchModalForCurrentTab() {
             currentBatchTarget = currentActiveAdminTab;
+            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast'];
+            if (!supportedTabs.includes(currentBatchTarget)) {
+                alert("Batch update is only available for Monthly Calendar, Blessings, and Worship Duty tabs.");
+                return;
+            }
+
             const title = document.getElementById('batch-modal-title');
             const instructions = document.getElementById('batch-modal-instructions');
             const input = document.getElementById('batch-modal-input');
@@ -1641,7 +1669,7 @@
                     if (parts.length >= 2) {
                         const role = parts[0];
                         const name = parts[1];
-                        parsedDuties.push(`${name} : ${role}`);
+                        parsedDuties.push(`${name || 'Unassigned'} : ${role}`);
                         updatedCount++;
                     }
                 });
@@ -1968,7 +1996,7 @@
                 document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row').forEach(r => {
                     const role = r.getAttribute('data-role');
                     const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role && name) sabLines.push(`${name} : ${role}`);
+                    if (role) sabLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.sabbathSchedule.duties = sabLines;
                 await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
@@ -1980,7 +2008,7 @@
                 document.querySelectorAll('#thirdday-permanent-roster .permanent-duty-row').forEach(r => {
                     const role = r.getAttribute('data-role');
                     const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role && name) tdLines.push(`${name} : ${role}`);
+                    if (role) tdLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.thirddaySchedule.duties = tdLines;
                 await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
@@ -1992,7 +2020,7 @@
                 document.querySelectorAll('#feast-permanent-roster .permanent-duty-row').forEach(r => {
                     const role = r.getAttribute('data-role');
                     const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role && name) fLines.push(`${name} : ${role}`);
+                    if (role) fLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.feastSchedule.duties = fLines;
                 await saveKeyToCloud('feast_schedule', appState.feastSchedule);
