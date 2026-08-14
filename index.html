@@ -145,7 +145,7 @@
             </div>
 
             <div id="main-content" class="space-y-6">
-                <!-- TAB 1: DAILY VIEW -->
+                <!-- TAB 1: DAILY VIEW (No Search Bar) -->
                 <div id="view-daily" class="space-y-6">
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
@@ -196,6 +196,13 @@
                             <button onclick="changeMonth(1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm">Next →</button>
                         </div>
                     </div>
+
+                    <div class="bg-white rounded-2xl p-3 shadow-sm border border-slate-100 flex items-center gap-3">
+                        <span class="text-lg pl-2">🔍</span>
+                        <input type="text" id="monthly-search-input" oninput="filterMonthlyCalendar(this.value)" placeholder="Search events in this month..." class="w-full text-sm outline-none text-slate-800 placeholder-slate-400 font-medium">
+                        <button type="button" onclick="clearSearch('monthly-search-input', filterMonthlyCalendar)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                    </div>
+
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 overflow-x-auto">
                         <div class="min-w-[700px]">
                             <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 uppercase text-xs tracking-wider mb-2">
@@ -277,8 +284,15 @@
 
                 <!-- TAB 6: FEAST WORSHIP VIEW -->
                 <div id="view-feast" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-                        <h1 class="text-2xl font-bold text-slate-900 mb-6">🎉 Feast Worship Schedule</h1>
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                        <h1 class="text-2xl font-bold text-slate-900">🎉 Feast Worship Schedule</h1>
+
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="feast-search-input" oninput="filterFeastView(this.value)" placeholder="Search Feast duties or names..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('feast-search-input', filterFeastView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
+                        </div>
+
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
                                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
@@ -294,10 +308,16 @@
 
                 <!-- TAB 8: COOKING SCHEDULE -->
                 <div id="view-cooking" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="bg-purple-800 text-white p-4 rounded-xl text-center">
                             <h1 class="text-xl font-bold tracking-wide">Sabbath Day Dinner Blessing</h1>
                             <p class="text-xs text-purple-200 mt-0.5">Weekly Group Food & Snack Preparation</p>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="cooking-search-input" oninput="filterCookingView(this.value)" placeholder="Search assigned groups or weeks..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('cooking-search-input', filterCookingView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -317,10 +337,16 @@
 
                 <!-- TAB 9: CLEANING RESPONSIBILITIES -->
                 <div id="view-cleaning" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="text-center space-y-1">
                             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">GROUP CLEANING AREAS</h1>
                             <p class="text-sm font-semibold text-emerald-600 italic">"Many hands, brighter space!" ✨</p>
+                        </div>
+
+                        <div class="bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center gap-3">
+                            <span class="text-lg pl-2">🔍</span>
+                            <input type="text" id="cleaning-search-input" oninput="filterCleaningView(this.value)" placeholder="Search cleaning groups, areas, or leaders..." class="w-full text-sm outline-none bg-transparent text-slate-800 placeholder-slate-400 font-medium">
+                            <button type="button" onclick="clearSearch('cleaning-search-input', filterCleaningView)" class="text-xs bg-white hover:bg-slate-100 border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg font-bold transition-all">Clear</button>
                         </div>
 
                         <div id="cleaning-groups-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
@@ -746,11 +772,6 @@
             return null;
         }
 
-        function linkifyText(text) {
-            if (!text) return "";
-            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`);
-        }
-
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
             lastKnownLocalDate = getLocalDateString(new Date());
@@ -844,6 +865,7 @@
             return html;
         }
 
+        // PREACHING BUILDER ROW (GROUP SCOPED)
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
@@ -883,6 +905,7 @@
             }
         }
 
+        // DAILY DUTIES BUILDER (GROUP SCOPED)
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
@@ -1074,6 +1097,62 @@
                     if (card.tagName === 'P') return;
                     card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
                 });
+            });
+        }
+
+        function filterFeastView(query) {
+            const q = query.trim().toLowerCase();
+            ['feast-activities', 'feast-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
+
+        function filterCookingView(query) {
+            const q = query.trim().toLowerCase();
+            const body = document.getElementById('cooking-schedule-body');
+            if (!body) return;
+            Array.from(body.children).forEach(row => {
+                row.style.display = (q === "" || row.innerText.toLowerCase().includes(q)) ? "" : "none";
+            });
+        }
+
+        function filterCleaningView(query) {
+            const q = query.trim().toLowerCase();
+            const groupGrid = document.getElementById('cleaning-groups-grid');
+            const specialGrid = document.getElementById('cleaning-special-grid');
+
+            if (groupGrid) {
+                Array.from(groupGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            }
+            if (specialGrid) {
+                Array.from(specialGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            }
+        }
+
+        function filterMonthlyCalendar(query) {
+            const q = query.trim().toLowerCase();
+            const gridContainer = document.getElementById('calendar-grid-cells');
+            if (!gridContainer) return;
+            Array.from(gridContainer.children).forEach(cell => {
+                if (q === "") {
+                    cell.style.opacity = "1";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
+                } else if (cell.innerText.toLowerCase().includes(q)) {
+                    cell.style.opacity = "1";
+                    cell.classList.add('ring-2', 'ring-indigo-500');
+                } else {
+                    cell.style.opacity = "0.3";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
+                }
             });
         }
 
