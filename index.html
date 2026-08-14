@@ -42,7 +42,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-    <!-- GLOBAL AUTOCOMPLETE DATALISTS (TYPE & FILTER) -->
+    <!-- GLOBAL AUTOCOMPLETE DATALISTS -->
     <datalist id="dl-evangelists"></datalist>
     <datalist id="dl-duties"></datalist>
 
@@ -158,6 +158,19 @@
             <div id="main-content" class="space-y-6">
                 <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
+                    <!-- DAILY TOP ANNOUNCEMENT BANNER -->
+                    <div id="daily-announcements-section" class="hidden">
+                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-sm flex items-start justify-between gap-3 border border-amber-200/60">
+                            <div class="space-y-1">
+                                <h3 class="font-bold text-amber-950 text-sm flex items-center gap-2">📢 Church Announcement</h3>
+                                <div class="text-amber-900 leading-relaxed text-xs whitespace-pre-wrap break-words" id="daily-announcements-text"></div>
+                            </div>
+                            <button type="button" onclick="openAnnouncementPopupModal()" class="text-xs bg-amber-200/70 hover:bg-amber-200 text-amber-950 font-bold px-2.5 py-1 rounded-lg transition-all shrink-0">
+                                View
+                            </button>
+                        </div>
+                    </div>
+
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 class="text-2xl font-bold text-slate-900" id="display-date-title">Today's Schedule</h1>
@@ -169,12 +182,6 @@
                             <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
                             <button onclick="changeDate(1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold">Next →</button>
                         </div>
-                    </div>
-                    
-                    <!-- ANNOUNCEMENTS BANNER -->
-                    <div id="announcements-section" class="bg-amber-50 border-l-4 border-amber-500 p-5 rounded-r-xl shadow-sm hidden h-auto w-full">
-                        <h3 class="font-bold text-amber-900 text-lg flex items-center gap-2 mb-2">📢 Announcements</h3>
-                        <div class="text-amber-900 leading-relaxed text-sm whitespace-pre-wrap break-words overflow-visible" id="announcements-text"></div>
                     </div>
                     
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -391,6 +398,27 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- ANNOUNCEMENT POPUP MODAL (SHOWS ON UNLOCK) -->
+    <div id="announcement-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-amber-300 animate-shake">
+            <div class="bg-amber-500 text-slate-900 p-4 flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">📢</span>
+                    <h3 class="font-extrabold text-base tracking-wide">Important Announcement</h3>
+                </div>
+                <button type="button" onclick="closeAnnouncementPopupModal()" class="text-2xl font-bold text-slate-900 hover:text-slate-700">&times;</button>
+            </div>
+            <div class="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
+                <div id="announcement-popup-content" class="text-slate-800 text-sm leading-relaxed whitespace-pre-wrap break-words"></div>
+            </div>
+            <div class="bg-slate-50 p-4 border-t border-slate-100 flex justify-end">
+                <button type="button" onclick="closeAnnouncementPopupModal()" class="w-full bg-indigo-950 hover:bg-indigo-900 text-white font-bold py-3 rounded-xl text-xs shadow-md transition-all">
+                    I Understand
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- PWA MANUAL INSTALL MODAL -->
@@ -616,7 +644,6 @@
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
 
-        // Register Service Worker
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('/sw.js').catch(() => {});
@@ -640,6 +667,17 @@
 
         function togglePwaInstructionsModal() {
             document.getElementById('pwa-instructions-modal').classList.toggle('hidden');
+        }
+
+        function openAnnouncementPopupModal() {
+            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
+                document.getElementById('announcement-popup-content').innerHTML = linkifyText(appState.persistentAnnouncement);
+                document.getElementById('announcement-popup-modal').classList.remove('hidden');
+            }
+        }
+
+        function closeAnnouncementPopupModal() {
+            document.getElementById('announcement-popup-modal').classList.add('hidden');
         }
 
         const PERMANENT_SABBATH_DUTIES = [
@@ -786,9 +824,9 @@
         let currentPGroup = "";
         let currentDGroup = "";
 
-        // 2-MINUTE INACTIVITY ADMIN AUTO-LOCK ENGINE
+        // ADMIN TIMEOUT ENGINE
         let adminInactivityTimer = null;
-        const ADMIN_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+        const ADMIN_TIMEOUT_MS = 2 * 60 * 1000;
 
         function resetAdminInactivityTimer() {
             if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
@@ -807,9 +845,7 @@
 
         function checkExistingAdminSession() {
             const savedRole = sessionStorage.getItem('admin_role');
-            if (savedRole) {
-                setAdminActive(savedRole);
-            }
+            if (savedRole) setAdminActive(savedRole);
         }
 
         function setAdminActive(role) {
@@ -887,14 +923,19 @@
             }
         }
 
-        function submitPinCheck() {
+        async function submitPinCheck() {
             let enteredPin = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
             if (enteredPin === APP_ACCESS_PIN) {
                 sessionStorage.setItem('planner_unlocked', 'true');
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
-                loadDataFromCloud();
+                await loadDataFromCloud();
                 checkExistingAdminSession();
+                
+                // Show Announcement Pop up if an announcement exists
+                if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
+                    openAnnouncementPopupModal();
+                }
             } else {
                 document.getElementById('pin-error-msg').classList.remove('hidden');
                 document.getElementById('pin-input-container').classList.add('animate-shake');
@@ -913,11 +954,11 @@
             document.querySelectorAll('.pin-digit')[0].focus();
         }
 
-        function checkPinSession() {
+        async function checkPinSession() {
             if (sessionStorage.getItem('planner_unlocked') === 'true') {
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
-                loadDataFromCloud();
+                await loadDataFromCloud();
                 checkExistingAdminSession();
             } else {
                 document.querySelectorAll('.pin-digit')[0]?.focus();
@@ -955,6 +996,18 @@
         function linkifyText(text) {
             if (!text) return "";
             return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950 hover:text-amber-700 break-all">${url}</a>`);
+        }
+
+        function renderDailyAnnouncements() {
+            const section = document.getElementById('daily-announcements-section');
+            const textEl = document.getElementById('daily-announcements-text');
+            if (!section || !textEl) return;
+            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
+                textEl.innerHTML = linkifyText(appState.persistentAnnouncement);
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
         }
 
         function syncGlobalDatalists() {
@@ -1005,6 +1058,7 @@
                 console.log("Using cached baseline");
             } finally {
                 syncGlobalDatalists();
+                renderDailyAnnouncements();
                 renderMonthlyCalendar();
                 renderCookingSchedule();
                 renderCleaningSchedule();
@@ -1128,8 +1182,8 @@
             row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full";
 
             row.innerHTML = `
-                <input type="text" list="dl-duties" placeholder="Type or pick Role..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                <input type="text" list="dl-evangelists" placeholder="Type or pick Member..." value="${nameVal}" class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-duties" placeholder="Role..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Member..." value="${nameVal}" class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
                 <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
             `;
             container.appendChild(row);
@@ -1212,7 +1266,7 @@
 
                 row.innerHTML = `
                     <span class="font-bold text-xs text-slate-800 flex-1 min-w-[140px] leading-tight">${bDef.item}</span>
-                    <input type="text" list="dl-evangelists" placeholder="Type or pick Member..." value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-48 outline-none bg-white font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member..." value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-48 outline-none bg-white font-semibold">
                     <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none bg-white font-bold">
                         <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
                         <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
@@ -1239,7 +1293,7 @@
                 row.className = "flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs";
                 row.innerHTML = `
                     <span class="font-bold text-indigo-950 w-24">${mNames[currentCalendarMonth].slice(0, 3)} ${day}:</span>
-                    <input type="text" data-datekey="${dateKey}" value="${eventText}" placeholder="Comma-separated events (e.g. 2:00pm Preaching, Meeting)" class="monthly-event-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                    <input type="text" data-datekey="${dateKey}" value="${eventText}" placeholder="Events (e.g. 2:00pm Preaching)" class="monthly-event-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
                 `;
                 container.appendChild(row);
             }
@@ -1266,7 +1320,7 @@
 
                 row.innerHTML = `
                     <span class="font-bold text-slate-800 w-1/2 pr-2 leading-tight">${role}</span>
-                    <input type="text" list="dl-evangelists" placeholder="Type or pick Leader..." value="${assignedName}" class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
+                    <input type="text" list="dl-evangelists" placeholder="Leader..." value="${assignedName}" class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
                 `;
                 container.appendChild(row);
             });
@@ -1486,17 +1540,17 @@
 
             if (currentBatchTarget === 'monthly') {
                 title.innerText = "⚡ Batch Update Monthly Calendar";
-                instructions.innerHTML = `Paste your events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code><br><i>Example: August 9: WM Meeting, 2:00pm Preaching</i>`;
-                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching (Group by Group), 7:00pm Dinner";
+                instructions.innerHTML = `Paste events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code>`;
+                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
             } else if (currentBatchTarget === 'blessings') {
                 title.innerText = "⚡ Batch Update Blessings & Inventory";
-                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code><br><i>Example: Toilet Paper : D. James : Full</i>`;
-                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full\nMini Trash Bags (Bathroom) : B Kiimon : Low";
+                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code>`;
+                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full";
             } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
                 const tabTitle = currentBatchTarget.charAt(0).toUpperCase() + currentBatchTarget.slice(1);
                 title.innerText = `⚡ Batch Update ${tabTitle} Worship Duties`;
-                instructions.innerHTML = `Paste roles and leaders line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code><br><i>Example: Morning Presider : B.Ezequiel</i>`;
-                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Prayer of Thanks : B.Ezequiel\nMorning Sound : B.Kiimon";
+                instructions.innerHTML = `Paste roles line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code>`;
+                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Sound : B.Kiimon";
             }
 
             toggleBatchModal();
@@ -1691,15 +1745,8 @@
         function renderDashboardData() {
             const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
 
-            // Persistent Announcement Banner
-            const announceBanner = document.getElementById('announcements-section');
-            const announceText = document.getElementById('announcements-text');
-            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
-                announceText.innerHTML = linkifyText(appState.persistentAnnouncement);
-                announceBanner.classList.remove('hidden');
-            } else {
-                announceBanner.classList.add('hidden');
-            }
+            // Render persistent announcement in Daily Tab only
+            renderDailyAnnouncements();
 
             document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
                 const p = act.split(' - ');
@@ -1966,6 +2013,7 @@
                 });
             }
 
+            renderDailyAnnouncements();
             toggleAdminModal();
             renderDashboardData();
             renderBlessings();
