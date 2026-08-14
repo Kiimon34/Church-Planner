@@ -28,7 +28,13 @@
             background-color: #ffffff !important;
             color: #0f172a !important;
             opacity: 1 !important;
-            font-size: 14px !important;
+            font-size: 16px !important; /* Prevents mobile browser auto-zoom glitches */
+        }
+
+        select {
+            -webkit-appearance: menulist !important;
+            appearance: menulist !important;
+            touch-action: manipulation;
         }
 
         .preaching-row, .duty-row, .blessing-row {
@@ -145,7 +151,7 @@
             </div>
 
             <div id="main-content" class="space-y-6">
-                <!-- TAB 1: DAILY VIEW (No Search Bar) -->
+                <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
@@ -306,7 +312,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 8: COOKING SCHEDULE -->
+                <!-- TAB 7: COOKING SCHEDULE -->
                 <div id="view-cooking" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="bg-purple-800 text-white p-4 rounded-xl text-center">
@@ -335,7 +341,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 9: CLEANING RESPONSIBILITIES -->
+                <!-- TAB 8: CLEANING RESPONSIBILITIES -->
                 <div id="view-cleaning" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="text-center space-y-1">
@@ -360,7 +366,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 7: MAINTENANCE VIEW -->
+                <!-- TAB 9: MAINTENANCE VIEW -->
                 <div id="view-maintenance" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-2xl mx-auto text-center space-y-6">
                         <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-full text-3xl">
@@ -603,13 +609,7 @@
             if (deferredPrompt) {
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
-            } else {
-                togglePwaInstructionsModal();
             }
-        }
-
-        function togglePwaInstructionsModal() {
-            document.getElementById('pwa-modal').classList.toggle('hidden');
         }
 
         const PERMANENT_SABBATH_DUTIES = [
@@ -625,6 +625,29 @@
         const PERMANENT_FEAST_DUTIES = [
             "Morning Presider", "Morning Prayer of Thanks", "Morning Closing Prayer", "Morning Offering (Brothers)", "Morning Offering (Sisters)", "Morning Usher", "Morning Front desk", "Morning Sound", "Morning Elementary", "Morning Kids Room", "Morning Worship Diary",
             "Afternoon Presider", "Afternoon Closing Prayer", "Afternoon Offering (Brothers)", "Afternoon Offering (Sisters)", "Afternoon Usher", "Afternoon Front desk", "Afternoon Translater", "Afternoon Sound", "Afternoon Elementary", "Afternoon Kids Room", "Afternoon Worship Diary"
+        ];
+
+        const DEFAULT_EVANGELISTS = [
+            "B.Ezequiel", "B.Ryan", "B.Jemis", "D.Chris", "D.Madai", "D.James", 
+            "B.Kiimon", "B.David", "D.Chloe", "S.Chelda", "S.Veronica", "S.Ceclia", 
+            "S.Mercy", "S.Ellie", "S.Suriha", "S.Saira", "S.Bethany", "S.Lania", 
+            "D.Helen", "S.Sherice", "S.Candies", "S.Patricia", "S.Elizabeth", 
+            "S.Jessica P.", "D.Alan", "D.Samantha", "S.Robin", "S.Caniah", 
+            "B. Humberto", "S.Amber", "B.Luis", "B.Jeff", "B.Micco", 
+            "D.Helen/Sherice", "D Alan / D Samantha"
+        ];
+
+        const DEFAULT_DUTIES = [
+            "Presider", "Prayer of Thanks", "Closing Prayer", "Offering (Brothers)", 
+            "Offering (Sisters)", "Usher", "Front Desk", "Sound", "Elementary", 
+            "Kids Room", "Worship Diary", "Translater", "Construction", 
+            "Maintenance", "Visiting", "Bible Study", "Kitchen", "Media"
+        ];
+
+        const DEFAULT_GROUPS = [
+            "Adult Brothers", "Adult Sisters (D.Madai)", "Adult Sisters (D.Helen)", 
+            "Young Adult Brothers", "Young Adult Sisters", "Youth Brothers", 
+            "Youth Sisters", "2ND INDY SISTERS"
         ];
 
         const DEFAULT_BLESSINGS = [
@@ -717,10 +740,10 @@
                 { title: "ALTAR & BAPTISM", evangelists: "S. Veronica & D. Madai", icon: "🫧", color: "bg-rose-100 text-rose-900 border-rose-200" },
                 { title: "OFFICE", evangelists: "S. Ellie, S.CecLia", icon: "🖥️", color: "bg-emerald-100 text-emerald-900 border-emerald-200" }
             ],
-            masterEvangelists: ["B.Ezequiel", "B.Ryan", "B.Jemis", "D.Chris", "D.Madai", "D.James", "B.Kiimon", "B.David", "D.Chloe", "S.Chelda", "S.Veronica", "S.Ceclia", "S.Mercy", "S.Ellie", "S.Suriha", "S.Saira", "S.Bethany", "S.Lania", "D.Helen", "S.Sherice", "S.Candies", "S.Patricia", "S.Elizabeth", "S.Jessica P.", "D.Alan", "D.Samantha", "S.Robin", "S.Caniah", "B. Humberto", "S.Amber", "B.Luis", "B.Jeff", "B.Micco", "D.Helen/Sherice", "D Alan / D Samantha"],
-            masterGroups: ["Adult Brothers", "Adult Sisters (D.Madai)", "Adult Sisters (D.Helen)", "Young Adult Brothers", "Young Adult Sisters", "Youth Brothers", "Youth Sisters", "2ND INDY SISTERS"],
+            masterEvangelists: [...DEFAULT_EVANGELISTS],
+            masterGroups: [...DEFAULT_GROUPS],
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
-            masterDuties: ["Presider", "Prayer of Thanks", "Closing Prayer", "Offering (Brothers)", "Offering (Sisters)", "Usher", "Front Desk", "Sound", "Elementary", "Kids Room", "Worship Diary", "Translater", "Construction", "Maintenance", "Visiting", "Bible Study", "Kitchen", "Media"]
+            masterDuties: [...DEFAULT_DUTIES]
         };
         
         let currentSelectedDate = "";
@@ -812,11 +835,6 @@
             return null;
         }
 
-        function linkifyText(text) {
-            if (!text) return "";
-            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`);
-        }
-
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
             lastKnownLocalDate = getLocalDateString(new Date());
@@ -840,9 +858,15 @@
 
                 const masterData = await loadKeyFromCloud('master_lists');
                 if (masterData) {
-                    if (masterData.masterEvangelists) appState.masterEvangelists = masterData.masterEvangelists;
-                    if (masterData.masterGroups) appState.masterGroups = masterData.masterGroups;
-                    if (masterData.masterDuties) appState.masterDuties = masterData.masterDuties;
+                    if (masterData.masterEvangelists && Array.isArray(masterData.masterEvangelists) && masterData.masterEvangelists.length > 0) {
+                        appState.masterEvangelists = masterData.masterEvangelists;
+                    }
+                    if (masterData.masterGroups && Array.isArray(masterData.masterGroups) && masterData.masterGroups.length > 0) {
+                        appState.masterGroups = masterData.masterGroups;
+                    }
+                    if (masterData.masterDuties && Array.isArray(masterData.masterDuties) && masterData.masterDuties.length > 0) {
+                        appState.masterDuties = masterData.masterDuties;
+                    }
                 }
             } catch (err) {
                 console.log("Using cached baseline");
@@ -898,17 +922,31 @@
         }
 
         function getEvangelistOptionsHtml(selectedVal = "") {
+            let list = (appState.masterEvangelists && appState.masterEvangelists.length > 0) 
+                ? appState.masterEvangelists 
+                : DEFAULT_EVANGELISTS;
+
             let html = `<option value="">-- Select Leader / Member --</option>`;
-            (appState.masterEvangelists || []).forEach(ev => {
-                html += `<option value="${ev}" ${ev === selectedVal ? 'selected' : ''}>${ev}</option>`;
+            list.forEach(ev => {
+                if (!ev) return;
+                const cleanName = ev.trim();
+                const isSelected = cleanName.toLowerCase() === (selectedVal || "").trim().toLowerCase();
+                html += `<option value="${cleanName}" ${isSelected ? 'selected' : ''}>${cleanName}</option>`;
             });
             return html;
         }
 
         function getDutyOptionsHtml(selectedVal = "") {
+            let list = (appState.masterDuties && appState.masterDuties.length > 0) 
+                ? appState.masterDuties 
+                : DEFAULT_DUTIES;
+
             let html = `<option value="">-- Select Role / Duty --</option>`;
-            (appState.masterDuties || []).forEach(d => {
-                html += `<option value="${d}" ${d === selectedVal ? 'selected' : ''}>${d}</option>`;
+            list.forEach(d => {
+                if (!d) return;
+                const cleanDuty = d.trim();
+                const isSelected = cleanDuty.toLowerCase() === (selectedVal || "").trim().toLowerCase();
+                html += `<option value="${cleanDuty}" ${isSelected ? 'selected' : ''}>${cleanDuty}</option>`;
             });
             return html;
         }
@@ -1643,10 +1681,11 @@
                 const dData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
                 document.getElementById('input-activities').value = (dData.activities || []).join('\n');
                 
-                // Populate Group Selectors
+                // Populate Group Selectors with fallback
                 const pGroupSelect = document.getElementById('preaching-group-selector');
                 const dGroupSelect = document.getElementById('duty-group-selector');
-                const groupOptions = (appState.masterGroups || []).map(g => `<option value="${g}">${g}</option>`).join('');
+                const groupsToUse = (appState.masterGroups && appState.masterGroups.length > 0) ? appState.masterGroups : DEFAULT_GROUPS;
+                const groupOptions = groupsToUse.map(g => `<option value="${g}">${g}</option>`).join('');
 
                 if (pGroupSelect) {
                     pGroupSelect.innerHTML = groupOptions;
