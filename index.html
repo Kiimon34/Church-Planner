@@ -24,7 +24,6 @@
         }
         .animate-shake { animation: shake 0.4s ease-in-out; }
 
-        /* MOBILE DROPDOWN & INPUT ENHANCEMENTS */
         select, input[list], input[type="text"] {
             background-color: #ffffff !important;
             color: #0f172a !important;
@@ -32,7 +31,6 @@
             font-size: 14px !important;
         }
 
-        /* Prevent Flex Collapsing on Small Mobile Screens */
         .preaching-row, .duty-row, .blessing-row {
             display: flex;
             flex-wrap: wrap;
@@ -59,7 +57,6 @@
                 <p class="text-xs text-slate-500 mt-1">Please enter your 4-digit PIN to enter</p>
             </div>
 
-            <!-- PIN INPUT DIGITS -->
             <div id="pin-input-container" class="flex justify-center space-x-3">
                 <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 0)" onkeydown="handlePinBackspace(event, 0)">
                 <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 1)" onkeydown="handlePinBackspace(event, 1)">
@@ -80,20 +77,17 @@
         <!-- NAVIGATION BAR -->
         <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-                <!-- LOGO / HEADER -->
                 <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
                     <span class="text-2xl">📖</span>
                     <span class="font-bold text-lg tracking-wide">Zion Church Planner (INDY)</span>
                 </div>
                 
-                <!-- TOP RIGHT ACTIONS -->
                 <div class="flex items-center space-x-3">
                     <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded hidden">🛠️ Admin Active</span>
                     <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shadow hidden">
                         ⚙️ Admin
                     </button>
                     
-                    <!-- HAMBURGER MENU BUTTON -->
                     <button type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -140,7 +134,7 @@
                 </div>
 
                 <div class="space-y-2 border-t pt-4">
-                    <button type="button" onclick="togglePwaInstructionsModal(); toggleHamburgerMenu();" class="w-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border border-emerald-200">
+                    <button type="button" onclick="triggerPwaInstall(); toggleHamburgerMenu();" class="w-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border border-emerald-200">
                         📱 Install App to Home Screen
                     </button>
                     <button type="button" onclick="lockApp()" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2">
@@ -150,16 +144,14 @@
             </div>
         </div>
 
-        <!-- MAIN APP SCREEN CONTAINER -->
+        <!-- MAIN APP CONTAINER -->
         <main class="max-w-6xl mx-auto px-4 py-6">
             
-            <!-- LOADING OVERLAY -->
             <div id="loading-spinner" class="text-center py-12">
                 <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-900 border-t-transparent"></div>
                 <p class="text-slate-500 text-sm mt-2">Syncing latest church schedule...</p>
             </div>
 
-            <!-- MAIN CONTENT -->
             <div id="main-content" class="space-y-6">
                 <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
@@ -377,7 +369,7 @@
         </main>
     </div>
 
-    <!-- POPUP MODALS -->
+    <!-- PWA INSTRUCTIONS MODAL -->
     <div id="pwa-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-100 space-y-4 p-6">
             <div class="flex justify-between items-center border-b pb-3">
@@ -533,11 +525,10 @@
                     <div class="flex justify-between items-center mb-2">
                         <div>
                             <label class="block text-sm font-bold text-slate-700">✨ Blessings & Thanksgiving Inventory</label>
-                            <p class="text-[11px] text-slate-400">Select Evangelist/Member & set supply status dropdown.</p>
+                            <p class="text-[11px] text-slate-400">Update status & assigned member using dropdowns.</p>
                         </div>
-                        <button type="button" onclick="addBlessingBuilderRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800 transition-all master-only">+ Add Item</button>
                     </div>
-                    <div id="blessings-builder-rows" class="space-y-2"></div>
+                    <div id="blessings-builder-rows" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                     <textarea id="input-blessings" rows="4" class="hidden"></textarea>
                 </div>
 
@@ -639,6 +630,27 @@
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
 
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+        });
+
+        function triggerPwaInstall() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    deferredPrompt = null;
+                });
+            } else {
+                togglePwaInstructionsModal();
+            }
+        }
+
+        function togglePwaInstructionsModal() {
+            document.getElementById('pwa-modal').classList.toggle('hidden');
+        }
+
         const PERMANENT_SABBATH_DUTIES = [
             "Morning Presider", "Morning Prayer of Thanks", "Morning Closing Prayer", "Morning Offering (Brothers)", "Morning Offering (Sisters)", "Morning Usher", "Morning Front desk", "Morning Sound", "Morning Elementary", "Morning Kids Room", "Morning Worship Diary",
             "Afternoon Presider", "Afternoon Closing Prayer", "Afternoon Offering (Brothers)", "Afternoon Offering (Sisters)", "Afternoon Usher", "Afternoon Front desk", "Afternoon Translater", "Afternoon Sound", "Afternoon Elementary", "Afternoon Kids Room", "Afternoon Worship Diary",
@@ -654,14 +666,75 @@
             "Afternoon Presider", "Afternoon Closing Prayer", "Afternoon Offering (Brothers)", "Afternoon Offering (Sisters)", "Afternoon Usher", "Afternoon Front desk", "Afternoon Translater", "Afternoon Sound", "Afternoon Elementary", "Afternoon Kids Room", "Afternoon Worship Diary"
         ];
 
+        const DEFAULT_BLESSINGS = [
+            { item: "Toilet Paper", status: "Full", name: "D. James" },
+            { item: "Multi-purpose Cleaner Refill", status: "Full", name: "B Jemis" },
+            { item: "Dry Sweeping Cloth", status: "Full", name: "" },
+            { item: "Trash Bag 30 Gallon", status: "Full", name: "B.Ryan" },
+            { item: "Tri-fold Paper Towels", status: "Full", name: "S Saira & B Luis" },
+            { item: "Window Cleaner Refill", status: "Full", name: "" },
+            { item: "Bleach", status: "Full", name: "B Jeff" },
+            { item: "Trash bag 13 Gallon", status: "Full", name: "S. Cesilia" },
+            { item: "Air Freshener", status: "Full", name: "S.Chelda" },
+            { item: "Hand Soap Refills", status: "Full", name: "B Micco" },
+            { item: "Mini Trash Bags (Bathroom)", status: "Low", name: "B Kiimon" },
+            { item: "Ground Cofee", status: "Full", name: "S Veronica" },
+            { item: "Forks", status: "Full", name: "D. Helen" },
+            { item: "Spoons", status: "Full", name: "S.Sherice" },
+            { item: "Dispenser Napkins", status: "Full", name: "D.Madai" },
+            { item: "Plate Regular", status: "Full", name: "S.Candies" },
+            { item: "Dish soap", status: "Full", name: "S.LaNia" },
+            { item: "Kitchen paper towel", status: "Low", name: "S.Patricia" },
+            { item: "Ziplock (snack)", status: "Full", name: "S.Elizabeth" },
+            { item: "Ziploc (quart)", status: "Low", name: "S.Elizabeth" },
+            { item: "Ziplock (gallon)", status: "Low", name: "S.Elizabeth" },
+            { item: "Tea", status: "Full", name: "S.Mercy" },
+            { item: "Stirrers", status: "Full", name: "S.Mercy" },
+            { item: "Ibuprofen", status: "Full", name: "S.Jessica P." },
+            { item: "Zyrtec / Claritin", status: "Full", name: "S.Bethany" },
+            { item: "Cold Medication", status: "Full", name: "S.Bethany" },
+            { item: "Knives", status: "Full", name: "D. Helen/Sherice" },
+            { item: "Long Grain Rice", status: "Full", name: "D Alan / D Samantha" },
+            { item: "Butter Sticks", status: "Full", name: "S.Robin" },
+            { item: "Small/ Large coffee filters", status: "Full", name: "S.Caniah" },
+            { item: "Sweetner and sugar packets", status: "Full", name: "S.Caniah" },
+            { item: "Cone Cups for Water", status: "Full", name: "" },
+            { item: "Sanitizer Refill (Big One)", status: "Full", name: "S. Suriha" },
+            { item: "Floor Cleaner", status: "Full", name: "" },
+            { item: "Pepto Bismol (Tabs)", status: "Full", name: "" },
+            { item: "Honey", status: "Full", name: "" },
+            { item: "K- Cups", status: "Low", name: "" },
+            { item: "Toilet Bowl Cleaner", status: "Full", name: "" },
+            { item: "Gloves for cleaning", status: "Empty", name: "" },
+            { item: "Snack plate/trays", status: "Empty", name: "" }
+        ];
+
         let appState = {
             persistentAnnouncement: "",
             database: {},
             calendarEventsDb: {},
-            blessingsList: [],
-            sabbathSchedule: { activities: [], duties: [] },
-            thirddaySchedule: { activities: [], duties: [] },
-            feastSchedule: { activities: [], duties: [] },
+            blessingsList: DEFAULT_BLESSINGS.map(b => `${b.name} : ${b.item} : ${b.status}`),
+            sabbathSchedule: {
+                activities: [],
+                duties: [
+                    "B.Ezequiel : Morning Presider", "B.Ezequiel : Morning Prayer of Thanks", "D.Chris : Morning Closing Prayer", "S.Amber : Morning Offering (Brothers)", "S.Suriha : Morning Offering (Sisters)", "S.Ellie : Morning Usher", "B.Jemis : Morning Front desk", "B.Kiimon : Morning Sound", "D.Chloe : Morning Elementary", "S.Lania : Morning Kids Room", "S.Bethany : Morning Worship Diary",
+                    "B.Ryan : Afternoon Presider", "B.Ryan : Afternoon Closing Prayer", "S.Amber : Afternoon Offering (Brothers)", "S.Suriha : Afternoon Offering (Sisters)", "S.Suriha : Afternoon Usher", "D.Chris : Afternoon Front desk", "S.Ellie : Afternoon Translater", "B.Kiimon : Afternoon Sound", "S.Saira : Afternoon Elementary", "D.Madai : Afternoon Kids Room", "S.Chelda : Afternoon Worship Diary",
+                    "B.Jemis : Evening Presider", "D.Madai : Evening Closing Prayer", "S.Amber : Evening Offering (Brothers)", "S.Suriha : Evening Offering (Sisters)", "S.Veronica : Evening Usher", "B.Ezequiel : Evening Front desk", "S.Saira : Evening Translater", "B.Jemis : Evening Sound", "S.Lania : Evening Elementary", "D.Chloe : Evening Kids Room", "S.Bethany : Evening Worship Diary"
+                ]
+            },
+            thirddaySchedule: {
+                activities: [],
+                duties: [
+                    "B.Jemis : Evening Presider", "D.Madai : Evening Closing Prayer", "S.Veronica : Evening Usher", "B.Ryan : Evening Front desk", "B.Kiimon : Evening Sound", "D.Chloe : Evening Elementary", "S.Chelda : Evening Worship Diary"
+                ]
+            },
+            feastSchedule: {
+                activities: [],
+                duties: [
+                    "B.Ezequiel : Morning Presider", "B.Ezequiel : Morning Prayer of Thanks", "D.Chris : Morning Closing Prayer", "S.Amber : Morning Offering (Brothers)", "S.Suriha : Morning Offering (Sisters)", "S.Ellie : Morning Usher", "B.Jemis : Morning Front desk", "B.Kiimon : Morning Sound", "D.Chloe : Morning Elementary", "S.Lania : Morning Kids Room", "S.Bethany : Morning Worship Diary",
+                    "B.Ryan : Afternoon Presider", "B.Ryan : Afternoon Closing Prayer", "S.Amber : Afternoon Offering (Brothers)", "S.Suriha : Afternoon Offering (Sisters)", "S.Suriha : Afternoon Usher", "D.Chris : Afternoon Front desk", "S.Ellie : Afternoon Translater", "B.Kiimon : Afternoon Sound", "S.Saira : Afternoon Elementary", "D.Madai : Afternoon Kids Room", "S.Chelda : Afternoon Worship Diary"
+                ]
+            },
             cookingSchedule: [
                 { week: "1st week", dinner: "Adult Sisters (D.Madai)", snacks: "Adult Brothers" },
                 { week: "2nd Week", dinner: "Adult Sisters (D.Helen)", snacks: "Young Adult Brothers&sisters" },
@@ -683,7 +756,7 @@
                 { title: "ALTAR & BAPTISM", evangelists: "S. Veronica & D. Madai", icon: "🫧", color: "bg-rose-100 text-rose-900 border-rose-200" },
                 { title: "OFFICE", evangelists: "S. Ellie, S.CecLia", icon: "🖥️", color: "bg-emerald-100 text-emerald-900 border-emerald-200" }
             ],
-            masterEvangelists: ["B.Ezequiel", "B.Ryan", "B.Jemis", "D.Chris", "D.Madai", "D.James", "B.Kiimon", "B.David", "D.Chloe", "S.Chelda", "S.Veronica", "S.Ceclia", "S.Mercy", "S.Ellie", "S.Suriha", "S.Saira", "S.Bethany", "S.Lania", "D.Helen", "S.Sherice", "S.Candies", "S.Patricia", "S.Elizabeth", "S.Jessica P.", "D.Alan", "D.Samantha", "S.Robin", "S.Caniah", "B. Humberto"],
+            masterEvangelists: ["B.Ezequiel", "B.Ryan", "B.Jemis", "D.Chris", "D.Madai", "D.James", "B.Kiimon", "B.David", "D.Chloe", "S.Chelda", "S.Veronica", "S.Ceclia", "S.Mercy", "S.Ellie", "S.Suriha", "S.Saira", "S.Bethany", "S.Lania", "D.Helen", "S.Sherice", "S.Candies", "S.Patricia", "S.Elizabeth", "S.Jessica P.", "D.Alan", "D.Samantha", "S.Robin", "S.Caniah", "B. Humberto", "S.Amber", "B.Luis", "B.Jeff", "B.Micco", "D.Helen/Sherice", "D Alan / D Samantha"],
             masterGroups: ["Adult Brothers", "Adult Sisters (D.Madai)", "Adult Sisters (D.Helen)", "Young Adult", "Young Adult Brothers&sisters", "Youth Brothers", "Youth Sisters", "2ND INDY SISTERS"],
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
             masterDuties: ["Presider", "Prayer of Thanks", "Closing Prayer", "Offering (Brothers)", "Offering (Sisters)", "Usher", "Front Desk", "Sound", "Elementary", "Kids Room", "Worship Diary", "Translater"]
@@ -699,9 +772,6 @@
             document.getElementById('hamburger-drawer').classList.toggle('hidden');
         }
 
-        // -------------------------------------------------------------
-        // PIN LOCK & AUTHENTICATION ENGINE
-        // -------------------------------------------------------------
         function handlePinInput(input, index) {
             const errorMsg = document.getElementById('pin-error-msg');
             errorMsg.classList.add('hidden');
@@ -767,30 +837,20 @@
             }
         }
 
-        // -------------------------------------------------------------
-        // AUTOMATED MIDNIGHT (12:00 AM) RESET & DATE TRACKING
-        // -------------------------------------------------------------
         function checkAndResetForNewDay() {
             const todayStr = getLocalDateString(new Date());
             
             if (lastKnownLocalDate && lastKnownLocalDate !== todayStr) {
-                console.log(`Midnight reset triggered. Date changed from ${lastKnownLocalDate} to ${todayStr}`);
-                
                 if (!appState.database[todayStr]) {
                     appState.database[todayStr] = { activities: [], preaching: [], duties: [] };
                 }
-                
                 handleDateChange(todayStr);
             }
-            
             lastKnownLocalDate = todayStr;
         }
 
         setInterval(checkAndResetForNewDay, 60000);
 
-        // -------------------------------------------------------------
-        // GRANULAR CLOUD HELPERS (5+ CONCURRENT ADMIN SAFE)
-        // -------------------------------------------------------------
         async function saveKeyToCloud(keyName, dataPayload) {
             try {
                 await fetch(`${CLOUD_URL}/set/${keyName}`, {
@@ -798,7 +858,6 @@
                     headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
                     body: JSON.stringify(dataPayload)
                 });
-                console.log(`Live sync successful for: ${keyName}`);
             } catch (err) {
                 console.error(`Failed to sync ${keyName}:`, err);
             }
@@ -820,7 +879,6 @@
             return null;
         }
 
-        // Background Silent Polling for Live 5-Admin Multi-Screen Sync
         setInterval(async () => {
             if (!document.getElementById('app-wrapper').classList.contains('hidden') && currentSelectedDate) {
                 const latestDaily = await loadKeyFromCloud(`daily_${currentSelectedDate}`);
@@ -837,9 +895,6 @@
             }
         }, 5000);
 
-        // -------------------------------------------------------------
-        // APPLICATION CORE & DATA SYNC
-        // -------------------------------------------------------------
         function linkifyText(text) {
             if (!text) return "";
             const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -865,7 +920,7 @@
                         if (parsed.persistentAnnouncement !== undefined) appState.persistentAnnouncement = parsed.persistentAnnouncement;
                         if (parsed.database) appState.database = parsed.database;
                         if (parsed.calendarEventsDb) appState.calendarEventsDb = parsed.calendarEventsDb;
-                        if (parsed.blessingsList) appState.blessingsList = parsed.blessingsList;
+                        if (parsed.blessingsList && parsed.blessingsList.length) appState.blessingsList = parsed.blessingsList;
                         if (parsed.sabbathSchedule) appState.sabbathSchedule = parsed.sabbathSchedule;
                         if (parsed.thirddaySchedule) appState.thirddaySchedule = parsed.thirddaySchedule;
                         if (parsed.feastSchedule) appState.feastSchedule = parsed.feastSchedule;
@@ -879,13 +934,17 @@
                     }
                 }
             } catch (err) {
-                console.log("Database fetch offline, running on local cache fallback.", err);
+                console.log("Offline fallback:", err);
             } finally {
                 checkAndResetForNewDay();
                 handleDateChange(currentSelectedDate);
                 renderMonthlyCalendar();
                 renderCookingSchedule();
                 renderCleaningSchedule();
+                renderBlessings();
+                renderSabbathAndFeast('sabbath');
+                renderSabbathAndFeast('thirdday');
+                renderSabbathAndFeast('feast');
                 triggerInitialAnnouncementPopup();
             }
         }
@@ -993,31 +1052,39 @@
             container.appendChild(row);
         }
 
-        function addBlessingBuilderRow(nameVal = "", descVal = "", statusVal = "Full") {
+        function renderBlessingsBuilderUI() {
             const container = document.getElementById('blessings-builder-rows');
-            const row = document.createElement('div');
-            row.className = "flex flex-wrap gap-2 items-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm blessing-row w-full";
+            if (!container) return;
+            container.innerHTML = "";
 
-            const st = (statusVal || 'Full').toLowerCase();
-            const isMaster = (currentAdminRole === 'master');
+            let mappedList = {};
+            (appState.blessingsList || []).forEach(b => {
+                const chunks = b.split(':');
+                const name = chunks[0] ? chunks[0].trim() : '';
+                const item = chunks[1] ? chunks[1].trim() : '';
+                const status = chunks[2] ? chunks[2].trim() : 'Full';
+                if (item) mappedList[item] = { name, status };
+            });
 
-            row.innerHTML = `
-                <div class="flex-1 min-w-[130px]">
-                    ${isMaster ? 
-                        `<input type="text" placeholder="Item Description *" value="${descVal}" class="b-desc-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none font-bold text-slate-800">` : 
-                        `<span class="b-desc-text font-bold text-xs text-slate-800 px-1 block">${descVal || 'Supply Item'}</span>
-                         <input type="hidden" class="b-desc-input" value="${descVal}">`
-                    }
-                </div>
-                <input list="dl-evangelists" placeholder="Assigned Member" value="${nameVal}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-32 outline-none focus:ring-1 focus:ring-indigo-500 bg-white text-slate-900">
-                <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-semibold text-slate-900">
-                    <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
-                    <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
-                    <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty (Red)</option>
-                </select>
-                ${isMaster ? `<button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-1.5">✕</button>` : ''}
-            `;
-            container.appendChild(row);
+            DEFAULT_BLESSINGS.forEach(bDef => {
+                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status };
+                const row = document.createElement('div');
+                row.className = "flex flex-wrap gap-2 items-center p-2 bg-slate-50 border border-slate-200 rounded-xl blessing-row w-full";
+                row.setAttribute('data-item', bDef.item);
+
+                const st = (itemData.status || 'Full').toLowerCase();
+
+                row.innerHTML = `
+                    <span class="font-bold text-xs text-slate-800 flex-1 min-w-[140px] leading-tight">${bDef.item}</span>
+                    <input list="dl-evangelists" placeholder="Assigned Member" value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1 text-xs w-32 outline-none focus:ring-1 focus:ring-indigo-500 bg-white">
+                    <select class="b-status-input border border-slate-300 rounded p-1 text-xs outline-none focus:ring-1 focus:ring-indigo-500 bg-white font-bold">
+                        <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
+                        <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
+                        <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty (Red)</option>
+                    </select>
+                `;
+                container.appendChild(row);
+            });
         }
 
         function renderPermanentRosterUI(containerId, dutiesArray, existingDutiesList = []) {
@@ -1098,7 +1165,6 @@
         }
 
         function buildTextFromBuilders() {
-            // Preaching Builder
             const pRows = document.querySelectorAll('.preaching-row');
             let preachingLines = [];
             pRows.forEach(r => {
@@ -1116,7 +1182,6 @@
             });
             document.getElementById('input-preaching').value = preachingLines.join('\n');
 
-            // Daily Duties Builder
             const dRows = document.querySelectorAll('.duty-row');
             let dutyLines = [];
             dRows.forEach(r => {
@@ -1128,15 +1193,14 @@
             });
             document.getElementById('input-duties').value = dutyLines.join('\n');
 
-            // Blessings Builder
-            const bRows = document.querySelectorAll('.blessing-row');
+            const bRows = document.querySelectorAll('#blessings-builder-rows .blessing-row');
             let blessingLines = [];
             bRows.forEach(r => {
-                const name = r.querySelector('.b-name-input').value.trim() || 'Church Supply';
-                const desc = r.querySelector('.b-desc-input').value.trim();
+                const item = r.getAttribute('data-item');
+                const name = r.querySelector('.b-name-input').value.trim();
                 const status = r.querySelector('.b-status-input').value;
-                if (desc) {
-                    blessingLines.push(`${name} : ${desc} : ${status}`);
+                if (item) {
+                    blessingLines.push(`${name} : ${item} : ${status}`);
                 }
             });
             document.getElementById('input-blessings').value = blessingLines.join('\n');
@@ -1199,9 +1263,6 @@
             }
         }
 
-        // -------------------------------------------------------------
-        // INSTANT SEARCH & FILTER LOGIC
-        // -------------------------------------------------------------
         function clearSearch(inputId, filterFunc) {
             const input = document.getElementById(inputId);
             if (input) {
@@ -1267,9 +1328,6 @@
             });
         }
 
-        // -------------------------------------------------------------
-        // EXPORT ENTIRE MONTH TO ICAL / GOOGLE CALENDAR (.ICS)
-        // -------------------------------------------------------------
         function exportToIcsCalendar() {
             const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
             const currentMonthName = mNames[currentCalendarMonth];
@@ -1304,43 +1362,10 @@
                 });
             }
 
-            if (appState.database) {
-                Object.keys(appState.database).forEach((dateKey) => {
-                    if (dateKey.startsWith(targetMonthPrefix)) {
-                        const dayData = appState.database[dateKey];
-                        const formattedDateStr = dateKey.replace(/-/g, '');
-
-                        if (dayData.activities && dayData.activities.length) {
-                            dayData.activities.forEach((act, idx) => {
-                                icsLines.push("BEGIN:VEVENT");
-                                icsLines.push(`UID:db-act-${formattedDateStr}-${idx}@graceplanner.org`);
-                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
-                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
-                                icsLines.push(`SUMMARY:Activity: ${act.replace(/,/g, '\\,')}`);
-                                icsLines.push("END:VEVENT");
-                                eventsExported++;
-                            });
-                        }
-
-                        if (dayData.duties && dayData.duties.length) {
-                            dayData.duties.forEach((duty, idx) => {
-                                icsLines.push("BEGIN:VEVENT");
-                                icsLines.push(`UID:db-duty-${formattedDateStr}-${idx}@graceplanner.org`);
-                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
-                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
-                                icsLines.push(`SUMMARY:Worship Duty: ${duty.replace(/,/g, '\\,')}`);
-                                icsLines.push("END:VEVENT");
-                                eventsExported++;
-                            });
-                        }
-                    }
-                });
-            }
-
             icsLines.push("END:VCALENDAR");
 
             if (eventsExported === 0) {
-                alert(`No scheduled calendar entries or duties found for ${currentMonthName} ${currentCalendarYear} to export.`);
+                alert(`No scheduled calendar entries found for ${currentMonthName} ${currentCalendarYear} to export.`);
                 return;
             }
 
@@ -1591,18 +1616,20 @@
 
         function renderBlessings() {
             const container = document.getElementById('blessings-container');
-            if (!appState.blessingsList || !appState.blessingsList.length) {
-                container.innerHTML = `<p class="text-slate-400 text-xs italic py-6 text-center col-span-2">No blessings or thanksgiving items listed currently.</p>`;
-                return;
-            }
+            if (!container) return;
 
-            container.innerHTML = appState.blessingsList.map((b) => {
+            let mappedList = {};
+            (appState.blessingsList || []).forEach(b => {
                 const chunks = b.split(':');
-                const name = chunks[0] ? chunks[0].trim() : 'Member';
-                const details = chunks[1] ? chunks[1].trim() : '';
+                const name = chunks[0] ? chunks[0].trim() : '';
+                const item = chunks[1] ? chunks[1].trim() : '';
                 let status = chunks[2] ? chunks[2].trim().toLowerCase() : 'full';
+                if (item) mappedList[item] = { name, status };
+            });
 
-                if (status !== 'full' && status !== 'low' && status !== 'empty') status = 'full';
+            container.innerHTML = DEFAULT_BLESSINGS.map(bDef => {
+                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status.toLowerCase() };
+                let status = itemData.status;
 
                 let colorClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
                 if (status === 'low') colorClass = "bg-amber-100 text-amber-800 border-amber-200";
@@ -1611,11 +1638,11 @@
                 return `
                     <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
                         <div class="flex divide-x divide-slate-100 flex-1">
-                            <div class="w-1/3 p-3 bg-indigo-50/30 font-bold text-indigo-900 text-sm flex items-center break-words">${name}</div>
-                            <div class="w-2/3 p-3 text-sm text-slate-700 flex items-center break-words">${details}</div>
+                            <div class="w-1/2 p-3 font-bold text-indigo-950 text-xs flex items-center break-words">${bDef.item}</div>
+                            <div class="w-1/2 p-3 text-xs font-semibold text-slate-700 flex items-center break-words bg-slate-50/50">${itemData.name || '<span class="text-slate-400 italic">Unassigned</span>'}</div>
                         </div>
                         <div class="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Current Status:</span>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Status:</span>
                             <span class="text-xs px-2.5 py-0.5 rounded-full border font-semibold uppercase ${colorClass}">${status}</span>
                         </div>
                     </div>`;
@@ -1645,7 +1672,6 @@
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
 
-            // Fetch live date-specific key first to avoid stale data
             const dateData = await loadKeyFromCloud(`daily_${dateString}`);
             if (dateData) {
                 appState.database[dateString] = dateData;
@@ -1703,17 +1729,23 @@
             
             if (!source) source = { activities: [], duties: [] };
 
-            document.getElementById(`${type}-activities`).innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
-                const parts = a.split(' - ');
-                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
+            const actContainer = document.getElementById(`${type}-activities`);
+            if (actContainer) {
+                actContainer.innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
+                    const parts = a.split(' - ');
+                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
+            }
 
-            document.getElementById(`${type}-duties`).innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
-                const idx = d.indexOf(':');
-                const name = idx !== -1 ? d.substring(0, idx).trim() : 'Assigned';
-                const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
-                return `<div class="grid grid-cols-3 bg-slate-50 border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-200"><div class="col-span-1 p-3 bg-emerald-50/50 font-bold text-emerald-900 text-sm flex items-center font-semibold">${name}</div><div class="col-span-2 p-3 text-sm text-slate-700 flex items-center">${duty}</div></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
+            const dutyContainer = document.getElementById(`${type}-duties`);
+            if (dutyContainer) {
+                dutyContainer.innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
+                    const idx = d.indexOf(':');
+                    const name = idx !== -1 ? d.substring(0, idx).trim() : 'Unassigned';
+                    const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
+                    return `<div class="grid grid-cols-3 bg-white border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-100 shadow-sm"><div class="col-span-1 p-3 bg-indigo-50/40 font-bold text-indigo-950 text-xs flex items-center leading-tight">${duty}</div><div class="col-span-2 p-3 text-xs font-semibold text-slate-700 flex items-center">${name}</div></div>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
+            }
 
             if (type === 'sabbath') {
                 const searchVal = document.getElementById('sabbath-search-input')?.value || "";
@@ -1749,7 +1781,6 @@
                 const dData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
                 document.getElementById('input-activities').value = (dData.activities || []).join('\n');
                 
-                // Populate Preaching Builder Rows
                 const pBuilderContainer = document.getElementById('preaching-builder-rows');
                 pBuilderContainer.innerHTML = "";
                 if (dData.preaching && dData.preaching.length) {
@@ -1761,7 +1792,6 @@
                     addPreachingBuilderRow();
                 }
 
-                // Populate Daily Duties Builder Rows
                 const dBuilderContainer = document.getElementById('duties-builder-rows');
                 dBuilderContainer.innerHTML = "";
                 if (dData.duties && dData.duties.length) {
@@ -1777,20 +1807,7 @@
                     addDutyBuilderRow();
                 }
 
-                // Populate Blessings Builder Rows
-                const bBuilderContainer = document.getElementById('blessings-builder-rows');
-                bBuilderContainer.innerHTML = "";
-                if (appState.blessingsList && appState.blessingsList.length) {
-                    appState.blessingsList.forEach(b => {
-                        const chunks = b.split(':');
-                        const name = chunks[0] ? chunks[0].trim() : '';
-                        const desc = chunks[1] ? chunks[1].trim() : '';
-                        const st = chunks[2] ? chunks[2].trim() : 'Full';
-                        addBlessingBuilderRow(name, desc, st);
-                    });
-                } else {
-                    addBlessingBuilderRow();
-                }
+                renderBlessingsBuilderUI();
 
                 if (currentAdminRole === 'master') {
                     renderCookingBuilderUI();
@@ -1827,7 +1844,6 @@
 
             const activeSubTab = document.querySelector('#admin-modal .bg-indigo-700')?.id;
 
-            // Granular Save Operations (Strictly avoids whole-database overwrites)
             if (activeSubTab === 'as-daily') {
                 const dData = appState.database[currentSelectedDate] || {};
                 if (currentAdminRole === 'master') {
@@ -1848,10 +1864,11 @@
             }
 
             if (currentAdminRole === 'master') {
-                if (activeSubTab === 'as-daily') {
-                    appState.persistentAnnouncement = document.getElementById('input-announcements').value;
-                    await saveKeyToCloud('persistent_announcement', appState.persistentAnnouncement);
-                }
+                appState.persistentAnnouncement = document.getElementById('input-announcements').value;
+                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
 
                 if (activeSubTab === 'as-sabbath') {
                     appState.sabbathSchedule = {
@@ -1884,20 +1901,6 @@
                 if (activeSubTab === 'as-cleaning') {
                     await saveKeyToCloud('cleaning_groups', appState.cleaningGroups);
                     await saveKeyToCloud('cleaning_specials', appState.cleaningSpecials);
-                }
-
-                if (activeSubTab === 'as-settings') {
-                    appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                    appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                    appState.masterLocations = document.getElementById('input-master-locations').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                    appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
-
-                    await saveKeyToCloud('master_lists', {
-                        masterEvangelists: appState.masterEvangelists,
-                        masterGroups: appState.masterGroups,
-                        masterLocations: appState.masterLocations,
-                        masterDuties: appState.masterDuties
-                    });
                 }
             }
 
