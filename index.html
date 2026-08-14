@@ -373,9 +373,6 @@
                 <div id="cv-modal-events-content" class="space-y-2"></div>
             </div>
             <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end space-x-2">
-                <button id="cv-modal-edit-btn" type="button" class="bg-amber-600 hover:bg-amber-500 text-slate-900 text-xs font-bold px-4 py-2 rounded-lg shadow-sm transition-colors hidden">
-                    ✏️ Edit Day Events
-                </button>
                 <button type="button" onclick="closeCalendarViewModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-xs font-medium hover:bg-slate-100 transition-colors">Close</button>
             </div>
         </div>
@@ -656,7 +653,7 @@
         let currentCalendarYear = 2026;
         let currentCalendarMonth = 7; 
         let currentAdminRole = null; 
-        let currentActiveAdminTab = 'daily'; // ROBUST ACTIVE TAB TRACKER
+        let currentActiveAdminTab = 'daily';
         let lastKnownLocalDate = "";
 
         function toggleHamburgerMenu() {
@@ -740,23 +737,6 @@
             return null;
         }
 
-        // Live polling every 4 seconds
-        setInterval(async () => {
-            if (!document.getElementById('app-wrapper').classList.contains('hidden') && currentSelectedDate) {
-                const latestDaily = await loadKeyFromCloud(`daily_${currentSelectedDate}`);
-                if (latestDaily) {
-                    appState.database[currentSelectedDate] = latestDaily;
-                    renderDashboardData();
-                }
-
-                const latestBlessings = await loadKeyFromCloud('blessings_list');
-                if (latestBlessings && latestBlessings.length) {
-                    appState.blessingsList = latestBlessings;
-                    renderBlessings();
-                }
-            }
-        }, 4000);
-
         function linkifyText(text) {
             if (!text) return "";
             return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`);
@@ -780,7 +760,7 @@
                 const fData = await loadKeyFromCloud('feast_schedule');
                 if (fData && fData.duties && fData.duties.length) appState.feastSchedule = fData;
             } catch (err) {
-                console.log("Offline state ready.");
+                console.log("Offline ready");
             } finally {
                 renderMonthlyCalendar();
                 renderCookingSchedule();
@@ -1067,6 +1047,58 @@
             });
         }
 
+        function exportToIcsCalendar() {
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthName = mNames[currentCalendarMonth];
+            const targetMonthPrefix = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`;
+            
+            let icsLines = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                `PRODID:-//Zion Church Planner (INDY) - ${currentMonthName} ${currentCalendarYear}//EN`,
+                "CALSCALE:GREGORIAN"
+            ];
+
+            let eventsExported = 0;
+
+            if (appState.calendarEventsDb) {
+                Object.keys(appState.calendarEventsDb).forEach((dateKey) => {
+                    if (dateKey.startsWith(targetMonthPrefix)) {
+                        const eventString = appState.calendarEventsDb[dateKey];
+                        if (eventString && eventString.trim()) {
+                            const formattedDateStr = dateKey.replace(/-/g, '');
+                            eventString.split(',').forEach((item, idx) => {
+                                icsLines.push("BEGIN:VEVENT");
+                                icsLines.push(`UID:cal-${formattedDateStr}-${idx}@graceplanner.org`);
+                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                                icsLines.push(`SUMMARY:${item.trim().replace(/,/g, '\\,')}`);
+                                icsLines.push("END:VEVENT");
+                                eventsExported++;
+                            });
+                        }
+                    }
+                });
+            }
+
+            icsLines.push("END:VCALENDAR");
+
+            if (eventsExported === 0) {
+                alert(`No events found for ${currentMonthName} ${currentCalendarYear}.`);
+                return;
+            }
+
+            const blob = new Blob([icsLines.join("\r\n")], { type: 'text/calendar;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Church_Calendar_${currentMonthName}_${currentCalendarYear}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
         function renderBlessings() {
             const container = document.getElementById('blessings-container');
             if (!container) return;
@@ -1312,7 +1344,6 @@
 
             const activeTab = currentActiveAdminTab;
 
-            // DAILY TAB SAVE
             if (activeTab === 'daily') {
                 const latestDateData = (await loadKeyFromCloud(`daily_${currentSelectedDate}`)) || appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
                 const selectedGroup = document.getElementById('preaching-group-selector').value;
@@ -1350,7 +1381,6 @@
                 await saveKeyToCloud(`daily_${currentSelectedDate}`, latestDateData);
             }
 
-            // BLESSINGS TAB SAVE
             if (activeTab === 'blessings') {
                 let blessingLines = [];
                 document.querySelectorAll('#blessings-builder-rows .blessing-row').forEach(r => {
@@ -1363,7 +1393,6 @@
                 await saveKeyToCloud('blessings_list', appState.blessingsList);
             }
 
-            // SABBATH ROSTER SAVE
             if (activeTab === 'sabbath' && currentAdminRole === 'master') {
                 let sabLines = [];
                 document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row').forEach(r => {
@@ -1375,7 +1404,6 @@
                 await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
             }
 
-            // THIRD-DAY ROSTER SAVE
             if (activeTab === 'thirdday' && currentAdminRole === 'master') {
                 let tdLines = [];
                 document.querySelectorAll('#thirdday-permanent-roster .permanent-duty-row').forEach(r => {
@@ -1387,7 +1415,6 @@
                 await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
             }
 
-            // FEAST ROSTER SAVE
             if (activeTab === 'feast' && currentAdminRole === 'master') {
                 let fLines = [];
                 document.querySelectorAll('#feast-permanent-roster .permanent-duty-row').forEach(r => {
