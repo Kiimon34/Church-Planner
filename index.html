@@ -32,12 +32,6 @@
             font-size: 15px !important;
         }
 
-        select {
-            -webkit-appearance: menulist !important;
-            appearance: menulist !important;
-            touch-action: manipulation;
-        }
-
         .preaching-row, .duty-row, .blessing-row {
             display: flex;
             flex-wrap: wrap;
@@ -47,6 +41,10 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <!-- GLOBAL AUTOCOMPLETE DATALISTS (TYPE & FILTER) -->
+    <datalist id="dl-evangelists"></datalist>
+    <datalist id="dl-duties"></datalist>
 
     <!-- PIN LOGIN SCREEN -->
     <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4">
@@ -83,8 +81,14 @@
                     <span class="font-bold text-lg tracking-wide">Zion Church Planner (INDY)</span>
                 </div>
                 
-                <div class="flex items-center space-x-3">
-                    <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded hidden">🛠️ Admin Active</span>
+                <div class="flex items-center space-x-2">
+                    <div id="admin-active-group" class="hidden flex items-center space-x-2">
+                        <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2.5 py-1 rounded-lg">🛠️ Master Admin Active</span>
+                        <button onclick="logoutAdmin()" class="bg-rose-800 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow transition-all">
+                            🔒 Logout
+                        </button>
+                    </div>
+
                     <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shadow hidden">
                         ⚙️ Admin
                     </button>
@@ -534,7 +538,7 @@
                 <div id="ap-blessings" class="admin-panel-section space-y-4 hidden">
                     <div>
                         <label class="block text-sm font-bold text-slate-700">✨ Blessings & Inventory</label>
-                        <p class="text-[11px] text-slate-400 mb-2">Assign members and update inventory levels individually.</p>
+                        <p class="text-[11px] text-slate-400 mb-2">Type to filter members and update inventory levels individually.</p>
                     </div>
                     <div id="blessings-builder-rows" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                 </div>
@@ -782,6 +786,88 @@
         let currentPGroup = "";
         let currentDGroup = "";
 
+        // 2-MINUTE INACTIVITY ADMIN AUTO-LOCK ENGINE
+        let adminInactivityTimer = null;
+        const ADMIN_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes
+
+        function resetAdminInactivityTimer() {
+            if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
+            if (currentAdminRole) {
+                adminInactivityTimer = setTimeout(() => {
+                    logoutAdmin(true);
+                }, ADMIN_TIMEOUT_MS);
+            }
+        }
+
+        ['click', 'touchstart', 'mousemove', 'keydown', 'scroll'].forEach(evt => {
+            window.addEventListener(evt, () => {
+                if (currentAdminRole) resetAdminInactivityTimer();
+            }, { passive: true });
+        });
+
+        function checkExistingAdminSession() {
+            const savedRole = sessionStorage.getItem('admin_role');
+            if (savedRole) {
+                setAdminActive(savedRole);
+            }
+        }
+
+        function setAdminActive(role) {
+            currentAdminRole = role;
+            sessionStorage.setItem('admin_role', role);
+            
+            const groupEl = document.getElementById('admin-active-group');
+            const statusEl = document.getElementById('admin-status');
+            
+            if (role === 'master') {
+                statusEl.innerText = "🛠️ Master Admin Active";
+                statusEl.className = "text-xs bg-amber-500 text-slate-900 font-bold px-2.5 py-1 rounded-lg";
+            } else {
+                statusEl.innerText = "📋 Limited Admin Active";
+                statusEl.className = "text-xs bg-indigo-500 text-white font-bold px-2.5 py-1 rounded-lg";
+            }
+            
+            groupEl.classList.remove('hidden');
+            document.getElementById('admin-trigger-btn').innerText = "⚙️ Admin Panel";
+            document.getElementById('admin-trigger-btn').classList.remove('hidden');
+            
+            resetAdminInactivityTimer();
+        }
+
+        function logoutAdmin(isAutoLock = false) {
+            currentAdminRole = null;
+            sessionStorage.removeItem('admin_role');
+            if (adminInactivityTimer) clearTimeout(adminInactivityTimer);
+            
+            document.getElementById('admin-active-group').classList.add('hidden');
+            const modal = document.getElementById('admin-modal');
+            if (!modal.classList.contains('hidden')) {
+                toggleAdminModal();
+            }
+            
+            if (isAutoLock) {
+                alert("Admin session locked due to 2 minutes of inactivity.");
+            }
+        }
+
+        function checkPasswordAndOpen() {
+            if (currentAdminRole) {
+                toggleAdminModal();
+                return;
+            }
+
+            const attempt = prompt("Please enter the Admin Password:");
+            if (attempt === MASTER_ADMIN_PASSWORD) {
+                setAdminActive('master');
+                toggleAdminModal();
+            } else if (attempt === LIMITED_ADMIN_PASSWORD) {
+                setAdminActive('limited');
+                toggleAdminModal();
+            } else if (attempt !== null) {
+                alert("Incorrect password. Access denied.");
+            }
+        }
+
         function toggleHamburgerMenu() {
             document.getElementById('hamburger-drawer').classList.toggle('hidden');
         }
@@ -808,6 +894,7 @@
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
                 loadDataFromCloud();
+                checkExistingAdminSession();
             } else {
                 document.getElementById('pin-error-msg').classList.remove('hidden');
                 document.getElementById('pin-input-container').classList.add('animate-shake');
@@ -818,6 +905,7 @@
         }
 
         function lockApp() {
+            logoutAdmin();
             sessionStorage.removeItem('planner_unlocked');
             document.getElementById('app-wrapper').classList.add('hidden');
             document.getElementById('pin-login-screen').classList.remove('hidden');
@@ -830,6 +918,7 @@
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
                 loadDataFromCloud();
+                checkExistingAdminSession();
             } else {
                 document.querySelectorAll('.pin-digit')[0]?.focus();
             }
@@ -866,6 +955,14 @@
         function linkifyText(text) {
             if (!text) return "";
             return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950 hover:text-amber-700 break-all">${url}</a>`);
+        }
+
+        function syncGlobalDatalists() {
+            const evList = (appState.masterEvangelists && appState.masterEvangelists.length > 0) ? appState.masterEvangelists : DEFAULT_EVANGELISTS;
+            const dutyList = (appState.masterDuties && appState.masterDuties.length > 0) ? appState.masterDuties : DEFAULT_DUTIES;
+
+            document.getElementById('dl-evangelists').innerHTML = evList.map(ev => `<option value="${ev}"></option>`).join('');
+            document.getElementById('dl-duties').innerHTML = dutyList.map(d => `<option value="${d}"></option>`).join('');
         }
 
         async function loadDataFromCloud() {
@@ -907,6 +1004,7 @@
             } catch (err) {
                 console.log("Using cached baseline");
             } finally {
+                syncGlobalDatalists();
                 renderMonthlyCalendar();
                 renderCookingSchedule();
                 renderCleaningSchedule();
@@ -957,52 +1055,16 @@
             }
         }
 
-        function getEvangelistOptionsHtml(selectedVal = "") {
-            let list = (appState.masterEvangelists && appState.masterEvangelists.length > 0) 
-                ? appState.masterEvangelists 
-                : DEFAULT_EVANGELISTS;
-
-            let html = `<option value="">-- Select Leader / Member --</option>`;
-            list.forEach(ev => {
-                if (!ev) return;
-                const cleanName = ev.trim();
-                const isSelected = cleanName.toLowerCase() === (selectedVal || "").trim().toLowerCase();
-                html += `<option value="${cleanName}" ${isSelected ? 'selected' : ''}>${cleanName}</option>`;
-            });
-            return html;
-        }
-
-        function getDutyOptionsHtml(selectedVal = "") {
-            let list = (appState.masterDuties && appState.masterDuties.length > 0) 
-                ? appState.masterDuties 
-                : DEFAULT_DUTIES;
-
-            let html = `<option value="">-- Select Role / Duty --</option>`;
-            list.forEach(d => {
-                if (!d) return;
-                const cleanDuty = d.trim();
-                const isSelected = cleanDuty.toLowerCase() === (selectedVal || "").trim().toLowerCase();
-                html += `<option value="${cleanDuty}" ${isSelected ? 'selected' : ''}>${cleanDuty}</option>`;
-            });
-            return html;
-        }
-
-        // PREACHING BUILDER ROW
+        // PREACHING BUILDER ROW (TYPE & FILTER COMBIBOX)
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
             row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-indigo-100 shadow-sm preaching-row w-full";
             
             row.innerHTML = `
-                <select class="e1-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                    ${getEvangelistOptionsHtml(e1)}
-                </select>
-                <select class="e2-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                    ${getEvangelistOptionsHtml(e2)}
-                </select>
-                <select class="e3-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                    ${getEvangelistOptionsHtml(e3)}
-                </select>
+                <input type="text" list="dl-evangelists" placeholder="Leader 1..." value="${e1}" class="e1-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 2..." value="${e2}" class="e2-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 3..." value="${e3}" class="e3-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
                 <input type="text" placeholder="Time (11:00 AM - 1:30 PM)" value="${timeVal}" class="time-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
                 <input type="text" placeholder="Location" value="${loc || 'Main Zion'}" class="loc-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
                 <button type="button" onclick="this.closest('.preaching-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
@@ -1059,19 +1121,15 @@
             }
         }
 
-        // DAILY DUTIES BUILDER
+        // DAILY DUTIES BUILDER (TYPE & FILTER COMBIBOX)
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
             row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full";
 
             row.innerHTML = `
-                <select class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                    ${getDutyOptionsHtml(roleVal)}
-                </select>
-                <select class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
-                    ${getEvangelistOptionsHtml(nameVal)}
-                </select>
+                <input type="text" list="dl-duties" placeholder="Type or pick Role..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Type or pick Member..." value="${nameVal}" class="name-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
                 <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
             `;
             container.appendChild(row);
@@ -1154,9 +1212,7 @@
 
                 row.innerHTML = `
                     <span class="font-bold text-xs text-slate-800 flex-1 min-w-[140px] leading-tight">${bDef.item}</span>
-                    <select class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-44 outline-none bg-white font-semibold">
-                        ${getEvangelistOptionsHtml(itemData.name)}
-                    </select>
+                    <input type="text" list="dl-evangelists" placeholder="Type or pick Member..." value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-48 outline-none bg-white font-semibold">
                     <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none bg-white font-bold">
                         <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
                         <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
@@ -1210,9 +1266,7 @@
 
                 row.innerHTML = `
                     <span class="font-bold text-slate-800 w-1/2 pr-2 leading-tight">${role}</span>
-                    <select class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
-                        ${getEvangelistOptionsHtml(assignedName)}
-                    </select>
+                    <input type="text" list="dl-evangelists" placeholder="Type or pick Leader..." value="${assignedName}" class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
                 `;
                 container.appendChild(row);
             });
@@ -1637,7 +1691,7 @@
         function renderDashboardData() {
             const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
 
-            // Render persistent announcement banner
+            // Persistent Announcement Banner
             const announceBanner = document.getElementById('announcements-section');
             const announceText = document.getElementById('announcements-text');
             if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
@@ -1652,7 +1706,7 @@
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
 
-            // RENDER PREACHING TEAMS
+            // PREACHING TEAMS
             document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
                 <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm shadow-sm space-y-1">
                     <div class="flex justify-between items-center">
@@ -1666,7 +1720,7 @@
                 </div>
             `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
 
-            // RENDER DUTIES & ROLES
+            // DUTIES & ROLES
             document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
                 if (typeof d === 'object') {
                     return `
@@ -1712,25 +1766,6 @@
 
         function revealAdminButton() {
             document.getElementById('admin-trigger-btn').classList.remove('hidden');
-        }
-
-        function checkPasswordAndOpen() {
-            const attempt = prompt("Please enter the Admin Password:");
-            if (attempt === MASTER_ADMIN_PASSWORD) {
-                currentAdminRole = 'master';
-                document.getElementById('admin-status').innerText = "🛠️ Master Admin Active";
-                document.getElementById('admin-status').className = "text-xs bg-amber-500 text-slate-900 font-bold px-2 py-1 rounded";
-                document.getElementById('admin-status').classList.remove('hidden');
-                toggleAdminModal();
-            } else if (attempt === LIMITED_ADMIN_PASSWORD) {
-                currentAdminRole = 'limited';
-                document.getElementById('admin-status').innerText = "📋 Limited Admin Active";
-                document.getElementById('admin-status').className = "text-xs bg-indigo-500 text-white font-bold px-2 py-1 rounded";
-                document.getElementById('admin-status').classList.remove('hidden');
-                toggleAdminModal();
-            } else if (attempt !== null) {
-                alert("Incorrect password. Access denied.");
-            }
         }
 
         function switchTab(viewName) {
@@ -1921,6 +1956,8 @@
                 appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
+
+                syncGlobalDatalists();
 
                 await saveKeyToCloud('master_lists', {
                     masterEvangelists: appState.masterEvangelists,
