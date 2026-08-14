@@ -145,7 +145,7 @@
             </div>
 
             <div id="main-content" class="space-y-6">
-                <!-- TAB 1: DAILY VIEW (No Search Bar) -->
+                <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
@@ -433,6 +433,7 @@
                 <div class="flex flex-wrap gap-1 bg-indigo-950/60 p-1 rounded-xl items-center justify-between">
                     <div class="flex flex-wrap gap-1">
                         <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white">Daily</button>
+                        <button onclick="switchAdminSubTab('monthly')" id="as-monthly" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Monthly</button>
                         <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
                         <button onclick="switchAdminSubTab('cooking')" id="as-cooking" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Cooking</button>
                         <button onclick="switchAdminSubTab('cleaning')" id="as-cleaning" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Cleaning</button>
@@ -441,7 +442,7 @@
                         <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Feast</button>
                         <button onclick="switchAdminSubTab('settings')" id="as-settings" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-amber-300 hover:text-white master-only">⚙️ Master</button>
                     </div>
-                    <button id="batch-action-trigger" type="button" onclick="openBatchModalForCurrentTab()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 shadow-sm transition-all hidden">
+                    <button id="batch-action-trigger" type="button" onclick="openBatchModalForCurrentTab()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 shadow-sm transition-all">
                         ⚡ Batch Update
                     </button>
                 </div>
@@ -495,6 +496,19 @@
 
                         <div id="duties-builder-rows" class="space-y-2 pt-2"></div>
                     </div>
+                </div>
+
+                <!-- MONTHLY ADMIN (MASTER ONLY) -->
+                <div id="ap-monthly" class="admin-panel-section space-y-4 hidden master-only">
+                    <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 space-y-2">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-bold text-indigo-950">🗓️ Monthly Events Editor</h3>
+                                <p class="text-xs text-slate-500">Type events directly below or click <b>⚡ Batch Update</b> above to paste in bulk.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="monthly-admin-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                 </div>
 
                 <!-- BLESSINGS ADMIN -->
@@ -821,6 +835,9 @@
                 const fData = await loadKeyFromCloud('feast_schedule');
                 if (fData && fData.duties && fData.duties.length > 0) appState.feastSchedule = fData;
 
+                const calData = await loadKeyFromCloud('calendar_events');
+                if (calData) appState.calendarEventsDb = calData;
+
                 const masterData = await loadKeyFromCloud('master_lists');
                 if (masterData) {
                     if (masterData.masterEvangelists) appState.masterEvangelists = masterData.masterEvangelists;
@@ -1010,6 +1027,28 @@
                 `;
                 container.appendChild(row);
             });
+        }
+
+        function renderMonthlyAdminListUI() {
+            const container = document.getElementById('monthly-admin-list');
+            if (!container) return;
+            container.innerHTML = "";
+
+            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const eventText = appState.calendarEventsDb[dateKey] || "";
+
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs";
+                row.innerHTML = `
+                    <span class="font-bold text-indigo-950 w-24">${mNames[currentCalendarMonth].slice(0, 3)} ${day}:</span>
+                    <input type="text" data-datekey="${dateKey}" value="${eventText}" placeholder="Comma-separated events (e.g. 2:00pm Preaching, Meeting)" class="monthly-event-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                `;
+                container.appendChild(row);
+            }
         }
 
         function renderPermanentRosterUI(containerId, dutiesArray, existingDutiesList = []) {
@@ -1319,6 +1358,7 @@
 
                 if (updatedCount > 0) {
                     renderMonthlyCalendar();
+                    renderMonthlyAdminListUI();
                     await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
                     toggleBatchModal();
                     alert(`Successfully imported ${updatedCount} monthly events!`);
@@ -1582,14 +1622,8 @@
             const targetBtn = document.getElementById(`as-${subTab}`);
             if (targetBtn) targetBtn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
 
-            // Update Batch Button Visibility
-            const batchBtn = document.getElementById('batch-action-trigger');
-            if (batchBtn) {
-                if (subTab === 'blessings' || (currentAdminRole === 'master' && (subTab === 'sabbath' || subTab === 'thirdday' || subTab === 'feast'))) {
-                    batchBtn.classList.remove('hidden');
-                } else {
-                    batchBtn.classList.add('hidden');
-                }
+            if (subTab === 'monthly') {
+                renderMonthlyAdminListUI();
             }
         }
 
@@ -1654,7 +1688,6 @@
             if (activeTab === 'daily') {
                 const latestDateData = (await loadKeyFromCloud(`daily_${currentSelectedDate}`)) || appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
                 
-                // 1. Merge Preaching by Group
                 const selectedPGroup = document.getElementById('preaching-group-selector').value;
                 let newGroupTeams = [];
                 document.querySelectorAll('.preaching-row').forEach(r => {
@@ -1672,7 +1705,6 @@
                 const otherGroupTeams = (latestDateData.preaching || []).filter(p => (p.group || "").trim().toLowerCase() !== (selectedPGroup || "").trim().toLowerCase());
                 latestDateData.preaching = [...otherGroupTeams, ...newGroupTeams];
 
-                // 2. Merge Duties by Group
                 const selectedDGroup = document.getElementById('duty-group-selector').value;
                 let newGroupDuties = [];
                 document.querySelectorAll('.duty-row').forEach(r => {
@@ -1696,6 +1728,21 @@
 
                 appState.database[currentSelectedDate] = latestDateData;
                 await saveKeyToCloud(`daily_${currentSelectedDate}`, latestDateData);
+            }
+
+            // MONTHLY VIEW SAVE
+            if (activeTab === 'monthly' && currentAdminRole === 'master') {
+                document.querySelectorAll('.monthly-event-input').forEach(input => {
+                    const dateKey = input.getAttribute('data-datekey');
+                    const val = input.value.trim();
+                    if (val) {
+                        appState.calendarEventsDb[dateKey] = val;
+                    } else {
+                        delete appState.calendarEventsDb[dateKey];
+                    }
+                });
+                renderMonthlyCalendar();
+                await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
             }
 
             // BLESSINGS SAVE
