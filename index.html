@@ -398,6 +398,28 @@
         </div>
     </div>
 
+    <!-- UNIVERSAL BATCH UPDATE MODAL -->
+    <div id="universal-batch-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[80] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden border border-indigo-200">
+            <div class="bg-indigo-900 text-white px-6 py-4 flex justify-between items-center">
+                <h3 id="batch-modal-title" class="font-bold text-lg flex items-center gap-2">⚡ Batch Update</h3>
+                <button type="button" onclick="toggleBatchModal()" class="text-2xl font-bold hover:text-indigo-200">&times;</button>
+            </div>
+            <div class="p-6 space-y-3">
+                <p id="batch-modal-instructions" class="text-xs text-slate-600 leading-relaxed font-medium">
+                    Paste your raw data line-by-line.
+                </p>
+                <textarea id="batch-modal-input" rows="12" class="w-full border border-slate-300 rounded-lg p-3 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500 leading-relaxed"></textarea>
+            </div>
+            <div class="bg-slate-50 px-6 py-3 border-t border-slate-100 flex justify-end space-x-2">
+                <button type="button" onclick="toggleBatchModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-slate-700 text-xs font-medium hover:bg-slate-100 transition-colors">Cancel</button>
+                <button type="button" onclick="processUniversalBatchData()" class="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md transition-all">
+                    Apply Batch Import
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ADMIN MODAL -->
     <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
@@ -419,6 +441,9 @@
                         <button onclick="switchAdminSubTab('feast')" id="as-feast" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Feast</button>
                         <button onclick="switchAdminSubTab('settings')" id="as-settings" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-amber-300 hover:text-white master-only">⚙️ Master</button>
                     </div>
+                    <button id="batch-action-trigger" type="button" onclick="openBatchModalForCurrentTab()" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-amber-500 text-slate-900 hover:bg-amber-400 shadow-sm transition-all hidden">
+                        ⚡ Batch Update
+                    </button>
                 </div>
             </div>
             
@@ -689,6 +714,7 @@
         let currentCalendarMonth = 7; 
         let currentAdminRole = null; 
         let currentActiveAdminTab = 'daily';
+        let currentBatchTarget = 'monthly';
         let lastKnownLocalDate = "";
 
         function toggleHamburgerMenu() {
@@ -770,6 +796,11 @@
                 console.error(`Load error ${keyName}:`, err);
             }
             return null;
+        }
+
+        function linkifyText(text) {
+            if (!text) return "";
+            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`);
         }
 
         async function loadDataFromCloud() {
@@ -865,7 +896,7 @@
             return html;
         }
 
-        // PREACHING BUILDER ROW (GROUP SCOPED)
+        // PREACHING BUILDER ROW
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
@@ -905,7 +936,7 @@
             }
         }
 
-        // DAILY DUTIES BUILDER (GROUP SCOPED)
+        // DAILY DUTIES BUILDER
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
@@ -1208,6 +1239,150 @@
             window.URL.revokeObjectURL(url);
         }
 
+        // ==========================================
+        // UNIVERSAL BATCH MODAL SYSTEM
+        // ==========================================
+        function toggleBatchModal() {
+            document.getElementById('universal-batch-modal').classList.toggle('hidden');
+        }
+
+        function openBatchModalForCurrentTab() {
+            currentBatchTarget = currentActiveAdminTab;
+            const title = document.getElementById('batch-modal-title');
+            const instructions = document.getElementById('batch-modal-instructions');
+            const input = document.getElementById('batch-modal-input');
+            input.value = "";
+
+            if (currentBatchTarget === 'monthly') {
+                title.innerText = "⚡ Batch Update Monthly Calendar";
+                instructions.innerHTML = `Paste your events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code><br><i>Example: August 9: WM Meeting, 2:00pm Preaching</i>`;
+                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching (Group by Group), 7:00pm Dinner";
+            } else if (currentBatchTarget === 'blessings') {
+                title.innerText = "⚡ Batch Update Blessings & Inventory";
+                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code><br><i>Example: Toilet Paper : D. James : Full</i>`;
+                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full\nMini Trash Bags (Bathroom) : B Kiimon : Low";
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                const tabTitle = currentBatchTarget.charAt(0).toUpperCase() + currentBatchTarget.slice(1);
+                title.innerText = `⚡ Batch Update ${tabTitle} Worship Duties`;
+                instructions.innerHTML = `Paste roles and leaders line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code><br><i>Example: Morning Presider : B.Ezequiel</i>`;
+                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Prayer of Thanks : B.Ezequiel\nMorning Sound : B.Kiimon";
+            }
+
+            toggleBatchModal();
+        }
+
+        async function processUniversalBatchData() {
+            const rawText = document.getElementById('batch-modal-input').value;
+            if (!rawText.trim()) return;
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+            let updatedCount = 0;
+
+            if (currentBatchTarget === 'monthly') {
+                const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+                lines.forEach(line => {
+                    let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
+                    if (!cleaned || !cleaned.includes(':')) return;
+
+                    const colonIdx = cleaned.indexOf(':');
+                    const datePart = cleaned.substring(0, colonIdx).trim().toLowerCase();
+                    const eventsPart = cleaned.substring(colonIdx + 1).trim();
+
+                    let matchedMonth = currentCalendarMonth + 1;
+                    let matchedDay = null;
+
+                    mNames.forEach((mName, idx) => {
+                        if (datePart.includes(mName)) {
+                            matchedMonth = idx + 1;
+                            const dayMatch = datePart.match(/\d+/);
+                            if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                        }
+                    });
+
+                    if (!matchedDay && datePart.includes('/')) {
+                        const parts = datePart.split('/');
+                        matchedMonth = parseInt(parts[0]);
+                        matchedDay = parseInt(parts[1]);
+                    } else if (!matchedDay) {
+                        const dayMatch = datePart.match(/\d+/);
+                        if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                    }
+
+                    if (matchedDay) {
+                        const dateKey = `${currentCalendarYear}-${String(matchedMonth).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
+                        if (eventsPart && eventsPart.toLowerCase() !== '(blank)') {
+                            appState.calendarEventsDb[dateKey] = eventsPart;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    renderMonthlyCalendar();
+                    await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} monthly events!`);
+                } else {
+                    alert("Could not parse dates. Please use 'Month Day: Events' format.");
+                }
+            } else if (currentBatchTarget === 'blessings') {
+                let parsedBlessings = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const item = parts[0];
+                        const name = parts[1];
+                        const status = parts[2] ? parts[2] : 'Full';
+                        parsedBlessings.push(`${name} : ${item} : ${status}`);
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedBlessings.length > 0) {
+                    appState.blessingsList = parsedBlessings;
+                    renderBlessings();
+                    renderBlessingsBuilderUI();
+                    await saveKeyToCloud('blessings_list', appState.blessingsList);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} blessing items!`);
+                } else {
+                    alert("Could not parse blessings. Please use 'Item : Name : Status' format.");
+                }
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                let parsedDuties = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const role = parts[0];
+                        const name = parts[1];
+                        parsedDuties.push(`${name} : ${role}`);
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedDuties.length > 0) {
+                    if (currentBatchTarget === 'sabbath') {
+                        appState.sabbathSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties);
+                        await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
+                    } else if (currentBatchTarget === 'thirdday') {
+                        appState.thirddaySchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties);
+                        await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
+                    } else if (currentBatchTarget === 'feast') {
+                        appState.feastSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties);
+                        await saveKeyToCloud('feast_schedule', appState.feastSchedule);
+                    }
+                    renderSabbathAndFeast(currentBatchTarget);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} duties for ${currentBatchTarget}!`);
+                } else {
+                    alert("Could not parse duties. Please use 'Role : Name' format.");
+                }
+            }
+        }
+
         function renderBlessings() {
             const container = document.getElementById('blessings-container');
             if (!container) return;
@@ -1406,6 +1581,16 @@
             document.getElementById(`ap-${subTab}`)?.classList.remove('hidden');
             const targetBtn = document.getElementById(`as-${subTab}`);
             if (targetBtn) targetBtn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
+
+            // Update Batch Button Visibility
+            const batchBtn = document.getElementById('batch-action-trigger');
+            if (batchBtn) {
+                if (subTab === 'blessings' || (currentAdminRole === 'master' && (subTab === 'sabbath' || subTab === 'thirdday' || subTab === 'feast'))) {
+                    batchBtn.classList.remove('hidden');
+                } else {
+                    batchBtn.classList.add('hidden');
+                }
+            }
         }
 
         function toggleAdminModal() {
