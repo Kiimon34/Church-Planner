@@ -145,7 +145,7 @@
             </div>
 
             <div id="main-content" class="space-y-6">
-                <!-- TAB 1: DAILY VIEW (Search Bar Removed) -->
+                <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
@@ -427,7 +427,7 @@
                         <div id="preaching-builder-rows" class="space-y-2 pt-2"></div>
                     </div>
 
-                    <!-- DAILY DUTIES & ROLES (IDENTICAL GROUP FUNCTIONALITY) -->
+                    <!-- DAILY DUTIES & ROLES -->
                     <div class="bg-slate-100/70 p-4 rounded-xl border border-slate-200 space-y-3">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                             <div>
@@ -494,7 +494,7 @@
                     <div id="feast-permanent-roster" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- MASTER SETTINGS (WITH EXTENSIVE GLOBAL DUTY LIST) -->
+                <!-- MASTER SETTINGS -->
                 <div id="ap-settings" class="admin-panel-section space-y-4 hidden master-only">
                     <p class="text-xs text-slate-500">Configure global lists.</p>
                     <div>
@@ -746,6 +746,11 @@
             return null;
         }
 
+        function linkifyText(text) {
+            if (!text) return "";
+            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-900 hover:text-amber-700 break-all">${url}</a>`);
+        }
+
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
             lastKnownLocalDate = getLocalDateString(new Date());
@@ -753,16 +758,16 @@
 
             try {
                 const bData = await loadKeyFromCloud('blessings_list');
-                if (bData && bData.length) appState.blessingsList = bData;
+                if (bData && Array.isArray(bData) && bData.length > 0) appState.blessingsList = bData;
 
                 const sabData = await loadKeyFromCloud('sabbath_schedule');
-                if (sabData && sabData.duties && sabData.duties.length) appState.sabbathSchedule = sabData;
+                if (sabData && sabData.duties && sabData.duties.length > 0) appState.sabbathSchedule = sabData;
 
                 const tdData = await loadKeyFromCloud('thirdday_schedule');
-                if (tdData && tdData.duties && tdData.duties.length) appState.thirddaySchedule = tdData;
+                if (tdData && tdData.duties && tdData.duties.length > 0) appState.thirddaySchedule = tdData;
 
                 const fData = await loadKeyFromCloud('feast_schedule');
-                if (fData && fData.duties && fData.duties.length) appState.feastSchedule = fData;
+                if (fData && fData.duties && fData.duties.length > 0) appState.feastSchedule = fData;
 
                 const masterData = await loadKeyFromCloud('master_lists');
                 if (masterData) {
@@ -839,7 +844,6 @@
             return html;
         }
 
-        // PREACHING BUILDER ROW (GROUP SCOPED)
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
@@ -879,7 +883,6 @@
             }
         }
 
-        // DAILY DUTIES BUILDER (GROUP SCOPED)
         function addDutyBuilderRow(roleVal = "", nameVal = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
@@ -902,8 +905,6 @@
             container.innerHTML = "";
 
             const dayData = appState.database[currentSelectedDate] || { duties: [] };
-            
-            // Filter duties that belong to the current group
             const groupDuties = (dayData.duties || []).filter(d => {
                 if (typeof d === 'object') {
                     return (d.group || "").trim().toLowerCase() === (selectedGroup || "").trim().toLowerCase();
