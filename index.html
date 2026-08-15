@@ -158,7 +158,6 @@
             <div id="main-content" class="space-y-6">
                 <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
-                    <!-- DAILY TOP ANNOUNCEMENT BANNER -->
                     <div id="daily-announcements-section" class="hidden">
                         <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-sm flex items-start justify-between gap-3 border border-amber-200/60">
                             <div class="space-y-1">
@@ -400,7 +399,7 @@
         </main>
     </div>
 
-    <!-- ANNOUNCEMENT POPUP MODAL (SHOWS ON UNLOCK) -->
+    <!-- ANNOUNCEMENT POPUP MODAL -->
     <div id="announcement-popup-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-amber-300 animate-shake">
             <div class="bg-amber-500 text-slate-900 p-4 flex justify-between items-center">
@@ -594,20 +593,32 @@
 
                 <!-- SABBATH ADMIN -->
                 <div id="ap-sabbath" class="admin-panel-section space-y-4 hidden master-only">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">⏱️ Sabbath Activities & Times (Format: Time - Activity)</label>
+                        <textarea id="input-sabbath-activities" rows="3" placeholder="e.g. 10:00 AM - Morning Worship" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">🕊️ Permanent Sabbath Worship Duties</label>
-                    <div id="sabbath-permanent-roster" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                    <div id="sabbath-permanent-roster" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div>
                 </div>
 
                 <!-- THIRD-DAY ADMIN -->
                 <div id="ap-thirdday" class="admin-panel-section space-y-4 hidden master-only">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">⏱️ Third-Day Activities & Times (Format: Time - Activity)</label>
+                        <textarea id="input-thirdday-activities" rows="3" placeholder="e.g. 7:30 PM - Evening Worship" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">🌅 Permanent Third-Day Worship Duties</label>
-                    <div id="thirdday-permanent-roster" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                    <div id="thirdday-permanent-roster" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div>
                 </div>
 
                 <!-- FEAST ADMIN -->
                 <div id="ap-feast" class="admin-panel-section space-y-4 hidden master-only">
+                    <div>
+                        <label class="block text-sm font-bold text-slate-700 mb-1">⏱️ Feast Activities & Times (Format: Time - Activity)</label>
+                        <textarea id="input-feast-activities" rows="3" placeholder="e.g. 10:00 AM - Holy Feast Service" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
                     <label class="block text-sm font-bold text-slate-700 mb-1">🎉 Permanent Feast Worship Duties</label>
-                    <div id="feast-permanent-roster" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                    <div id="feast-permanent-roster" class="space-y-2 max-h-[40vh] overflow-y-auto pr-1"></div>
                 </div>
 
                 <!-- MASTER SETTINGS -->
@@ -1035,13 +1046,22 @@
                 if (bData && Array.isArray(bData) && bData.length > 0) appState.blessingsList = bData;
 
                 const sabData = await loadKeyFromCloud('sabbath_schedule');
-                if (sabData && sabData.duties && sabData.duties.length > 0) appState.sabbathSchedule = sabData;
+                if (sabData) {
+                    if (sabData.duties && sabData.duties.length > 0) appState.sabbathSchedule.duties = sabData.duties;
+                    if (sabData.activities && Array.isArray(sabData.activities)) appState.sabbathSchedule.activities = sabData.activities;
+                }
 
                 const tdData = await loadKeyFromCloud('thirdday_schedule');
-                if (tdData && tdData.duties && tdData.duties.length > 0) appState.thirddaySchedule = tdData;
+                if (tdData) {
+                    if (tdData.duties && tdData.duties.length > 0) appState.thirddaySchedule.duties = tdData.duties;
+                    if (tdData.activities && Array.isArray(tdData.activities)) appState.thirddaySchedule.activities = tdData.activities;
+                }
 
                 const fData = await loadKeyFromCloud('feast_schedule');
-                if (fData && fData.duties && fData.duties.length > 0) appState.feastSchedule = fData;
+                if (fData) {
+                    if (fData.duties && fData.duties.length > 0) appState.feastSchedule.duties = fData.duties;
+                    if (fData.activities && Array.isArray(fData.activities)) appState.feastSchedule.activities = fData.activities;
+                }
 
                 const calData = await loadKeyFromCloud('calendar_events');
                 if (calData) appState.calendarEventsDb = calData;
@@ -1113,7 +1133,7 @@
             }
         }
 
-        // PREACHING BUILDER ROW (TYPE & FILTER COMBIBOX)
+        // PREACHING BUILDER ROW
         function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
             const container = document.getElementById('preaching-builder-rows');
             const row = document.createElement('div');
@@ -1179,7 +1199,7 @@
             }
         }
 
-        // DAILY DUTIES BUILDER (TYPE & FILTER COMBIBOX, UP TO 5 MEMBERS)
+        // DAILY DUTIES BUILDER
         function addDutyBuilderRow(roleVal = "", m1 = "", m2 = "", m3 = "", m4 = "", m5 = "") {
             const container = document.getElementById('duties-builder-rows');
             const row = document.createElement('div');
@@ -1773,7 +1793,6 @@
         function renderDashboardData() {
             const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
 
-            // Render persistent announcement in Daily Tab only
             renderDailyAnnouncements();
 
             document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
@@ -1824,7 +1843,7 @@
             if (actContainer) {
                 actContainer.innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
                     const parts = a.split(' - ');
-                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
+                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
                 }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
             }
 
@@ -1925,6 +1944,11 @@
                     renderCookingBuilderUI();
                     renderCleaningBuilderUI();
 
+                    // Pre-fill Activities & Times textareas
+                    document.getElementById('input-sabbath-activities').value = (appState.sabbathSchedule.activities || []).join('\n');
+                    document.getElementById('input-thirdday-activities').value = (appState.thirddaySchedule.activities || []).join('\n');
+                    document.getElementById('input-feast-activities').value = (appState.feastSchedule.activities || []).join('\n');
+
                     renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties || []);
                     renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties || []);
                     renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties || []);
@@ -1990,7 +2014,7 @@
                 await saveKeyToCloud('blessings_list', appState.blessingsList);
             }
 
-            // SABBATH ROSTER SAVE
+            // SABBATH ROSTER & ACTIVITIES SAVE
             if (activeTab === 'sabbath' && currentAdminRole === 'master') {
                 let sabLines = [];
                 document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row').forEach(r => {
@@ -1999,10 +2023,11 @@
                     if (role) sabLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.sabbathSchedule.duties = sabLines;
+                appState.sabbathSchedule.activities = document.getElementById('input-sabbath-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
             }
 
-            // THIRD-DAY ROSTER SAVE
+            // THIRD-DAY ROSTER & ACTIVITIES SAVE
             if (activeTab === 'thirdday' && currentAdminRole === 'master') {
                 let tdLines = [];
                 document.querySelectorAll('#thirdday-permanent-roster .permanent-duty-row').forEach(r => {
@@ -2011,10 +2036,11 @@
                     if (role) tdLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.thirddaySchedule.duties = tdLines;
+                appState.thirddaySchedule.activities = document.getElementById('input-thirdday-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
             }
 
-            // FEAST ROSTER SAVE
+            // FEAST ROSTER & ACTIVITIES SAVE
             if (activeTab === 'feast' && currentAdminRole === 'master') {
                 let fLines = [];
                 document.querySelectorAll('#feast-permanent-roster .permanent-duty-row').forEach(r => {
@@ -2023,6 +2049,7 @@
                     if (role) fLines.push(`${name || 'Unassigned'} : ${role}`);
                 });
                 appState.feastSchedule.duties = fLines;
+                appState.feastSchedule.activities = document.getElementById('input-feast-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 await saveKeyToCloud('feast_schedule', appState.feastSchedule);
             }
 
