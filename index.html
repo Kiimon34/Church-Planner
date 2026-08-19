@@ -32,7 +32,7 @@
             font-size: 15px !important;
         }
 
-        .preaching-row, .duty-row, .blessing-row {
+        .preaching-row, .duty-row, .blessing-row, .st-team-row, .st-lodging-row {
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -48,13 +48,13 @@
 
     <!-- PIN LOGIN SCREEN -->
     <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4">
-        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-6 border border-indigo-900/20">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-indigo-900/20">
             <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm">
                 📖
             </div>
             <div>
                 <h1 class="text-2xl font-bold text-indigo-950">Zion Church Planner (INDY)</h1>
-                <p class="text-xs text-slate-500 mt-1">Please enter your 4-digit PIN to enter</p>
+                <p class="text-xs text-slate-500 mt-1">Enter PIN or open Short Term extension</p>
             </div>
 
             <div id="pin-input-container" class="flex justify-center space-x-3">
@@ -67,7 +67,17 @@
             <p id="pin-error-msg" class="text-xs font-semibold text-rose-600 hidden">Incorrect PIN. Please try again.</p>
 
             <button type="button" onclick="submitPinCheck()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-sm">
-                Unlock Planner
+                Unlock Main Planner
+            </button>
+
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <button type="button" onclick="openShortTermPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2">
+                ✈️ Short Term Extensions Portal
             </button>
         </div>
     </div>
@@ -78,10 +88,7 @@
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
                     <span class="text-2xl">📖</span>
-                    <div class="flex flex-col">
-                        <span class="font-bold text-lg tracking-wide leading-tight">Zion Church Planner (INDY)</span>
-                        <span id="offline-badge" class="hidden text-[10px] text-amber-300 font-semibold">⚡ Offline Mode (Cached Data)</span>
-                    </div>
+                    <span class="font-bold text-lg tracking-wide">Zion Church Planner (INDY)</span>
                 </div>
                 
                 <div class="flex items-center space-x-2">
@@ -112,6 +119,7 @@
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🕊️ Sabbath</button>
                     <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🌅 Third-Day</button>
                     <button id="tab-feast-btn" onclick="switchTab('feast')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🎉 Feast Worship</button>
+                    <button id="tab-shortterm-btn" onclick="switchTab('shortterm')" class="px-3 py-1 rounded-lg text-amber-300 hover:text-white font-bold bg-amber-500/20">✈️ Short Term</button>
                 </div>
             </div>
         </nav>
@@ -137,6 +145,9 @@
                         </button>
                         <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3">
                             <span>🔧</span> Zion Maintenance
+                        </button>
+                        <button onclick="switchTab('shortterm'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all flex items-center gap-3">
+                            <span>✈️</span> Short Term Extension
                         </button>
                     </div>
                 </div>
@@ -327,7 +338,75 @@
                     </div>
                 </div>
 
-                <!-- TAB 7: COOKING SCHEDULE -->
+                <!-- TAB 7: SHORT TERM EXTENSION (NEW) -->
+                <div id="view-shortterm" class="space-y-6 hidden">
+                    <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200 space-y-6">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-2xl">✈️</span>
+                                    <h1 class="text-2xl font-black text-indigo-950 tracking-tight">Visiting Short Term Portal</h1>
+                                </div>
+                                <p class="text-xs text-slate-500 mt-0.5">Manage visiting groups, pairings, and lodging.</p>
+                            </div>
+                            
+                            <!-- GROUP SELECTOR -->
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Group:</span>
+                                <select id="st-group-selector" onchange="changeShortTermGroup(this.value)" class="border-2 border-amber-300 rounded-xl px-3 py-2 text-xs font-bold text-indigo-950 outline-none focus:ring-2 focus:ring-amber-500 bg-amber-50/50"></select>
+                            </div>
+                        </div>
+
+                        <!-- SHORT TERM SUB TABS & DISPLAY TOGGLE -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-100 p-1.5 rounded-2xl">
+                            <div class="flex space-x-1 text-xs font-bold w-full sm:w-auto overflow-x-auto">
+                                <button id="st-sub-plan-btn" onclick="switchShortTermSubTab('plan')" class="px-4 py-2 rounded-xl bg-indigo-900 text-white shadow-sm">📅 Daily Plan</button>
+                                <button id="st-sub-teams-btn" onclick="switchShortTermSubTab('teams')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950">📋 Preaching Teams</button>
+                                <button id="st-sub-lodging-btn" onclick="switchShortTermSubTab('lodging')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950">🏡 Lodging & Hosts</button>
+                            </div>
+
+                            <div class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-xs border border-slate-200 self-end sm:self-auto">
+                                <button id="st-mode-text-btn" onclick="toggleShortTermDisplayMode('text')" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900">📝 Text View</button>
+                                <button id="st-mode-image-btn" onclick="toggleShortTermDisplayMode('image')" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800">🖼️ Image Chart</button>
+                            </div>
+                        </div>
+
+                        <!-- SUB-VIEW: DAILY PLAN -->
+                        <div id="st-subview-plan" class="space-y-4">
+                            <div class="st-content-text space-y-3">
+                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">⏱️ Scheduled Itinerary & Times</h3>
+                                <div id="st-plan-container" class="space-y-3"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-plan-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
+                        </div>
+
+                        <!-- SUB-VIEW: PREACHING TEAMS -->
+                        <div id="st-subview-teams" class="space-y-4 hidden">
+                            <div class="st-content-text space-y-3">
+                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🤝 Indy & Visiting Member Pairs (Up to 10 Teams)</h3>
+                                <div id="st-teams-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-teams-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
+                        </div>
+
+                        <!-- SUB-VIEW: LODGING -->
+                        <div id="st-subview-lodging" class="space-y-4 hidden">
+                            <div class="st-content-text space-y-4">
+                                <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🏡 Guest Accommodations & Navigation</h3>
+                                <div id="st-lodging-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-lodging-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 8: COOKING SCHEDULE -->
                 <div id="view-cooking" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="bg-purple-800 text-white p-4 rounded-xl text-center">
@@ -356,7 +435,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 8: CLEANING RESPONSIBILITIES -->
+                <!-- TAB 9: CLEANING RESPONSIBILITIES -->
                 <div id="view-cleaning" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <div class="text-center space-y-1">
@@ -381,7 +460,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 9: MAINTENANCE VIEW -->
+                <!-- TAB 10: MAINTENANCE VIEW -->
                 <div id="view-maintenance" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-2xl mx-auto text-center space-y-6">
                         <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-full text-3xl">
@@ -479,7 +558,7 @@
 
     <!-- ADMIN MODAL -->
     <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
+        <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
             <div class="bg-indigo-900 text-white p-4 rounded-t-2xl flex flex-col gap-3">
                 <div class="flex justify-between items-center">
                     <div class="flex items-center space-x-3">
@@ -491,6 +570,7 @@
                     <div class="flex flex-wrap gap-1">
                         <button onclick="switchAdminSubTab('daily')" id="as-daily" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white">Daily</button>
                         <button onclick="switchAdminSubTab('monthly')" id="as-monthly" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Monthly</button>
+                        <button onclick="switchAdminSubTab('shortterm')" id="as-shortterm" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-amber-300 master-only">✈️ Short Term</button>
                         <button onclick="switchAdminSubTab('blessings')" id="as-blessings" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200">Blessings</button>
                         <button onclick="switchAdminSubTab('cooking')" id="as-cooking" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Cooking</button>
                         <button onclick="switchAdminSubTab('cleaning')" id="as-cleaning" type="button" class="admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 master-only">Cleaning</button>
@@ -506,34 +586,8 @@
             </div>
             
             <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
-                <!-- CONFLICT WARNING BANNER -->
-                <div id="conflict-warning-banner" class="hidden bg-rose-50 border-l-4 border-rose-600 p-4 rounded-r-xl border border-rose-200 space-y-1">
-                    <h4 class="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                        <span>⚠️</span> Double-Booking Detected
-                    </h4>
-                    <div id="conflict-warning-list" class="text-xs text-rose-800 space-y-0.5"></div>
-                </div>
-
                 <!-- DAILY ADMIN -->
                 <div id="ap-daily" class="admin-panel-section space-y-4">
-                    <!-- REUSABLE TEMPLATE QUICK-FILL CONTROLS -->
-                    <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                        <div>
-                            <span class="text-xs font-bold text-indigo-950 block">⚡ Quick-Fill Template</span>
-                            <span class="text-[11px] text-slate-500">Auto-load standard Saturday or Third-Day role slots into today's roster.</span>
-                        </div>
-                        <div class="flex items-center gap-2 w-full sm:w-auto">
-                            <select id="quick-template-select" class="border border-indigo-200 rounded-lg p-1.5 text-xs font-semibold bg-white text-indigo-950 outline-none flex-1 sm:flex-none">
-                                <option value="">-- Choose Template --</option>
-                                <option value="sabbath_default">🕊️ Standard Saturday Sabbath</option>
-                                <option value="thirdday_default">🌅 Third-Day Service</option>
-                            </select>
-                            <button type="button" onclick="applyQuickTemplate()" class="bg-indigo-900 hover:bg-indigo-800 text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all shrink-0">
-                                Apply
-                            </button>
-                        </div>
-                    </div>
-
                     <div class="master-only">
                         <label class="block text-sm font-bold text-slate-700 mb-1">Persistent Church Announcement</label>
                         <textarea id="input-announcements" rows="3" placeholder="Type persistent announcements here..." class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
@@ -562,7 +616,7 @@
                         <div id="preaching-builder-rows" class="space-y-2 pt-2"></div>
                     </div>
 
-                    <!-- DAILY DUTIES & ROLES (UP TO 5 MEMBERS) -->
+                    <!-- DAILY DUTIES & ROLES -->
                     <div class="bg-slate-100/70 p-4 rounded-xl border border-slate-200 space-y-3">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                             <div>
@@ -588,6 +642,58 @@
                         <p class="text-xs text-slate-500">Type events directly below or click <b>⚡ Batch Update</b> above to paste in bulk.</p>
                     </div>
                     <div id="monthly-admin-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
+                </div>
+
+                <!-- SHORT TERM ADMIN (NEW) -->
+                <div id="ap-shortterm" class="admin-panel-section space-y-6 hidden master-only">
+                    <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="text-sm font-bold text-amber-950">✈️ Short Term Extensions Editor</h3>
+                                <p class="text-[11px] text-slate-600">Select visiting group to configure data & image charts.</p>
+                            </div>
+                            <select id="admin-st-group-selector" onchange="switchAdminShortTermGroup(this.value)" class="border border-amber-300 rounded-lg p-2 text-xs font-bold bg-white text-indigo-950 outline-none"></select>
+                        </div>
+                    </div>
+
+                    <!-- SHORT TERM: DAILY PLAN -->
+                    <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary</h4>
+                        <textarea id="input-st-activities" rows="3" placeholder="e.g. 9:00 AM - Breakfast & Orientation&#10;10:30 AM - Indy Outreach Kickoff" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                        
+                        <div class="flex items-center gap-3 pt-1">
+                            <label class="text-xs font-bold text-slate-600">Upload Plan Chart Image:</label>
+                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'plan')" class="text-xs text-slate-500">
+                            <button type="button" onclick="clearStImage('plan')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        </div>
+                    </div>
+
+                    <!-- SHORT TERM: PREACHING TEAMS (UP TO 10 TEAMS) -->
+                    <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">2. Preaching Teams Pairing (Up to 10)</h4>
+                            <button type="button" onclick="addShortTermTeamRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800">+ Add Team</button>
+                        </div>
+                        <div id="st-teams-builder-rows" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+
+                        <div class="flex items-center gap-3 pt-2 border-t">
+                            <label class="text-xs font-bold text-slate-600">Upload Teams Chart Image:</label>
+                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'teams')" class="text-xs text-slate-500">
+                            <button type="button" onclick="clearStImage('teams')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        </div>
+                    </div>
+
+                    <!-- SHORT TERM: LODGING (5 HOUSES) -->
+                    <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">3. Lodging & Host Accommodations (5 Homes)</h4>
+                        <div id="st-lodging-builder-rows" class="space-y-4 max-h-72 overflow-y-auto pr-1"></div>
+
+                        <div class="flex items-center gap-3 pt-2 border-t">
+                            <label class="text-xs font-bold text-slate-600">Upload Lodging Chart Image:</label>
+                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'lodging')" class="text-xs text-slate-500">
+                            <button type="button" onclick="clearStImage('lodging')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- BLESSINGS ADMIN -->
@@ -652,10 +758,14 @@
 
                 <!-- MASTER SETTINGS -->
                 <div id="ap-settings" class="admin-panel-section space-y-4 hidden master-only">
-                    <p class="text-xs text-slate-500">Configure global rosters and groups.</p>
+                    <p class="text-xs text-slate-500">Configure global rosters, groups, and short term settings.</p>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Evangelists / Leaders (One per line)</label>
                         <textarea id="input-master-evangelists" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Visiting Short Term Groups (Up to 4, one per line)</label>
+                        <textarea id="input-master-stgroups" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Demographic Groups (One per line)</label>
@@ -683,18 +793,6 @@
         
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
-
-        // ONLINE/OFFLINE DETECTION LISTENER
-        function updateNetworkStatus() {
-            const badge = document.getElementById('offline-badge');
-            if (!navigator.onLine) {
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-        window.addEventListener('online', updateNetworkStatus);
-        window.addEventListener('offline', updateNetworkStatus);
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
@@ -730,63 +828,6 @@
 
         function closeAnnouncementPopupModal() {
             document.getElementById('announcement-popup-modal').classList.add('hidden');
-        }
-
-        // PRESET REUSABLE TEMPLATES
-        const REUSABLE_TEMPLATES = {
-            sabbath_default: [
-                { role: "Morning Presider", name: "" },
-                { role: "Morning Prayer of Thanks", name: "" },
-                { role: "Morning Closing Prayer", name: "" },
-                { role: "Morning Offering (Brothers)", name: "" },
-                { role: "Morning Offering (Sisters)", name: "" },
-                { role: "Morning Usher", name: "" },
-                { role: "Morning Front desk", name: "" },
-                { role: "Morning Sound", name: "" },
-                { role: "Morning Elementary", name: "" },
-                { role: "Morning Kids Room", name: "" },
-                { role: "Morning Worship Diary", name: "" },
-                { role: "Afternoon Presider", name: "" },
-                { role: "Afternoon Closing Prayer", name: "" },
-                { role: "Afternoon Offering (Brothers)", name: "" },
-                { role: "Afternoon Offering (Sisters)", name: "" },
-                { role: "Afternoon Usher", name: "" },
-                { role: "Afternoon Front desk", name: "" },
-                { role: "Afternoon Translater", name: "" },
-                { role: "Afternoon Sound", name: "" },
-                { role: "Afternoon Elementary", name: "" },
-                { role: "Afternoon Kids Room", name: "" },
-                { role: "Afternoon Worship Diary", name: "" }
-            ],
-            thirdday_default: [
-                { role: "Evening Presider", name: "" },
-                { role: "Evening Closing Prayer", name: "" },
-                { role: "Evening Usher", name: "" },
-                { role: "Evening Front desk", name: "" },
-                { role: "Evening Sound", name: "" },
-                { role: "Evening Elementary", name: "" },
-                { role: "Evening Worship Diary", name: "" }
-            ]
-        };
-
-        function applyQuickTemplate() {
-            const selectEl = document.getElementById('quick-template-select');
-            const templateKey = selectEl.value;
-            if (!templateKey || !REUSABLE_TEMPLATES[templateKey]) {
-                alert("Please select a template first.");
-                return;
-            }
-
-            if (!confirm(`Apply the ${templateKey.replace('_', ' ')} layout? Existing unfilled rows will be replaced.`)) {
-                return;
-            }
-
-            const container = document.getElementById('duties-builder-rows');
-            container.innerHTML = "";
-
-            REUSABLE_TEMPLATES[templateKey].forEach(t => {
-                addDutyBuilderRow(t.role, t.name || "");
-            });
         }
 
         const PERMANENT_SABBATH_DUTIES = [
@@ -826,6 +867,8 @@
             "Young Adult Brothers", "Young Adult Sisters", "Youth Brothers", 
             "Youth Sisters", "2ND INDY SISTERS"
         ];
+
+        const DEFAULT_ST_GROUPS = ["Columbus Zion", "Oaklawn Zion", "Naperville Zion", "Cincinnati Zion"];
 
         const DEFAULT_BLESSINGS = [
             { item: "Toilet Paper", status: "Full", name: "D. James" },
@@ -919,8 +962,10 @@
             ],
             masterEvangelists: [...DEFAULT_EVANGELISTS],
             masterGroups: [...DEFAULT_GROUPS],
+            masterShortTermGroups: [...DEFAULT_ST_GROUPS],
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
-            masterDuties: [...DEFAULT_DUTIES]
+            masterDuties: [...DEFAULT_DUTIES],
+            shortTermData: {} // Keyed by Group Name
         };
         
         let currentSelectedDate = "";
@@ -932,6 +977,11 @@
         let lastKnownLocalDate = "";
         let currentPGroup = "";
         let currentDGroup = "";
+        
+        // SHORT TERM STATE
+        let activeShortTermGroup = DEFAULT_ST_GROUPS[0];
+        let activeShortTermSubTab = 'plan';
+        let activeShortTermDisplayMode = 'text'; // 'text' or 'image'
 
         // ADMIN TIMEOUT ENGINE
         let adminInactivityTimer = null;
@@ -1053,6 +1103,15 @@
             }
         }
 
+        async function openShortTermPortal() {
+            sessionStorage.setItem('planner_unlocked', 'true');
+            document.getElementById('pin-login-screen').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+            await loadDataFromCloud();
+            checkExistingAdminSession();
+            switchTab('shortterm');
+        }
+
         function lockApp() {
             logoutAdmin();
             sessionStorage.removeItem('planner_unlocked');
@@ -1073,16 +1132,8 @@
             }
         }
 
-        // OFFLINE-AWARE SAVE FUNCTION (LOCAL STORAGE + CLOUD)
         async function saveKeyToCloud(keyName, dataPayload) {
             try {
-                localStorage.setItem(`cache_${keyName}`, JSON.stringify(dataPayload));
-                
-                if (!navigator.onLine) {
-                    console.warn(`Saved ${keyName} locally while offline.`);
-                    return;
-                }
-
                 await fetch(`${CLOUD_URL}/set/${keyName}`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
@@ -1093,22 +1144,7 @@
             }
         }
 
-        // OFFLINE-AWARE LOAD FUNCTION (LOCAL STORAGE FIRST, BACKGROUND REFRESH)
         async function loadKeyFromCloud(keyName) {
-            let cachedResult = null;
-            const localCache = localStorage.getItem(`cache_${keyName}`);
-            if (localCache) {
-                try {
-                    cachedResult = JSON.parse(localCache);
-                } catch {
-                    cachedResult = localCache;
-                }
-            }
-
-            if (!navigator.onLine) {
-                return cachedResult;
-            }
-
             try {
                 const response = await fetch(`${CLOUD_URL}/get/${keyName}`, {
                     method: 'GET',
@@ -1116,20 +1152,17 @@
                 });
                 if (response.ok) {
                     const result = await response.json();
-                    if (!result || result.result === undefined || result.result === null) return cachedResult;
+                    if (!result || result.result === undefined || result.result === null) return null;
                     try {
-                        const parsed = JSON.parse(result.result);
-                        localStorage.setItem(`cache_${keyName}`, JSON.stringify(parsed));
-                        return parsed;
+                        return JSON.parse(result.result);
                     } catch {
-                        localStorage.setItem(`cache_${keyName}`, JSON.stringify(result.result));
                         return result.result;
                     }
                 }
             } catch (err) {
-                console.warn(`Network load failed for ${keyName}, using local cache:`, err);
+                console.error(`Load error ${keyName}:`, err);
             }
-            return cachedResult;
+            return null;
         }
 
         function linkifyText(text) {
@@ -1159,7 +1192,6 @@
 
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
-            updateNetworkStatus();
             lastKnownLocalDate = getLocalDateString(new Date());
             handleDateChange(lastKnownLocalDate);
 
@@ -1188,6 +1220,9 @@
                     if (fData.activities && Array.isArray(fData.activities)) appState.feastSchedule.activities = fData.activities;
                 }
 
+                const stCloud = await loadKeyFromCloud('short_term_data');
+                if (stCloud) appState.shortTermData = stCloud;
+
                 const calData = await loadKeyFromCloud('calendar_events');
                 if (calData) appState.calendarEventsDb = calData;
 
@@ -1199,12 +1234,15 @@
                     if (masterData.masterGroups && Array.isArray(masterData.masterGroups) && masterData.masterGroups.length > 0) {
                         appState.masterGroups = masterData.masterGroups;
                     }
+                    if (masterData.masterShortTermGroups && Array.isArray(masterData.masterShortTermGroups) && masterData.masterShortTermGroups.length > 0) {
+                        appState.masterShortTermGroups = masterData.masterShortTermGroups;
+                    }
                     if (masterData.masterDuties && Array.isArray(masterData.masterDuties) && masterData.masterDuties.length > 0) {
                         appState.masterDuties = masterData.masterDuties;
                     }
                 }
             } catch (err) {
-                console.log("Using cached baseline data");
+                console.log("Using cached baseline");
             } finally {
                 syncGlobalDatalists();
                 renderDailyAnnouncements();
@@ -1215,7 +1253,275 @@
                 renderSabbathAndFeast('sabbath');
                 renderSabbathAndFeast('thirdday');
                 renderSabbathAndFeast('feast');
+                initShortTermView();
             }
+        }
+
+        // ==========================================
+        // SHORT TERM EXTENSION ENGINE
+        // ==========================================
+        function getShortTermGroupData(groupName) {
+            if (!appState.shortTermData[groupName]) {
+                appState.shortTermData[groupName] = {
+                    activities: ["9:00 AM - Breakfast & Daily Overview", "10:30 AM - Indy Combined Preaching Session", "6:00 PM - Dinner & Fellowship"],
+                    teams: [
+                        { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy" },
+                        { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North" }
+                    ],
+                    lodging: [
+                        { host: "Host Home 1 (Brother's House)", address: "Indianapolis, IN", mapUrl: "https://maps.google.com/?q=Indianapolis", guests: ["Visiting Brother A", "Visiting Brother B"] },
+                        { host: "Host Home 2 (Sister's House)", address: "Carmel, IN", mapUrl: "https://maps.google.com/?q=Carmel+IN", guests: ["Visiting Sister A", "Visiting Sister B"] },
+                        { host: "Host Home 3", address: "Fishers, IN", mapUrl: "https://maps.google.com/?q=Fishers+IN", guests: [] },
+                        { host: "Host Home 4", address: "Greenwood, IN", mapUrl: "https://maps.google.com/?q=Greenwood+IN", guests: [] },
+                        { host: "Host Home 5", address: "Noblesville, IN", mapUrl: "https://maps.google.com/?q=Noblesville+IN", guests: [] }
+                    ],
+                    planImage: "",
+                    teamsImage: "",
+                    lodgingImage: ""
+                };
+            }
+            return appState.shortTermData[groupName];
+        }
+
+        function initShortTermView() {
+            const selector = document.getElementById('st-group-selector');
+            if (!selector) return;
+            const groups = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+            
+            selector.innerHTML = groups.map(g => `<option value="${g}">${g}</option>`).join('');
+            if (!groups.includes(activeShortTermGroup)) {
+                activeShortTermGroup = groups[0];
+            }
+            selector.value = activeShortTermGroup;
+
+            renderShortTermContent();
+        }
+
+        function changeShortTermGroup(newGroup) {
+            activeShortTermGroup = newGroup;
+            renderShortTermContent();
+        }
+
+        function switchShortTermSubTab(subTab) {
+            activeShortTermSubTab = subTab;
+            ['plan', 'teams', 'lodging'].forEach(st => {
+                document.getElementById(`st-subview-${st}`)?.classList.add('hidden');
+                const btn = document.getElementById(`st-sub-${st}-btn`);
+                if (btn) {
+                    btn.className = "px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 font-bold";
+                }
+            });
+
+            document.getElementById(`st-subview-${subTab}`)?.classList.remove('hidden');
+            const targetBtn = document.getElementById(`st-sub-${subTab}-btn`);
+            if (targetBtn) {
+                targetBtn.className = "px-4 py-2 rounded-xl bg-indigo-900 text-white font-bold shadow-sm";
+            }
+
+            renderShortTermContent();
+        }
+
+        function toggleShortTermDisplayMode(mode) {
+            activeShortTermDisplayMode = mode;
+            const textBtn = document.getElementById('st-mode-text-btn');
+            const imgBtn = document.getElementById('st-mode-image-btn');
+
+            if (mode === 'text') {
+                textBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900";
+                imgBtn.className = "px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800";
+                document.querySelectorAll('.st-content-text').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.st-content-image').forEach(el => el.classList.add('hidden'));
+            } else {
+                imgBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900";
+                textBtn.className = "px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800";
+                document.querySelectorAll('.st-content-text').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.st-content-image').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function renderShortTermContent() {
+            const data = getShortTermGroupData(activeShortTermGroup);
+
+            // 1. Daily Plan
+            const planContainer = document.getElementById('st-plan-container');
+            if (planContainer) {
+                planContainer.innerHTML = (data.activities && data.activities.length > 0) ? data.activities.map(act => {
+                    const p = act.split(' - ');
+                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-xs"><span class="bg-indigo-100 text-indigo-900 text-xs font-bold px-2.5 py-1 rounded-lg mr-3 whitespace-nowrap">${p[0]||'Time'}</span><span class="text-sm font-semibold text-slate-800 pt-0.5">${p[1]||act}</span></div>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No daily itinerary scheduled for this group.</p>`;
+            }
+
+            const planImg = document.getElementById('st-plan-image-display');
+            if (planImg) {
+                planImg.innerHTML = data.planImage ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No plan image uploaded. Admins can upload one in Admin > Short Term.</p>`;
+            }
+
+            // 2. Preaching Teams
+            const teamsContainer = document.getElementById('st-teams-container');
+            if (teamsContainer) {
+                teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => `
+                    <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl shadow-xs space-y-2">
+                        <div class="flex justify-between items-center border-b border-indigo-100 pb-2">
+                            <span class="text-xs font-black uppercase tracking-wider text-indigo-900">Team ${idx + 1}</span>
+                            <span class="text-[11px] bg-indigo-200 text-indigo-950 font-bold px-2 py-0.5 rounded-lg">${t.time || 'TBD'}</span>
+                        </div>
+                        <div class="text-xs font-bold text-slate-800 space-y-1">
+                            <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Indy Lead:</span> <span>${t.indy || 'Unassigned'}</span></div>
+                            <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Visiting:</span> <span class="text-amber-800">${t.visiting || 'Unassigned'}</span></div>
+                        </div>
+                        <div class="text-[11px] text-slate-500 pt-1 flex items-center gap-1">📍 ${t.location || 'Main Zion'}</div>
+                    </div>
+                `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-2">No preaching teams paired.</p>`;
+            }
+
+            const teamsImg = document.getElementById('st-teams-image-display');
+            if (teamsImg) {
+                teamsImg.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
+            }
+
+            // 3. Lodging
+            const lodgingContainer = document.getElementById('st-lodging-container');
+            if (lodgingContainer) {
+                lodgingContainer.innerHTML = (data.lodging && data.lodging.length > 0) ? data.lodging.map((h, idx) => `
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl shadow-xs flex flex-col justify-between space-y-3">
+                        <div class="space-y-1.5">
+                            <div class="flex justify-between items-start">
+                                <h4 class="font-bold text-xs text-indigo-950">${h.host || `Host House ${idx + 1}`}</h4>
+                                ${h.mapUrl ? `<a href="${h.mapUrl}" target="_blank" rel="noopener noreferrer" class="text-[10px] bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">🗺️ Map</a>` : ''}
+                            </div>
+                            <p class="text-[11px] text-slate-500">${h.address || 'Address provided by host'}</p>
+                            <div class="pt-2">
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned Guests (${(h.guests||[]).length}/8):</span>
+                                <ul class="mt-1 space-y-1 text-xs font-semibold text-slate-800">
+                                    ${(h.guests && h.guests.length > 0) ? h.guests.map(g => `<li class="flex items-center gap-1.5"><span class="text-amber-500">•</span> ${g}</li>`).join('') : `<li class="text-slate-400 italic text-[11px]">No guests assigned</li>`}
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-3">No lodging houses configured.</p>`;
+            }
+
+            const lodgingImg = document.getElementById('st-lodging-image-display');
+            if (lodgingImg) {
+                lodgingImg.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
+            }
+        }
+
+        // ==========================================
+        // SHORT TERM ADMIN BUILDER
+        // ==========================================
+        let adminCurrentStGroup = DEFAULT_ST_GROUPS[0];
+
+        function switchAdminShortTermGroup(groupName) {
+            harvestAdminShortTermRows();
+            adminCurrentStGroup = groupName;
+            populateAdminShortTermUI(groupName);
+        }
+
+        function populateAdminShortTermUI(groupName) {
+            const data = getShortTermGroupData(groupName);
+            document.getElementById('input-st-activities').value = (data.activities || []).join('\n');
+
+            // Teams (up to 10)
+            const teamContainer = document.getElementById('st-teams-builder-rows');
+            teamContainer.innerHTML = "";
+            (data.teams || []).forEach(t => addShortTermTeamRow(t.indy, t.visiting, t.time, t.location));
+            if (!data.teams || data.teams.length === 0) addShortTermTeamRow();
+
+            // Lodging (5 homes)
+            const lodgingContainer = document.getElementById('st-lodging-builder-rows');
+            lodgingContainer.innerHTML = "";
+            const hostHomes = data.lodging && data.lodging.length === 5 ? data.lodging : [
+                { host: "Host Home 1", address: "", mapUrl: "", guests: [] },
+                { host: "Host Home 2", address: "", mapUrl: "", guests: [] },
+                { host: "Host Home 3", address: "", mapUrl: "", guests: [] },
+                { host: "Host Home 4", address: "", mapUrl: "", guests: [] },
+                { host: "Host Home 5", address: "", mapUrl: "", guests: [] }
+            ];
+
+            hostHomes.forEach((h, idx) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs st-lodging-row";
+                div.innerHTML = `
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Host House ${idx + 1} Name..." value="${h.host || ''}" class="st-host-input font-bold border border-slate-300 rounded p-1.5 flex-1">
+                        <input type="text" placeholder="Google Maps URL..." value="${h.mapUrl || ''}" class="st-map-input border border-slate-300 rounded p-1.5 flex-1">
+                    </div>
+                    <input type="text" placeholder="Address..." value="${h.address || ''}" class="st-address-input border border-slate-300 rounded p-1.5 w-full">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Assigned Guests (Up to 8, comma separated):</label>
+                        <input type="text" placeholder="Guest 1, Guest 2, Guest 3..." value="${(h.guests || []).join(', ')}" class="st-guests-input border border-slate-300 rounded p-1.5 w-full">
+                    </div>
+                `;
+                lodgingContainer.appendChild(div);
+            });
+        }
+
+        function addShortTermTeamRow(indyVal = "", visitingVal = "", timeVal = "", locVal = "") {
+            const container = document.getElementById('st-teams-builder-rows');
+            if (container.children.length >= 10) {
+                alert("Maximum 10 teams allowed.");
+                return;
+            }
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs st-team-row w-full";
+            row.innerHTML = `
+                <input type="text" list="dl-evangelists" placeholder="Indy Leader..." value="${indyVal}" class="st-t-indy border border-slate-300 rounded p-1 flex-1 font-semibold">
+                <input type="text" placeholder="Visiting Member..." value="${visitingVal}" class="st-t-visiting border border-slate-300 rounded p-1 flex-1 font-semibold">
+                <input type="text" placeholder="Time..." value="${timeVal || '11:00 AM - 4:00 PM'}" class="st-t-time border border-slate-300 rounded p-1 w-32">
+                <input type="text" placeholder="Location..." value="${locVal || 'Main Zion'}" class="st-t-loc border border-slate-300 rounded p-1 w-28">
+                <button type="button" onclick="this.closest('.st-team-row').remove()" class="text-rose-500 font-bold px-1.5">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function harvestAdminShortTermRows() {
+            if (!adminCurrentStGroup) return;
+            const data = getShortTermGroupData(adminCurrentStGroup);
+
+            data.activities = document.getElementById('input-st-activities').value.split('\n').map(l => l.trim()).filter(Boolean);
+
+            let teams = [];
+            document.querySelectorAll('#st-teams-builder-rows .st-team-row').forEach(r => {
+                const indy = r.querySelector('.st-t-indy').value.trim();
+                const visiting = r.querySelector('.st-t-visiting').value.trim();
+                const time = r.querySelector('.st-t-time').value.trim();
+                const location = r.querySelector('.st-t-loc').value.trim();
+                if (indy || visiting) teams.push({ indy, visiting, time, location });
+            });
+            data.teams = teams;
+
+            let lodging = [];
+            document.querySelectorAll('#st-lodging-builder-rows .st-lodging-row').forEach(r => {
+                const host = r.querySelector('.st-host-input').value.trim();
+                const mapUrl = r.querySelector('.st-map-input').value.trim();
+                const address = r.querySelector('.st-address-input').value.trim();
+                const guestsRaw = r.querySelector('.st-guests-input').value.split(',').map(g => g.trim()).filter(Boolean).slice(0, 8);
+                lodging.push({ host, mapUrl, address, guests: guestsRaw });
+            });
+            data.lodging = lodging;
+        }
+
+        function handleStImageUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = getShortTermGroupData(adminCurrentStGroup);
+                if (type === 'plan') data.planImage = e.target.result;
+                if (type === 'teams') data.teamsImage = e.target.result;
+                if (type === 'lodging') data.lodgingImage = e.target.result;
+                alert(`Uploaded chart for ${type.toUpperCase()}! Click 'Save Changes' to push online.`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearStImage(type) {
+            const data = getShortTermGroupData(adminCurrentStGroup);
+            if (type === 'plan') data.planImage = "";
+            if (type === 'teams') data.teamsImage = "";
+            if (type === 'lodging') data.lodgingImage = "";
+            alert(`Removed image chart for ${type}.`);
         }
 
         function renderCookingSchedule() {
@@ -1407,63 +1713,6 @@
             } else {
                 addDutyBuilderRow();
             }
-        }
-
-        // ==========================================
-        // CONFLICT & DOUBLE-BOOKING DETECTION ENGINE
-        // ==========================================
-        function findScheduleConflicts(dayData) {
-            const assignmentMap = {};
-            const conflicts = [];
-
-            // 1. Audit Daily Duties
-            (dayData.duties || []).forEach(d => {
-                const roleName = (typeof d === 'object') ? d.role : (d.split(':')[1] || d).trim();
-                const rawNames = (typeof d === 'object') ? d.name : (d.split(':')[0] || '').trim();
-                
-                // Identify service slot based on role prefix
-                let slot = 'General Service';
-                const lowerRole = roleName.toLowerCase();
-                if (lowerRole.includes('morning')) slot = 'Morning Service';
-                else if (lowerRole.includes('afternoon')) slot = 'Afternoon Service';
-                else if (lowerRole.includes('evening')) slot = 'Evening Service';
-
-                rawNames.split('&').forEach(n => {
-                    const clean = n.trim().toLowerCase();
-                    if (!clean || clean === 'unassigned') return;
-
-                    const key = `${clean}_${slot}`;
-                    if (!assignmentMap[key]) {
-                        assignmentMap[key] = { name: n.trim(), slot, roles: [roleName] };
-                    } else {
-                        assignmentMap[key].roles.push(roleName);
-                    }
-                });
-            });
-
-            // 2. Audit Preaching Team Times
-            (dayData.preaching || []).forEach(p => {
-                const timeSlot = p.time || 'General Preaching';
-                (p.team || '').split('&').forEach(n => {
-                    const clean = n.trim().toLowerCase();
-                    if (!clean) return;
-
-                    const key = `${clean}_${timeSlot}`;
-                    if (!assignmentMap[key]) {
-                        assignmentMap[key] = { name: n.trim(), slot: `Preaching (${timeSlot})`, roles: ['Preaching Team'] };
-                    } else {
-                        assignmentMap[key].roles.push(`Preaching (${timeSlot})`);
-                    }
-                });
-            });
-
-            Object.values(assignmentMap).forEach(entry => {
-                if (entry.roles.length > 1) {
-                    conflicts.push(entry);
-                }
-            });
-
-            return conflicts;
         }
 
         function renderBlessingsBuilderUI() {
@@ -2045,7 +2294,7 @@
         }
 
         function switchTab(viewName) {
-            ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
+            ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
                 document.getElementById(`view-${t}`)?.classList.add('hidden');
                 const btn = document.getElementById(`tab-${t}-btn`);
                 if (btn) btn.className = "px-3 py-1 rounded-lg text-indigo-200 hover:text-white";
@@ -2053,7 +2302,13 @@
 
             document.getElementById(`view-${viewName}`)?.classList.remove('hidden');
             const targetBtn = document.getElementById(`tab-${viewName}-btn`);
-            if (targetBtn) targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold";
+            if (targetBtn) {
+                if (viewName === 'shortterm') {
+                    targetBtn.className = "px-3 py-1 rounded-lg bg-amber-500 text-indigo-950 font-bold shadow-md";
+                } else {
+                    targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold";
+                }
+            }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -2063,6 +2318,7 @@
             if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
             if (viewName === 'thirdday') renderSabbathAndFeast('thirdday');
             if (viewName === 'feast') renderSabbathAndFeast('feast');
+            if (viewName === 'shortterm') renderShortTermContent();
             if (viewName === 'cooking') renderCookingSchedule();
             if (viewName === 'cleaning') renderCleaningSchedule();
         }
@@ -2084,13 +2340,19 @@
             if (subTab === 'monthly') {
                 renderMonthlyAdminListUI();
             }
+            if (subTab === 'shortterm') {
+                const stGroupSel = document.getElementById('admin-st-group-selector');
+                const groups = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+                stGroupSel.innerHTML = groups.map(g => `<option value="${g}">${g}</option>`).join('');
+                adminCurrentStGroup = stGroupSel.value;
+                populateAdminShortTermUI(adminCurrentStGroup);
+            }
         }
 
         function toggleAdminModal() {
             const m = document.getElementById('admin-modal');
             m.classList.toggle('hidden');
             if (!m.classList.contains('hidden')) {
-                document.getElementById('conflict-warning-banner').classList.add('hidden');
                 document.querySelectorAll('.master-only').forEach(el => {
                     if (currentAdminRole === 'master') el.classList.remove('hidden');
                     else el.classList.add('hidden');
@@ -2127,7 +2389,6 @@
                     renderCookingBuilderUI();
                     renderCleaningBuilderUI();
 
-                    // Pre-fill Activities & Times textareas
                     document.getElementById('input-sabbath-activities').value = (appState.sabbathSchedule.activities || []).join('\n');
                     document.getElementById('input-thirdday-activities').value = (appState.thirddaySchedule.activities || []).join('\n');
                     document.getElementById('input-feast-activities').value = (appState.feastSchedule.activities || []).join('\n');
@@ -2138,6 +2399,7 @@
 
                     document.getElementById('input-master-evangelists').value = (appState.masterEvangelists || []).join('\n');
                     document.getElementById('input-master-groups').value = (appState.masterGroups || []).join('\n');
+                    document.getElementById('input-master-stgroups').value = (appState.masterShortTermGroups || DEFAULT_ST_GROUPS).join('\n');
                     document.getElementById('input-master-duties').value = (appState.masterDuties || []).join('\n');
                 }
             }
@@ -2152,33 +2414,12 @@
 
             const activeTab = currentActiveAdminTab;
 
-            // DAILY VIEW SAVE & CONFLICT CHECK
+            // DAILY VIEW SAVE
             if (activeTab === 'daily') {
                 harvestCurrentPreachingGroupRows();
                 harvestCurrentDutyGroupRows();
 
                 const targetDateData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-
-                // Run Conflict Check
-                const detectedConflicts = findScheduleConflicts(targetDateData);
-                if (detectedConflicts.length > 0) {
-                    const banner = document.getElementById('conflict-warning-banner');
-                    const list = document.getElementById('conflict-warning-list');
-                    list.innerHTML = detectedConflicts.map(c => `
-                        <div>• <b>${c.name}</b> assigned multiple times (${c.slot}): <span class="underline">${c.roles.join(', ')}</span></div>
-                    `).join('');
-                    banner.classList.remove('hidden');
-                    banner.scrollIntoView({ behavior: 'smooth' });
-
-                    const proceed = confirm(`Double-booking detected for ${detectedConflicts.length} member(s). Would you like to ignore and save anyway?`);
-                    if (!proceed) {
-                        saveBtn.disabled = false;
-                        saveBtn.innerText = "Save Changes";
-                        return;
-                    }
-                } else {
-                    document.getElementById('conflict-warning-banner').classList.add('hidden');
-                }
 
                 if (currentAdminRole === 'master') {
                     appState.persistentAnnouncement = document.getElementById('input-announcements').value.trim();
@@ -2203,6 +2444,13 @@
                 });
                 renderMonthlyCalendar();
                 await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
+            }
+
+            // SHORT TERM SAVE (NEW)
+            if (activeTab === 'shortterm' && currentAdminRole === 'master') {
+                harvestAdminShortTermRows();
+                await saveKeyToCloud('short_term_data', appState.shortTermData);
+                renderShortTermContent();
             }
 
             // BLESSINGS SAVE
@@ -2261,13 +2509,16 @@
             if (activeTab === 'settings' && currentAdminRole === 'master') {
                 appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
                 appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
+                appState.masterShortTermGroups = document.getElementById('input-master-stgroups').value.split('\n').map(l=>l.trim()).filter(Boolean).slice(0, 4);
                 appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
 
                 syncGlobalDatalists();
+                initShortTermView();
 
                 await saveKeyToCloud('master_lists', {
                     masterEvangelists: appState.masterEvangelists,
                     masterGroups: appState.masterGroups,
+                    masterShortTermGroups: appState.masterShortTermGroups,
                     masterDuties: appState.masterDuties
                 });
             }
@@ -2279,6 +2530,7 @@
             renderSabbathAndFeast('sabbath');
             renderSabbathAndFeast('thirdday');
             renderSabbathAndFeast('feast');
+            renderShortTermContent();
 
             saveBtn.disabled = false;
             saveBtn.innerText = "Save Changes";
