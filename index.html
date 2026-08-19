@@ -568,6 +568,11 @@
         </div>
     </div>
 
+    <!-- FULL SCREEN IMAGE LIGHTBOX MODAL -->
+    <div id="imageLightboxModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center hidden p-4 cursor-zoom-out" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" alt="Full view preview" class="max-w-[90vw] max-h-[85vh] object-contain rounded-xl border border-slate-700 shadow-2xl" />
+    </div>
+
     <!-- ADMIN MODAL -->
     <div id="admin-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl max-h-[90vh] flex flex-col">
@@ -660,7 +665,10 @@
                 <div id="ap-shortterm" class="admin-panel-section space-y-6 hidden master-only">
                     <!-- SHORT TERM: DAILY PLAN -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
-                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary</h4>
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary</h4>
+                            <button type="button" onclick="openBatchModalForCurrentTab('stdaily')" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Plan</button>
+                        </div>
                         <textarea id="input-st-activities" rows="3" placeholder="e.g. 9:00 AM - Breakfast & Orientation&#10;10:30 AM - Indy Outreach Kickoff" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                         
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
@@ -681,7 +689,10 @@
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">2. Preaching Teams Pairing (Up to 10)</h4>
-                            <button type="button" onclick="addShortTermTeamRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800">+ Add Team</button>
+                            <div class="flex gap-2">
+                                <button type="button" onclick="openBatchModalForCurrentTab('stteams')" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Teams</button>
+                                <button type="button" onclick="addShortTermTeamRow()" class="bg-indigo-900 text-white text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-indigo-800">+ Add Team</button>
+                            </div>
                         </div>
                         <div id="st-teams-builder-rows" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
 
@@ -701,7 +712,10 @@
 
                     <!-- SHORT TERM: LODGING -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
-                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">3. Lodging & Host Accommodations (5 Homes)</h4>
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">3. Lodging & Host Accommodations (5 Homes)</h4>
+                            <button type="button" onclick="openBatchModalForCurrentTab('stlodging')" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Lodging</button>
+                        </div>
                         <div id="st-lodging-builder-rows" class="space-y-4 max-h-72 overflow-y-auto pr-1"></div>
 
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
@@ -720,7 +734,10 @@
 
                     <!-- SHORT TERM: VISITING ZION ROSTERS BUILDER -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
-                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">4. Visiting Zion Rosters (Up to 10 Members per Zion)</h4>
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">4. Visiting Zion Rosters (Up to 10 Members per Zion)</h4>
+                            <button type="button" onclick="openBatchModalForCurrentTab('stroster')" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Roster</button>
+                        </div>
                         <div id="st-rosters-builder-rows" class="space-y-4 max-h-80 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
@@ -859,6 +876,19 @@
             document.getElementById('announcement-popup-modal').classList.add('hidden');
         }
 
+        function openLightbox(src) {
+            if (!src) return;
+            const modal = document.getElementById('imageLightboxModal');
+            const img = document.getElementById('lightboxImg');
+            img.src = src;
+            modal.classList.remove('hidden');
+        }
+
+        function closeLightbox() {
+            document.getElementById('imageLightboxModal').classList.add('hidden');
+            document.getElementById('lightboxImg').src = '';
+        }
+
         const PERMANENT_SABBATH_DUTIES = [
             "Morning Presider", "Morning Prayer of Thanks", "Morning Closing Prayer", "Morning Offering (Brothers)", "Morning Offering (Sisters)", "Morning Usher", "Morning Front desk", "Morning Sound", "Morning Elementary", "Morning Kids Room", "Morning Worship Diary",
             "Afternoon Presider", "Afternoon Closing Prayer", "Afternoon Offering (Brothers)", "Afternoon Offering (Sisters)", "Afternoon Usher", "Afternoon Front desk", "Afternoon Translater", "Afternoon Sound", "Afternoon Elementary", "Afternoon Kids Room", "Afternoon Worship Diary",
@@ -995,17 +1025,21 @@
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
             masterDuties: [...DEFAULT_DUTIES],
             shortTermData: {
-                activities: ["9:00 AM - Breakfast & Daily Overview", "10:30 AM - Indy Combined Preaching Session", "6:00 PM - Dinner & Fellowship"],
+                activities: [
+                    { time: "9:00 AM", activity: "Breakfast & Daily Overview", location: "Sanctuary", image: "" },
+                    { time: "10:30 AM", activity: "Indy Combined Preaching Session", location: "Downtown Indy", image: "" },
+                    { time: "6:00 PM", activity: "Dinner & Fellowship", location: "Fellowship Hall", image: "" }
+                ],
                 teams: [
-                    { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy" },
-                    { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North" }
+                    { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy", image: "" },
+                    { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North", image: "" }
                 ],
                 lodging: [
-                    { host: "Host Home 1 (Brother's House)", address: "Indianapolis, IN", mapUrl: "https://maps.google.com/?q=Indianapolis", guests: ["Visiting Brother A", "Visiting Brother B"] },
-                    { host: "Host Home 2 (Sister's House)", address: "Carmel, IN", mapUrl: "https://maps.google.com/?q=Carmel+IN", guests: ["Visiting Sister A", "Visiting Sister B"] },
-                    { host: "Host Home 3", address: "Fishers, IN", mapUrl: "https://maps.google.com/?q=Fishers+IN", guests: [] },
-                    { host: "Host Home 4", address: "Greenwood, IN", mapUrl: "https://maps.google.com/?q=Greenwood+IN", guests: [] },
-                    { host: "Host Home 5", address: "Noblesville, IN", mapUrl: "https://maps.google.com/?q=Noblesville+IN", guests: [] }
+                    { host: "Host Home 1 (Brother's House)", address: "Indianapolis, IN", mapUrl: "https://maps.google.com/?q=Indianapolis", guests: ["Visiting Brother A", "Visiting Brother B"], image: "" },
+                    { host: "Host Home 2 (Sister's House)", address: "Carmel, IN", mapUrl: "https://maps.google.com/?q=Carmel+IN", guests: ["Visiting Sister A", "Visiting Sister B"], image: "" },
+                    { host: "Host Home 3", address: "Fishers, IN", mapUrl: "https://maps.google.com/?q=Fishers+IN", guests: [], image: "" },
+                    { host: "Host Home 4", address: "Greenwood, IN", mapUrl: "https://maps.google.com/?q=Greenwood+IN", guests: [], image: "" },
+                    { host: "Host Home 5", address: "Noblesville, IN", mapUrl: "https://maps.google.com/?q=Noblesville+IN", guests: [], image: "" }
                 ],
                 planImage: "",
                 teamsImage: "",
@@ -1353,25 +1387,44 @@
         // SHORT TERM EXTENSION ENGINE
         // ==========================================
         function getShortTermGroupData() {
-            if (!appState.shortTermData || typeof appState.shortTermData !== 'object' || Array.isArray(appState.shortTermData.activities) === false) {
+            if (!appState.shortTermData || typeof appState.shortTermData !== 'object') {
                 appState.shortTermData = {
-                    activities: ["9:00 AM - Breakfast & Daily Overview", "10:30 AM - Indy Combined Preaching Session", "6:00 PM - Dinner & Fellowship"],
+                    activities: [
+                        { time: "9:00 AM", activity: "Breakfast & Daily Overview", location: "Sanctuary", image: "" },
+                        { time: "10:30 AM", activity: "Indy Combined Preaching Session", location: "Downtown Indy", image: "" },
+                        { time: "6:00 PM", activity: "Dinner & Fellowship", location: "Fellowship Hall", image: "" }
+                    ],
                     teams: [
-                        { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy" },
-                        { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North" }
+                        { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy", image: "" },
+                        { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North", image: "" }
                     ],
                     lodging: [
-                        { host: "Host Home 1 (Brother's House)", address: "Indianapolis, IN", mapUrl: "https://maps.google.com/?q=Indianapolis", guests: ["Visiting Brother A", "Visiting Brother B"] },
-                        { host: "Host Home 2 (Sister's House)", address: "Carmel, IN", mapUrl: "https://maps.google.com/?q=Carmel+IN", guests: ["Visiting Sister A", "Visiting Sister B"] },
-                        { host: "Host Home 3", address: "Fishers, IN", mapUrl: "https://maps.google.com/?q=Fishers+IN", guests: [] },
-                        { host: "Host Home 4", address: "Greenwood, IN", mapUrl: "https://maps.google.com/?q=Greenwood+IN", guests: [] },
-                        { host: "Host Home 5", address: "Noblesville, IN", mapUrl: "https://maps.google.com/?q=Noblesville+IN", guests: [] }
+                        { host: "Host Home 1 (Brother's House)", address: "Indianapolis, IN", mapUrl: "https://maps.google.com/?q=Indianapolis", guests: ["Visiting Brother A", "Visiting Brother B"], image: "" },
+                        { host: "Host Home 2 (Sister's House)", address: "Carmel, IN", mapUrl: "https://maps.google.com/?q=Carmel+IN", guests: ["Visiting Sister A", "Visiting Sister B"], image: "" },
+                        { host: "Host Home 3", address: "Fishers, IN", mapUrl: "https://maps.google.com/?q=Fishers+IN", guests: [], image: "" },
+                        { host: "Host Home 4", address: "Greenwood, IN", mapUrl: "https://maps.google.com/?q=Greenwood+IN", guests: [], image: "" },
+                        { host: "Host Home 5", address: "Noblesville, IN", mapUrl: "https://maps.google.com/?q=Noblesville+IN", guests: [], image: "" }
                     ],
                     planImage: "",
                     teamsImage: "",
                     lodgingImage: ""
                 };
             }
+
+            // Normalization for legacy format string activities
+            if (Array.isArray(appState.shortTermData.activities)) {
+                appState.shortTermData.activities = appState.shortTermData.activities.map(act => {
+                    if (typeof act === 'string') {
+                        const parts = act.split(' - ');
+                        return { time: parts[0] || '', activity: parts[1] || act, location: 'Sanctuary', image: '' };
+                    }
+                    return act;
+                });
+            }
+
+            if (!Array.isArray(appState.shortTermData.teams)) appState.shortTermData.teams = [];
+            if (!Array.isArray(appState.shortTermData.lodging)) appState.shortTermData.lodging = [];
+
             return appState.shortTermData;
         }
 
@@ -1428,64 +1481,92 @@
             const planContainer = document.getElementById('st-plan-container');
             if (planContainer) {
                 planContainer.innerHTML = (data.activities && data.activities.length > 0) ? data.activities.map(act => {
-                    const p = act.split(' - ');
-                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-xs"><span class="bg-indigo-100 text-indigo-900 text-xs font-bold px-2.5 py-1 rounded-lg mr-3 whitespace-nowrap">${p[0]||'Time'}</span><span class="text-sm font-semibold text-slate-800 pt-0.5">${p[1]||act}</span></div>`;
+                    const time = act.time || 'Time';
+                    const title = act.activity || 'Activity';
+                    const loc = act.location ? `📍 ${act.location}` : '';
+                    const thumb = act.image ? `<img src="${act.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${act.image}')" alt="Attachment" title="Click to view full image">` : '';
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-xs gap-3">
+                            <div class="flex items-start">
+                                <span class="bg-indigo-100 text-indigo-900 text-xs font-bold px-2.5 py-1 rounded-lg mr-3 whitespace-nowrap">${time}</span>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-800">${title}</div>
+                                    ${loc ? `<div class="text-[11px] text-slate-500 mt-0.5">${loc}</div>` : ''}
+                                </div>
+                            </div>
+                            ${thumb}
+                        </div>
+                    `;
                 }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No daily itinerary scheduled.</p>`;
             }
 
             const planImg = document.getElementById('st-plan-image-display');
             if (planImg) {
-                planImg.innerHTML = (data.planImage && data.planImage.trim()) ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded.</p>`;
+                planImg.innerHTML = (data.planImage && data.planImage.trim()) ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.planImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded.</p>`;
             }
 
             // 2. Preaching Teams
             const teamsContainer = document.getElementById('st-teams-container');
             if (teamsContainer) {
-                teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => `
-                    <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl shadow-xs space-y-2">
-                        <div class="flex justify-between items-center border-b border-indigo-100 pb-2">
-                            <span class="text-xs font-black uppercase tracking-wider text-indigo-950">Team ${idx + 1}</span>
-                            <span class="text-[11px] bg-indigo-200 text-indigo-950 font-bold px-2 py-0.5 rounded-lg">${t.time || 'TBD'}</span>
+                teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => {
+                    const thumb = t.image ? `<img src="${t.image}" class="w-11 h-11 object-cover rounded-lg border border-indigo-200 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${t.image}')" alt="Route Map" title="Click to view full map/image">` : '';
+                    return `
+                        <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl shadow-xs space-y-2">
+                            <div class="flex justify-between items-center border-b border-indigo-100 pb-2">
+                                <span class="text-xs font-black uppercase tracking-wider text-indigo-950">Team ${idx + 1}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] bg-indigo-200 text-indigo-950 font-bold px-2 py-0.5 rounded-lg">${t.time || 'TBD'}</span>
+                                    ${thumb}
+                                </div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-800 space-y-1">
+                                <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Indy Lead:</span> <span>${t.indy || 'Unassigned'}</span></div>
+                                <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Visiting:</span> <span class="text-amber-800">${t.visiting || 'Unassigned'}</span></div>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pt-1 flex items-center gap-1">📍 ${t.location || 'Main Zion'}</div>
                         </div>
-                        <div class="text-xs font-bold text-slate-800 space-y-1">
-                            <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Indy Lead:</span> <span>${t.indy || 'Unassigned'}</span></div>
-                            <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Visiting:</span> <span class="text-amber-800">${t.visiting || 'Unassigned'}</span></div>
-                        </div>
-                        <div class="text-[11px] text-slate-500 pt-1 flex items-center gap-1">📍 ${t.location || 'Main Zion'}</div>
-                    </div>
-                `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-2">No preaching teams paired.</p>`;
+                    `;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-2">No preaching teams paired.</p>`;
             }
 
             const teamsImg = document.getElementById('st-teams-image-display');
             if (teamsImg) {
-                teamsImg.innerHTML = (data.teamsImage && data.teamsImage.trim()) ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
+                teamsImg.innerHTML = (data.teamsImage && data.teamsImage.trim()) ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.teamsImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
             }
 
             // 3. Lodging
             const lodgingContainer = document.getElementById('st-lodging-container');
             if (lodgingContainer) {
-                lodgingContainer.innerHTML = (data.lodging && data.lodging.length > 0) ? data.lodging.map((h, idx) => `
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl shadow-xs flex flex-col justify-between space-y-3">
-                        <div class="space-y-1.5">
-                            <div class="flex justify-between items-start">
-                                <h4 class="font-bold text-xs text-indigo-950">${h.host || `Host House ${idx + 1}`}</h4>
-                                ${h.mapUrl ? `<a href="${h.mapUrl}" target="_blank" rel="noopener noreferrer" class="text-[10px] bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">🗺️ Map</a>` : ''}
-                            </div>
-                            <p class="text-[11px] text-slate-500">${h.address || 'Address provided by host'}</p>
-                            <div class="pt-2">
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned Guests (${(h.guests||[]).length}/8):</span>
-                                <ul class="mt-1 space-y-1 text-xs font-semibold text-slate-800">
-                                    ${(h.guests && h.guests.length > 0) ? h.guests.map(g => `<li class="flex items-center gap-1.5"><span class="text-amber-500">•</span> ${g}</li>`).join('') : `<li class="text-slate-400 italic text-[11px]">No guests assigned</li>`}
-                                </ul>
+                lodgingContainer.innerHTML = (data.lodging && data.lodging.length > 0) ? data.lodging.map((h, idx) => {
+                    const thumb = h.image ? `<img src="${h.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${h.image}')" alt="Lodging" title="Click to view lodging photo">` : '';
+                    return `
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl shadow-xs flex flex-col justify-between space-y-3">
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-start gap-2">
+                                    <div>
+                                        <h4 class="font-bold text-xs text-indigo-950">${h.host || `Host House ${idx + 1}`}</h4>
+                                        <p class="text-[11px] text-slate-500">${h.address || 'Address provided by host'}</p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        ${h.mapUrl ? `<a href="${h.mapUrl}" target="_blank" rel="noopener noreferrer" class="text-[10px] bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">🗺️ Map</a>` : ''}
+                                        ${thumb}
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned Guests (${(h.guests||[]).length}/8):</span>
+                                    <ul class="mt-1 space-y-1 text-xs font-semibold text-slate-800">
+                                        ${(h.guests && h.guests.length > 0) ? h.guests.map(g => `<li class="flex items-center gap-1.5"><span class="text-amber-500">•</span> ${g}</li>`).join('') : `<li class="text-slate-400 italic text-[11px]">No guests assigned</li>`}
+                                    </ul>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-3">No lodging houses configured.</p>`;
+                    `;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-3">No lodging houses configured.</p>`;
             }
 
             const lodgingImg = document.getElementById('st-lodging-image-display');
             if (lodgingImg) {
-                lodgingImg.innerHTML = (data.lodgingImage && data.lodgingImage.trim()) ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
+                lodgingImg.innerHTML = (data.lodgingImage && data.lodgingImage.trim()) ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.lodgingImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
             }
 
             // 4. Visiting Zion Rosters
@@ -1519,30 +1600,31 @@
         // ==========================================
         function populateAdminShortTermUI() {
             const data = getShortTermGroupData();
-            document.getElementById('input-st-activities').value = (data.activities || []).join('\n');
+            document.getElementById('input-st-activities').value = (data.activities || []).map(a => `${a.time} - ${a.activity}${a.location ? ` | ${a.location}` : ''}`).join('\n');
 
             updateAdminImagePreviews();
 
             // Teams (up to 10)
             const teamContainer = document.getElementById('st-teams-builder-rows');
             teamContainer.innerHTML = "";
-            (data.teams || []).forEach(t => addShortTermTeamRow(t.indy, t.visiting, t.time, t.location));
+            (data.teams || []).forEach(t => addShortTermTeamRow(t.indy, t.visiting, t.time, t.location, t.image));
             if (!data.teams || data.teams.length === 0) addShortTermTeamRow();
 
             // Lodging (5 homes)
             const lodgingContainer = document.getElementById('st-lodging-builder-rows');
             lodgingContainer.innerHTML = "";
             const hostHomes = data.lodging && data.lodging.length === 5 ? data.lodging : [
-                { host: "Host Home 1", address: "", mapUrl: "", guests: [] },
-                { host: "Host Home 2", address: "", mapUrl: "", guests: [] },
-                { host: "Host Home 3", address: "", mapUrl: "", guests: [] },
-                { host: "Host Home 4", address: "", mapUrl: "", guests: [] },
-                { host: "Host Home 5", address: "", mapUrl: "", guests: [] }
+                { host: "Host Home 1", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 2", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 3", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 4", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 5", address: "", mapUrl: "", guests: [], image: "" }
             ];
 
             hostHomes.forEach((h, idx) => {
                 const div = document.createElement('div');
                 div.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs st-lodging-row";
+                const imgThumb = h.image ? `<img src="${h.image}" class="w-8 h-8 rounded border object-cover cursor-pointer" onclick="openLightbox('${h.image}')">` : '';
                 div.innerHTML = `
                     <div class="flex gap-2">
                         <input type="text" placeholder="Host House ${idx + 1} Name..." value="${h.host || ''}" class="st-host-input font-bold border border-slate-300 rounded p-1.5 flex-1">
@@ -1552,6 +1634,16 @@
                     <div>
                         <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Assigned Guests (Up to 8, comma separated):</label>
                         <input type="text" placeholder="Guest 1, Guest 2, Guest 3..." value="${(h.guests || []).join(', ')}" class="st-guests-input border border-slate-300 rounded p-1.5 w-full">
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-2 py-1 rounded text-[11px] flex items-center gap-1">
+                            📷 Attach Lodging Photo
+                            <input type="file" accept="image/*" onchange="handleItemImageUpload(event, this)" class="hidden">
+                        </label>
+                        <div class="flex items-center gap-2 lodging-img-holder">
+                            ${imgThumb}
+                            <input type="hidden" class="st-lodge-img-data" value="${h.image || ''}">
+                        </div>
                     </div>
                 `;
                 lodgingContainer.appendChild(div);
@@ -1594,25 +1686,25 @@
             document.getElementById('st-plan-img-status').innerText = data.planImage ? "✓ Image Loaded" : "";
             const planPrev = document.getElementById('admin-st-plan-preview');
             if (planPrev) {
-                planPrev.innerHTML = data.planImage ? `<img src="${data.planImage}" class="h-20 rounded-lg border shadow-xs object-cover">` : '';
+                planPrev.innerHTML = data.planImage ? `<img src="${data.planImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.planImage}')" title="Click to view full">` : '';
             }
 
             // Teams preview
             document.getElementById('st-teams-img-status').innerText = data.teamsImage ? "✓ Image Loaded" : "";
             const teamsPrev = document.getElementById('admin-st-teams-preview');
             if (teamsPrev) {
-                teamsPrev.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" class="h-20 rounded-lg border shadow-xs object-cover">` : '';
+                teamsPrev.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.teamsImage}')" title="Click to view full">` : '';
             }
 
             // Lodging preview
             document.getElementById('st-lodging-img-status').innerText = data.lodgingImage ? "✓ Image Loaded" : "";
             const lodgingPrev = document.getElementById('admin-st-lodging-preview');
             if (lodgingPrev) {
-                lodgingPrev.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" class="h-20 rounded-lg border shadow-xs object-cover">` : '';
+                lodgingPrev.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.lodgingImage}')" title="Click to view full">` : '';
             }
         }
 
-        function addShortTermTeamRow(indyVal = "", visitingVal = "", timeVal = "", locVal = "") {
+        function addShortTermTeamRow(indyVal = "", visitingVal = "", timeVal = "", locVal = "", imgVal = "") {
             const container = document.getElementById('st-teams-builder-rows');
             if (container.children.length >= 10) {
                 alert("Maximum 10 teams allowed.");
@@ -1620,20 +1712,91 @@
             }
             const row = document.createElement('div');
             row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs st-team-row w-full";
+            const imgThumb = imgVal ? `<img src="${imgVal}" class="w-7 h-7 rounded border object-cover cursor-pointer" onclick="openLightbox('${imgVal}')">` : '';
             row.innerHTML = `
                 <input type="text" list="dl-evangelists" placeholder="Indy Leader..." value="${indyVal}" class="st-t-indy border border-slate-300 rounded p-1 flex-1 font-semibold">
                 <input type="text" placeholder="Visiting Member..." value="${visitingVal}" class="st-t-visiting border border-slate-300 rounded p-1 flex-1 font-semibold">
-                <input type="text" placeholder="Time..." value="${timeVal || '11:00 AM - 4:00 PM'}" class="st-t-time border border-slate-300 rounded p-1 w-32">
-                <input type="text" placeholder="Location..." value="${locVal || 'Main Zion'}" class="st-t-loc border border-slate-300 rounded p-1 w-28">
+                <input type="text" placeholder="Time..." value="${timeVal || '11:00 AM - 4:00 PM'}" class="st-t-time border border-slate-300 rounded p-1 w-28">
+                <input type="text" placeholder="Location..." value="${locVal || 'Main Zion'}" class="st-t-loc border border-slate-300 rounded p-1 w-24">
+                <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-[10px] font-bold" title="Attach Route Map">
+                    📷
+                    <input type="file" accept="image/*" onchange="handleItemImageUpload(event, this)" class="hidden">
+                </label>
+                <div class="team-img-holder flex items-center">
+                    ${imgThumb}
+                    <input type="hidden" class="st-t-img-data" value="${imgVal || ''}">
+                </div>
                 <button type="button" onclick="this.closest('.st-team-row').remove()" class="text-rose-500 font-bold px-1.5">✕</button>
             `;
             container.appendChild(row);
         }
 
+        function handleItemImageUpload(event, inputEl) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 900;
+                    const MAX_HEIGHT = 900;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const resized = canvas.toDataURL('image/jpeg', 0.82);
+                    const parent = inputEl.closest('.st-team-row') || inputEl.closest('.st-lodging-row');
+                    if (parent) {
+                        const holder = parent.querySelector('.team-img-holder') || parent.querySelector('.lodging-img-holder');
+                        const dataInput = parent.querySelector('.st-t-img-data') || parent.querySelector('.st-lodge-img-data');
+                        if (dataInput) dataInput.value = resized;
+                        if (holder) {
+                            holder.innerHTML = `<img src="${resized}" class="w-8 h-8 rounded border object-cover cursor-pointer" onclick="openLightbox('${resized}')"><input type="hidden" class="${dataInput.className}" value="${resized}">`;
+                        }
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
         function harvestAdminShortTermRows() {
             const data = getShortTermGroupData();
 
-            data.activities = document.getElementById('input-st-activities').value.split('\n').map(l => l.trim()).filter(Boolean);
+            data.activities = document.getElementById('input-st-activities').value.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+                let loc = "Sanctuary";
+                let text = line;
+                if (line.includes('|')) {
+                    const p = line.split('|');
+                    text = p[0].trim();
+                    loc = p[1].trim();
+                }
+                const parts = text.split(' - ');
+                return {
+                    time: parts[0] || 'TBD',
+                    activity: parts[1] || text,
+                    location: loc,
+                    image: ""
+                };
+            });
 
             let teams = [];
             document.querySelectorAll('#st-teams-builder-rows .st-team-row').forEach(r => {
@@ -1641,7 +1804,9 @@
                 const visiting = r.querySelector('.st-t-visiting').value.trim();
                 const time = r.querySelector('.st-t-time').value.trim();
                 const location = r.querySelector('.st-t-loc').value.trim();
-                if (indy || visiting) teams.push({ indy, visiting, time, location });
+                const imgEl = r.querySelector('.st-t-img-data');
+                const image = imgEl ? imgEl.value : "";
+                if (indy || visiting) teams.push({ indy, visiting, time, location, image });
             });
             data.teams = teams;
 
@@ -1651,7 +1816,9 @@
                 const mapUrl = r.querySelector('.st-map-input').value.trim();
                 const address = r.querySelector('.st-address-input').value.trim();
                 const guestsRaw = r.querySelector('.st-guests-input').value.split(',').map(g => g.trim()).filter(Boolean).slice(0, 8);
-                lodging.push({ host, mapUrl, address, guests: guestsRaw });
+                const imgEl = r.querySelector('.st-lodge-img-data');
+                const image = imgEl ? imgEl.value : "";
+                lodging.push({ host, mapUrl, address, guests: guestsRaw, image });
             });
             data.lodging = lodging;
 
@@ -2207,12 +2374,16 @@
             document.getElementById('universal-batch-modal').classList.toggle('hidden');
         }
 
-        function openBatchModalForCurrentTab() {
-            currentBatchTarget = currentActiveAdminTab;
-            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast'];
+        function openBatchModalForCurrentTab(targetType = null) {
+            currentBatchTarget = targetType || currentActiveAdminTab;
+            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'stdaily', 'stteams', 'stlodging', 'stroster', 'shortterm'];
             if (!supportedTabs.includes(currentBatchTarget)) {
-                alert("Batch update is only available for Monthly Calendar, Blessings, and Worship Duty tabs.");
+                alert("Batch update is not available for this tab.");
                 return;
+            }
+
+            if (currentBatchTarget === 'shortterm') {
+                currentBatchTarget = 'stdaily';
             }
 
             const title = document.getElementById('batch-modal-title');
@@ -2224,6 +2395,22 @@
                 title.innerText = "⚡ Batch Update Monthly Calendar";
                 instructions.innerHTML = `Paste events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code>`;
                 input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
+            } else if (currentBatchTarget === 'stdaily') {
+                title.innerText = "⚡ Batch Upload Short Term Daily Schedule";
+                instructions.innerHTML = `Paste schedule lines.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code>`;
+                input.placeholder = "9:00 AM, Breakfast & Strategy, Main Sanctuary\n11:00 AM, Downtown Outreach, Indy Center\n6:00 PM, Evening Fellowship, Fellowship Hall";
+            } else if (currentBatchTarget === 'stteams') {
+                title.innerText = "⚡ Batch Upload Short Term Preaching Teams";
+                instructions.innerHTML = `Paste teams (up to 10).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Indy Member, Visiting Member, Time, Location</code>`;
+                input.placeholder = "B.Kiimon, Visiting Brother 1, 11:00 AM - 4:00 PM, Downtown\nB.Ryan, Visiting Brother 2, 11:00 AM - 4:00 PM, Carmel";
+            } else if (currentBatchTarget === 'stlodging') {
+                title.innerText = "⚡ Batch Upload Lodging Matrix";
+                instructions.innerHTML = `Paste host homes (up to 5).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Host Name (Phone | MapURL), Guest 1 / Guest 2 / Guest 3</code>`;
+                input.placeholder = "D.James (720-949-8770 | https://maps.google.com/?q=Noblesville), D.Jack / B.Geonhee\nB.Jemis (616-260-3298 | https://maps.google.com/?q=Indianapolis), B.Tyler / B.Ethan";
+            } else if (currentBatchTarget === 'stroster') {
+                title.innerText = "⚡ Batch Upload Visiting Rosters";
+                instructions.innerHTML = `Paste roster per Zion.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Zion Name: Member 1, Member 2, Member 3</code>`;
+                input.placeholder = "Columbus Zion: Bro John, Sis Mary, Bro Luke\nNaperville Zion: Bro Mark, Sis Anna";
             } else if (currentBatchTarget === 'blessings') {
                 title.innerText = "⚡ Batch Update Blessings & Inventory";
                 instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code>`;
@@ -2245,7 +2432,122 @@
             const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
             let updatedCount = 0;
 
-            if (currentBatchTarget === 'monthly') {
+            if (currentBatchTarget === 'stdaily') {
+                let parsedActs = [];
+                lines.forEach(line => {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        parsedActs.push({
+                            time: parts[0] || 'TBD',
+                            activity: parts[1] || '',
+                            location: parts[2] || 'Main Sanctuary',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedActs.length > 0) {
+                    appState.shortTermData.activities = parsedActs;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} daily schedule items!`);
+                } else {
+                    alert("Could not parse schedule. Format: Time, Activity, Location");
+                }
+            } else if (currentBatchTarget === 'stteams') {
+                let parsedTeams = [];
+                lines.forEach(line => {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 2 && parsedTeams.length < 10) {
+                        parsedTeams.push({
+                            indy: parts[0] || '',
+                            visiting: parts[1] || '',
+                            time: parts[2] || '11:00 AM - 4:00 PM',
+                            location: parts[3] || 'Main Zion',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedTeams.length > 0) {
+                    appState.shortTermData.teams = parsedTeams;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} preaching teams!`);
+                } else {
+                    alert("Could not parse teams. Format: Indy Lead, Visiting, Time, Location");
+                }
+            } else if (currentBatchTarget === 'stlodging') {
+                let parsedLodging = [];
+                lines.forEach(line => {
+                    if (parsedLodging.length >= 5) return;
+                    let host = "";
+                    let mapUrl = "";
+                    let address = "";
+                    let guests = [];
+
+                    const commaIdx = line.indexOf(',');
+                    if (commaIdx !== -1) {
+                        const hostPart = line.substring(0, commaIdx).trim();
+                        const guestsPart = line.substring(commaIdx + 1).trim();
+
+                        guests = guestsPart.split(/[/,]/).map(g => g.trim()).filter(Boolean).slice(0, 8);
+
+                        if (hostPart.includes('http')) {
+                            const urlMatch = hostPart.match(/https?:\/\/[^\s\)\|\,]+/);
+                            if (urlMatch) mapUrl = urlMatch[0];
+                        }
+
+                        host = hostPart.replace(/\([^)]*\)/g, '').replace(/https?:\/\/[^\s\)\|\,]+/g, '').replace(/[\|\:]/g, '').trim();
+                        address = hostPart.includes('|') ? hostPart.split('|')[0].replace(/[()]/g, '').trim() : '';
+
+                        parsedLodging.push({ host: host || "Host House", address: address || "See Map", mapUrl, guests, image: "" });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedLodging.length > 0) {
+                    while (parsedLodging.length < 5) {
+                        parsedLodging.push({ host: `Host Home ${parsedLodging.length + 1}`, address: "", mapUrl: "", guests: [], image: "" });
+                    }
+                    appState.shortTermData.lodging = parsedLodging;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} lodging homes!`);
+                } else {
+                    alert("Could not parse lodging. Format: Host (Details | MapURL), Guest 1 / Guest 2");
+                }
+            } else if (currentBatchTarget === 'stroster') {
+                lines.forEach(line => {
+                    if (line.includes(':')) {
+                        const colonIdx = line.indexOf(':');
+                        const zion = line.substring(0, colonIdx).trim();
+                        const members = line.substring(colonIdx + 1).split(/[,/]/).map(m => m.trim()).filter(Boolean).slice(0, 10);
+                        if (zion) {
+                            appState.shortTermZionRosters[zion] = members;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
+                    toggleBatchModal();
+                    alert(`Imported rosters for ${updatedCount} visiting Zion locations!`);
+                } else {
+                    alert("Could not parse roster. Format: Zion Name: Member 1, Member 2");
+                }
+            } else if (currentBatchTarget === 'monthly') {
                 const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
                 lines.forEach(line => {
                     let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
