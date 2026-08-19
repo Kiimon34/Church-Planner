@@ -49,7 +49,7 @@
     <!-- PIN LOGIN SCREEN -->
     <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-indigo-900/20">
-            <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm">
+            <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
                 📖
             </div>
             <div>
@@ -72,12 +72,12 @@
 
             <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams</span>
+                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams Portal</span>
                 <div class="flex-grow border-t border-slate-200"></div>
             </div>
 
-            <button type="button" onclick="openShortTermPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2">
-                ✈️ Short Term Extensions Portal
+            <button type="button" onclick="openShortTermGuestPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2">
+                ✈️ Short Term Guest Portal (Visiting Teams Only)
             </button>
         </div>
     </div>
@@ -88,7 +88,7 @@
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
                     <span class="text-2xl">📖</span>
-                    <span class="font-bold text-lg tracking-wide">Zion Church Planner (INDY)</span>
+                    <span class="font-bold text-lg tracking-wide" id="app-nav-title">Zion Church Planner (INDY)</span>
                 </div>
                 
                 <div class="flex items-center space-x-2">
@@ -103,7 +103,13 @@
                         ⚙️ Admin
                     </button>
                     
-                    <button type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
+                    <!-- Guest Exit Button -->
+                    <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1">
+                        🚪 Exit Guest Mode
+                    </button>
+
+                    <!-- Full Navigation Drawer Toggle -->
+                    <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                         </svg>
@@ -111,8 +117,8 @@
                 </div>
             </div>
 
-            <!-- PRIMARY TABS SLIDER BAR -->
-            <div class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
+            <!-- PRIMARY TABS SLIDER BAR (HIDDEN IN SHORT TERM GUEST MODE) -->
+            <div id="primary-tabs-bar" class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold">📅 Daily View</button>
                     <button id="tab-monthly-btn" onclick="switchTab('monthly')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🗓️ Monthly Calendar</button>
@@ -338,7 +344,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 7: SHORT TERM EXTENSION (NEW) -->
+                <!-- TAB 7: SHORT TERM EXTENSION -->
                 <div id="view-shortterm" class="space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200 space-y-6">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
@@ -347,7 +353,7 @@
                                     <span class="text-2xl">✈️</span>
                                     <h1 class="text-2xl font-black text-indigo-950 tracking-tight">Visiting Short Term Portal</h1>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Manage visiting groups, pairings, and lodging.</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Manage visiting groups, pairings, lodging, and visiting rosters.</p>
                             </div>
                             
                             <!-- GROUP SELECTOR -->
@@ -360,18 +366,19 @@
                         <!-- SHORT TERM SUB TABS & DISPLAY TOGGLE -->
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-100 p-1.5 rounded-2xl">
                             <div class="flex space-x-1 text-xs font-bold w-full sm:w-auto overflow-x-auto">
-                                <button id="st-sub-plan-btn" onclick="switchShortTermSubTab('plan')" class="px-4 py-2 rounded-xl bg-indigo-900 text-white shadow-sm">📅 Daily Plan</button>
-                                <button id="st-sub-teams-btn" onclick="switchShortTermSubTab('teams')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950">📋 Preaching Teams</button>
-                                <button id="st-sub-lodging-btn" onclick="switchShortTermSubTab('lodging')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950">🏡 Lodging & Hosts</button>
+                                <button id="st-sub-plan-btn" onclick="switchShortTermSubTab('plan')" class="px-4 py-2 rounded-xl bg-indigo-900 text-white shadow-sm whitespace-nowrap">📅 Daily Plan</button>
+                                <button id="st-sub-teams-btn" onclick="switchShortTermSubTab('teams')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap">📋 Preaching Teams</button>
+                                <button id="st-sub-lodging-btn" onclick="switchShortTermSubTab('lodging')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap">🏡 Lodging & Hosts</button>
+                                <button id="st-sub-rosters-btn" onclick="switchShortTermSubTab('rosters')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap">🏛️ Visiting Zion Rosters</button>
                             </div>
 
-                            <div class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-xs border border-slate-200 self-end sm:self-auto">
+                            <div id="st-toggle-container" class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-xs border border-slate-200 self-end sm:self-auto">
                                 <button id="st-mode-text-btn" onclick="toggleShortTermDisplayMode('text')" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900">📝 Text View</button>
                                 <button id="st-mode-image-btn" onclick="toggleShortTermDisplayMode('image')" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800">🖼️ Image Chart</button>
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW: DAILY PLAN -->
+                        <!-- SUB-VIEW 1: DAILY PLAN -->
                         <div id="st-subview-plan" class="space-y-4">
                             <div class="st-content-text space-y-3">
                                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">⏱️ Scheduled Itinerary & Times</h3>
@@ -382,7 +389,7 @@
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW: PREACHING TEAMS -->
+                        <!-- SUB-VIEW 2: PREACHING TEAMS -->
                         <div id="st-subview-teams" class="space-y-4 hidden">
                             <div class="st-content-text space-y-3">
                                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🤝 Indy & Visiting Member Pairs (Up to 10 Teams)</h3>
@@ -393,7 +400,7 @@
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW: LODGING -->
+                        <!-- SUB-VIEW 3: LODGING -->
                         <div id="st-subview-lodging" class="space-y-4 hidden">
                             <div class="st-content-text space-y-4">
                                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🏡 Guest Accommodations & Navigation</h3>
@@ -401,6 +408,17 @@
                             </div>
                             <div class="st-content-image hidden">
                                 <div id="st-lodging-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
+                        </div>
+
+                        <!-- SUB-VIEW 4: VISITING ZION ROSTERS (NEW) -->
+                        <div id="st-subview-rosters" class="space-y-4 hidden">
+                            <div class="space-y-4">
+                                <div class="flex justify-between items-center">
+                                    <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">🏛️ Visiting Zion Member Directories</h3>
+                                    <span class="text-xs text-slate-400 font-semibold">10 Members / Location</span>
+                                </div>
+                                <div id="st-rosters-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
                             </div>
                         </div>
                     </div>
@@ -644,7 +662,7 @@
                     <div id="monthly-admin-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- SHORT TERM ADMIN (NEW) -->
+                <!-- SHORT TERM ADMIN -->
                 <div id="ap-shortterm" class="admin-panel-section space-y-6 hidden master-only">
                     <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-3">
                         <div class="flex justify-between items-center">
@@ -661,14 +679,20 @@
                         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary</h4>
                         <textarea id="input-st-activities" rows="3" placeholder="e.g. 9:00 AM - Breakfast & Orientation&#10;10:30 AM - Indy Outreach Kickoff" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                         
-                        <div class="flex items-center gap-3 pt-1">
-                            <label class="text-xs font-bold text-slate-600">Upload Plan Chart Image:</label>
-                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'plan')" class="text-xs text-slate-500">
-                            <button type="button" onclick="clearStImage('plan')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                            <label class="text-xs font-bold text-slate-700 block">Plan Chart Image:</label>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="cursor-pointer bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm">
+                                    📁 Select Image from Device
+                                    <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'plan')" class="hidden">
+                                </label>
+                                <button type="button" onclick="clearStImage('plan')" class="text-xs text-rose-600 hover:text-rose-800 font-bold">Remove Image</button>
+                                <span id="st-plan-img-status" class="text-[11px] font-semibold text-emerald-600"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- SHORT TERM: PREACHING TEAMS (UP TO 10 TEAMS) -->
+                    <!-- SHORT TERM: PREACHING TEAMS -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
                         <div class="flex justify-between items-center">
                             <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">2. Preaching Teams Pairing (Up to 10)</h4>
@@ -676,23 +700,41 @@
                         </div>
                         <div id="st-teams-builder-rows" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
 
-                        <div class="flex items-center gap-3 pt-2 border-t">
-                            <label class="text-xs font-bold text-slate-600">Upload Teams Chart Image:</label>
-                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'teams')" class="text-xs text-slate-500">
-                            <button type="button" onclick="clearStImage('teams')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                            <label class="text-xs font-bold text-slate-700 block">Teams Chart Image:</label>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="cursor-pointer bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm">
+                                    📁 Select Image from Device
+                                    <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'teams')" class="hidden">
+                                </label>
+                                <button type="button" onclick="clearStImage('teams')" class="text-xs text-rose-600 hover:text-rose-800 font-bold">Remove Image</button>
+                                <span id="st-teams-img-status" class="text-[11px] font-semibold text-emerald-600"></span>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- SHORT TERM: LODGING (5 HOUSES) -->
+                    <!-- SHORT TERM: LODGING -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
                         <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">3. Lodging & Host Accommodations (5 Homes)</h4>
                         <div id="st-lodging-builder-rows" class="space-y-4 max-h-72 overflow-y-auto pr-1"></div>
 
-                        <div class="flex items-center gap-3 pt-2 border-t">
-                            <label class="text-xs font-bold text-slate-600">Upload Lodging Chart Image:</label>
-                            <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'lodging')" class="text-xs text-slate-500">
-                            <button type="button" onclick="clearStImage('lodging')" class="text-xs text-rose-600 hover:underline font-semibold">Remove Image</button>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                            <label class="text-xs font-bold text-slate-700 block">Lodging Chart Image:</label>
+                            <div class="flex flex-wrap items-center gap-3">
+                                <label class="cursor-pointer bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm">
+                                    📁 Select Image from Device
+                                    <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'lodging')" class="hidden">
+                                </label>
+                                <button type="button" onclick="clearStImage('lodging')" class="text-xs text-rose-600 hover:text-rose-800 font-bold">Remove Image</button>
+                                <span id="st-lodging-img-status" class="text-[11px] font-semibold text-emerald-600"></span>
+                            </div>
                         </div>
+                    </div>
+
+                    <!-- SHORT TERM: VISITING ZION ROSTERS BUILDER -->
+                    <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
+                        <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">4. Visiting Zion Rosters (Up to 10 Members per Zion)</h4>
+                        <div id="st-rosters-builder-rows" class="space-y-4 max-h-80 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
 
@@ -868,7 +910,7 @@
             "Youth Sisters", "2ND INDY SISTERS"
         ];
 
-        const DEFAULT_ST_GROUPS = ["Columbus Zion", "Oaklawn Zion", "Naperville Zion", "Cincinnati Zion"];
+        const DEFAULT_ST_GROUPS = ["Columbus Zion", "Oak Lawn Zion", "Naperville Zion", "Cincinnati Zion"];
 
         const DEFAULT_BLESSINGS = [
             { item: "Toilet Paper", status: "Full", name: "D. James" },
@@ -965,7 +1007,8 @@
             masterShortTermGroups: [...DEFAULT_ST_GROUPS],
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
             masterDuties: [...DEFAULT_DUTIES],
-            shortTermData: {} // Keyed by Group Name
+            shortTermData: {}, // Keyed by Short Term Group Name
+            shortTermZionRosters: {} // Keyed by Zion Location (e.g. "Columbus Zion": ["Name 1", ...])
         };
         
         let currentSelectedDate = "";
@@ -982,6 +1025,7 @@
         let activeShortTermGroup = DEFAULT_ST_GROUPS[0];
         let activeShortTermSubTab = 'plan';
         let activeShortTermDisplayMode = 'text'; // 'text' or 'image'
+        let isShortTermGuestMode = false;
 
         // ADMIN TIMEOUT ENGINE
         let adminInactivityTimer = null;
@@ -1064,6 +1108,7 @@
         }
 
         function toggleHamburgerMenu() {
+            if (isShortTermGuestMode) return;
             document.getElementById('hamburger-drawer').classList.toggle('hidden');
         }
 
@@ -1086,8 +1131,13 @@
             let enteredPin = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
             if (enteredPin === APP_ACCESS_PIN) {
                 sessionStorage.setItem('planner_unlocked', 'true');
+                sessionStorage.removeItem('guest_short_term');
+                isShortTermGuestMode = false;
+
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
+                
+                applyGuestModeUI(false);
                 await loadDataFromCloud();
                 checkExistingAdminSession();
                 
@@ -1103,18 +1153,52 @@
             }
         }
 
-        async function openShortTermPortal() {
+        async function openShortTermGuestPortal() {
             sessionStorage.setItem('planner_unlocked', 'true');
+            sessionStorage.setItem('guest_short_term', 'true');
+            isShortTermGuestMode = true;
+
             document.getElementById('pin-login-screen').classList.add('hidden');
             document.getElementById('app-wrapper').classList.remove('hidden');
+
+            applyGuestModeUI(true);
             await loadDataFromCloud();
             checkExistingAdminSession();
             switchTab('shortterm');
         }
 
+        function applyGuestModeUI(isGuest) {
+            isShortTermGuestMode = isGuest;
+            const tabsBar = document.getElementById('primary-tabs-bar');
+            const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+            const guestExitBtn = document.getElementById('guest-exit-btn');
+            const navTitle = document.getElementById('app-nav-title');
+
+            if (isGuest) {
+                tabsBar.classList.add('hidden');
+                hamburgerBtn.classList.add('hidden');
+                guestExitBtn.classList.remove('hidden');
+                navTitle.innerText = "Visiting Zion Portal (Short Term)";
+            } else {
+                tabsBar.classList.remove('hidden');
+                hamburgerBtn.classList.remove('hidden');
+                guestExitBtn.classList.add('hidden');
+                navTitle.innerText = "Zion Church Planner (INDY)";
+            }
+        }
+
+        function exitGuestMode() {
+            sessionStorage.removeItem('guest_short_term');
+            sessionStorage.removeItem('planner_unlocked');
+            isShortTermGuestMode = false;
+            lockApp();
+        }
+
         function lockApp() {
             logoutAdmin();
             sessionStorage.removeItem('planner_unlocked');
+            sessionStorage.removeItem('guest_short_term');
+            isShortTermGuestMode = false;
             document.getElementById('app-wrapper').classList.add('hidden');
             document.getElementById('pin-login-screen').classList.remove('hidden');
             document.querySelectorAll('.pin-digit').forEach(i => i.value = '');
@@ -1123,10 +1207,13 @@
 
         async function checkPinSession() {
             if (sessionStorage.getItem('planner_unlocked') === 'true') {
+                const isGuest = sessionStorage.getItem('guest_short_term') === 'true';
                 document.getElementById('pin-login-screen').classList.add('hidden');
                 document.getElementById('app-wrapper').classList.remove('hidden');
+                applyGuestModeUI(isGuest);
                 await loadDataFromCloud();
                 checkExistingAdminSession();
+                if (isGuest) switchTab('shortterm');
             } else {
                 document.querySelectorAll('.pin-digit')[0]?.focus();
             }
@@ -1223,6 +1310,9 @@
                 const stCloud = await loadKeyFromCloud('short_term_data');
                 if (stCloud) appState.shortTermData = stCloud;
 
+                const stRostersCloud = await loadKeyFromCloud('short_term_zion_rosters');
+                if (stRostersCloud) appState.shortTermZionRosters = stRostersCloud;
+
                 const calData = await loadKeyFromCloud('calendar_events');
                 if (calData) appState.calendarEventsDb = calData;
 
@@ -1304,18 +1394,28 @@
 
         function switchShortTermSubTab(subTab) {
             activeShortTermSubTab = subTab;
-            ['plan', 'teams', 'lodging'].forEach(st => {
+            ['plan', 'teams', 'lodging', 'rosters'].forEach(st => {
                 document.getElementById(`st-subview-${st}`)?.classList.add('hidden');
                 const btn = document.getElementById(`st-sub-${st}-btn`);
                 if (btn) {
-                    btn.className = "px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 font-bold";
+                    btn.className = "px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 font-bold whitespace-nowrap";
                 }
             });
 
             document.getElementById(`st-subview-${subTab}`)?.classList.remove('hidden');
             const targetBtn = document.getElementById(`st-sub-${subTab}-btn`);
             if (targetBtn) {
-                targetBtn.className = "px-4 py-2 rounded-xl bg-indigo-900 text-white font-bold shadow-sm";
+                targetBtn.className = "px-4 py-2 rounded-xl bg-indigo-900 text-white font-bold shadow-sm whitespace-nowrap";
+            }
+
+            // Hide or show the text/image toggle on Rosters tab
+            const toggleContainer = document.getElementById('st-toggle-container');
+            if (toggleContainer) {
+                if (subTab === 'rosters') {
+                    toggleContainer.classList.add('hidden');
+                } else {
+                    toggleContainer.classList.remove('hidden');
+                }
             }
 
             renderShortTermContent();
@@ -1353,7 +1453,7 @@
 
             const planImg = document.getElementById('st-plan-image-display');
             if (planImg) {
-                planImg.innerHTML = data.planImage ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No plan image uploaded. Admins can upload one in Admin > Short Term.</p>`;
+                planImg.innerHTML = data.planImage ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded.</p>`;
             }
 
             // 2. Preaching Teams
@@ -1362,7 +1462,7 @@
                 teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => `
                     <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl shadow-xs space-y-2">
                         <div class="flex justify-between items-center border-b border-indigo-100 pb-2">
-                            <span class="text-xs font-black uppercase tracking-wider text-indigo-900">Team ${idx + 1}</span>
+                            <span class="text-xs font-black uppercase tracking-wider text-indigo-950">Team ${idx + 1}</span>
                             <span class="text-[11px] bg-indigo-200 text-indigo-950 font-bold px-2 py-0.5 rounded-lg">${t.time || 'TBD'}</span>
                         </div>
                         <div class="text-xs font-bold text-slate-800 space-y-1">
@@ -1376,7 +1476,7 @@
 
             const teamsImg = document.getElementById('st-teams-image-display');
             if (teamsImg) {
-                teamsImg.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
+                teamsImg.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
             }
 
             // 3. Lodging
@@ -1403,7 +1503,32 @@
 
             const lodgingImg = document.getElementById('st-lodging-image-display');
             if (lodgingImg) {
-                lodgingImg.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[500px] mx-auto rounded-xl shadow-sm">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
+                lodgingImg.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
+            }
+
+            // 4. Visiting Zion Rosters
+            const rostersContainer = document.getElementById('st-rosters-container');
+            if (rostersContainer) {
+                const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+                rostersContainer.innerHTML = zionList.map(zionName => {
+                    const members = appState.shortTermZionRosters[zionName] || [];
+                    const activeCount = members.filter(Boolean).length;
+                    return `
+                        <div class="bg-white border-2 border-amber-200/80 rounded-2xl p-4 shadow-sm space-y-3 flex flex-col justify-between">
+                            <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
+                                <h4 class="font-extrabold text-xs text-indigo-950 flex items-center gap-1.5">
+                                    <span>📍</span> ${zionName}
+                                </h4>
+                                <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full">${activeCount}/10</span>
+                            </div>
+                            <ul class="space-y-1 text-xs font-semibold text-slate-700 flex-1">
+                                ${members.length > 0 && activeCount > 0 ? members.filter(Boolean).map((m, i) => `
+                                    <li class="flex items-center gap-1.5"><span class="text-indigo-400 text-[10px] font-bold">${i + 1}.</span> <span>${m}</span></li>
+                                `).join('') : `<li class="text-slate-400 italic text-[11px] py-2 text-center">No visiting members registered</li>`}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
             }
         }
 
@@ -1421,6 +1546,11 @@
         function populateAdminShortTermUI(groupName) {
             const data = getShortTermGroupData(groupName);
             document.getElementById('input-st-activities').value = (data.activities || []).join('\n');
+
+            // Image upload status indicators
+            document.getElementById('st-plan-img-status').innerText = data.planImage ? "✓ Image Loaded" : "";
+            document.getElementById('st-teams-img-status').innerText = data.teamsImage ? "✓ Image Loaded" : "";
+            document.getElementById('st-lodging-img-status').innerText = data.lodgingImage ? "✓ Image Loaded" : "";
 
             // Teams (up to 10)
             const teamContainer = document.getElementById('st-teams-builder-rows');
@@ -1454,6 +1584,35 @@
                     </div>
                 `;
                 lodgingContainer.appendChild(div);
+            });
+
+            // Visiting Zion Rosters Builder
+            const rostersContainer = document.getElementById('st-rosters-builder-rows');
+            rostersContainer.innerHTML = "";
+            const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+
+            zionList.forEach(zionName => {
+                const savedMembers = appState.shortTermZionRosters[zionName] || [];
+                const block = document.createElement('div');
+                block.className = "p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 st-zion-roster-block";
+                block.setAttribute('data-zion', zionName);
+
+                let inputsHtml = "";
+                for (let i = 0; i < 10; i++) {
+                    const val = savedMembers[i] || "";
+                    inputsHtml += `<input type="text" placeholder="Member ${i + 1}..." value="${val}" class="st-member-input border border-slate-300 rounded p-1.5 text-xs font-semibold">`;
+                }
+
+                block.innerHTML = `
+                    <div class="font-bold text-xs text-indigo-950 border-b pb-1 flex items-center justify-between">
+                        <span>📍 ${zionName} Directory</span>
+                        <span class="text-[10px] text-slate-400">Max 10 Members</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                        ${inputsHtml}
+                    </div>
+                `;
+                rostersContainer.appendChild(block);
             });
         }
 
@@ -1500,28 +1659,85 @@
                 lodging.push({ host, mapUrl, address, guests: guestsRaw });
             });
             data.lodging = lodging;
+
+            // Harvest Visiting Zion Rosters
+            document.querySelectorAll('.st-zion-roster-block').forEach(block => {
+                const zionName = block.getAttribute('data-zion');
+                const members = Array.from(block.querySelectorAll('.st-member-input')).map(input => input.value.trim()).filter(Boolean);
+                appState.shortTermZionRosters[zionName] = members;
+            });
         }
 
+        // DEVICE IMAGE UPLOAD WITH RESIZE FOR COMPATIBILITY
         function handleStImageUpload(event, type) {
             const file = event.target.files[0];
             if (!file) return;
+
             const reader = new FileReader();
-            reader.onload = function(e) {
-                const data = getShortTermGroupData(adminCurrentStGroup);
-                if (type === 'plan') data.planImage = e.target.result;
-                if (type === 'teams') data.teamsImage = e.target.result;
-                if (type === 'lodging') data.lodgingImage = e.target.result;
-                alert(`Uploaded chart for ${type.toUpperCase()}! Click 'Save Changes' to push online.`);
+            reader.onload = function(readerEvent) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.82);
+                    const data = getShortTermGroupData(adminCurrentStGroup);
+
+                    if (type === 'plan') {
+                        data.planImage = resizedDataUrl;
+                        document.getElementById('st-plan-img-status').innerText = "✓ Uploaded";
+                    }
+                    if (type === 'teams') {
+                        data.teamsImage = resizedDataUrl;
+                        document.getElementById('st-teams-img-status').innerText = "✓ Uploaded";
+                    }
+                    if (type === 'lodging') {
+                        data.lodgingImage = resizedDataUrl;
+                        document.getElementById('st-lodging-img-status').innerText = "✓ Uploaded";
+                    }
+
+                    alert(`Image for ${type.toUpperCase()} successfully processed from device. Click 'Save Changes' to update cloud.`);
+                };
+                img.src = readerEvent.target.result;
             };
             reader.readAsDataURL(file);
         }
 
         function clearStImage(type) {
             const data = getShortTermGroupData(adminCurrentStGroup);
-            if (type === 'plan') data.planImage = "";
-            if (type === 'teams') data.teamsImage = "";
-            if (type === 'lodging') data.lodgingImage = "";
-            alert(`Removed image chart for ${type}.`);
+            if (type === 'plan') {
+                data.planImage = "";
+                document.getElementById('st-plan-img-status').innerText = "";
+            }
+            if (type === 'teams') {
+                data.teamsImage = "";
+                document.getElementById('st-teams-img-status').innerText = "";
+            }
+            if (type === 'lodging') {
+                data.lodgingImage = "";
+                document.getElementById('st-lodging-img-status').innerText = "";
+            }
+            alert(`Removed ${type.toUpperCase()} image.`);
         }
 
         function renderCookingSchedule() {
@@ -2294,6 +2510,10 @@
         }
 
         function switchTab(viewName) {
+            if (isShortTermGuestMode && viewName !== 'shortterm') {
+                viewName = 'shortterm';
+            }
+
             ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
                 document.getElementById(`view-${t}`)?.classList.add('hidden');
                 const btn = document.getElementById(`tab-${t}-btn`);
@@ -2446,10 +2666,11 @@
                 await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
             }
 
-            // SHORT TERM SAVE (NEW)
+            // SHORT TERM SAVE
             if (activeTab === 'shortterm' && currentAdminRole === 'master') {
                 harvestAdminShortTermRows();
                 await saveKeyToCloud('short_term_data', appState.shortTermData);
+                await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
                 renderShortTermContent();
             }
 
