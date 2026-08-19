@@ -25,7 +25,7 @@
         }
         .animate-shake { animation: shake 0.4s ease-in-out; }
 
-        select, input[type="text"], textarea {
+        select, input[type="text"], input[type="date"], textarea {
             background-color: #ffffff !important;
             color: #0f172a !important;
             opacity: 1 !important;
@@ -103,12 +103,10 @@
                         ⚙️ Admin
                     </button>
                     
-                    <!-- Guest Exit Button -->
                     <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1">
                         🚪 Exit Guest Mode
                     </button>
 
-                    <!-- Full Navigation Drawer Toggle -->
                     <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -372,8 +370,20 @@
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW 1: DAILY PLAN -->
+                        <!-- SUB-VIEW 1: DAILY PLAN (WITH DATE CYCLING) -->
                         <div id="st-subview-plan" class="space-y-4">
+                            <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
+                                <div>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Itinerary Date</h4>
+                                    <p class="text-sm font-extrabold text-indigo-950" id="st-plan-date-display">Today</p>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <button onclick="changeStPlanDate(-1)" class="p-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold shadow-xs">← Prev Day</button>
+                                    <input type="date" id="st-plan-date-picker" onchange="setStPlanDate(this.value)" class="border border-slate-300 rounded-lg p-1.5 text-xs font-bold bg-white text-indigo-950 outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs">
+                                    <button onclick="changeStPlanDate(1)" class="p-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold shadow-xs">Next Day →</button>
+                                </div>
+                            </div>
+
                             <div class="st-content-text space-y-3">
                                 <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">⏱️ Scheduled Itinerary & Times</h3>
                                 <div id="st-plan-container" class="space-y-3"></div>
@@ -663,16 +673,28 @@
 
                 <!-- SHORT TERM ADMIN -->
                 <div id="ap-shortterm" class="admin-panel-section space-y-6 hidden master-only">
-                    <!-- SHORT TERM: DAILY PLAN -->
+                    <!-- SHORT TERM: DAILY PLAN BUILDER -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
-                        <div class="flex justify-between items-center">
-                            <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary</h4>
-                            <button type="button" onclick="openBatchModalForCurrentTab('stdaily')" class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Plan</button>
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
+                            <div>
+                                <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary (Advance Scheduler)</h4>
+                                <p class="text-[11px] text-slate-500">Select a target date to edit or paste batch events in bulk.</p>
+                            </div>
+                            <div class="flex items-center gap-2 self-end sm:self-auto">
+                                <button type="button" onclick="openBatchModalForCurrentTab('stdaily')" class="px-2 py-1 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Schedule</button>
+                            </div>
                         </div>
-                        <textarea id="input-st-activities" rows="3" placeholder="e.g. 9:00 AM - Breakfast & Orientation&#10;10:30 AM - Indy Outreach Kickoff" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+
+                        <div class="bg-indigo-50/50 p-3 rounded-xl border border-indigo-100 flex flex-wrap items-center gap-3">
+                            <label class="text-xs font-bold text-indigo-950 uppercase tracking-wider">Managing Date:</label>
+                            <input type="date" id="admin-st-plan-date-picker" onchange="switchAdminStPlanDate(this.value)" class="border border-indigo-200 rounded p-1 text-xs font-bold bg-white text-indigo-950 outline-none">
+                            <span id="admin-st-plan-date-label" class="text-xs font-bold text-indigo-800"></span>
+                        </div>
+
+                        <textarea id="input-st-activities" rows="4" placeholder="e.g. 11:00 AM - Preach (To-Go Lunch) | Assigned Routes&#10;7:00 PM - Dinner in Zion | Main Zion" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                         
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                            <label class="text-xs font-bold text-slate-700 block">Plan Chart Image:</label>
+                            <label class="text-xs font-bold text-slate-700 block">Plan Chart Image (For Current Selected Date):</label>
                             <div class="flex flex-wrap items-center gap-3">
                                 <label class="cursor-pointer bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm">
                                     📁 Select Image from Device
@@ -1025,11 +1047,7 @@
             masterLocations: ["Main Zion", "Columbus Zion", "NPV", "Naperville", "Group by Group"],
             masterDuties: [...DEFAULT_DUTIES],
             shortTermData: {
-                activities: [
-                    { time: "9:00 AM", activity: "Breakfast & Daily Overview", location: "Sanctuary", image: "" },
-                    { time: "10:30 AM", activity: "Indy Combined Preaching Session", location: "Downtown Indy", image: "" },
-                    { time: "6:00 PM", activity: "Dinner & Fellowship", location: "Fellowship Hall", image: "" }
-                ],
+                dailyPlans: {},
                 teams: [
                     { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy", image: "" },
                     { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North", image: "" }
@@ -1062,6 +1080,8 @@
         let activeShortTermSubTab = 'plan';
         let activeShortTermDisplayMode = 'text';
         let isShortTermGuestMode = false;
+        let currentStPlanDate = "";
+        let currentAdminStPlanDate = "";
 
         // ADMIN TIMEOUT ENGINE
         let adminInactivityTimer = null;
@@ -1316,6 +1336,8 @@
         async function loadDataFromCloud() {
             document.getElementById('loading-spinner').classList.add('hidden');
             lastKnownLocalDate = getLocalDateString(new Date());
+            currentStPlanDate = lastKnownLocalDate;
+            currentAdminStPlanDate = lastKnownLocalDate;
             handleDateChange(lastKnownLocalDate);
 
             try {
@@ -1389,11 +1411,7 @@
         function getShortTermGroupData() {
             if (!appState.shortTermData || typeof appState.shortTermData !== 'object') {
                 appState.shortTermData = {
-                    activities: [
-                        { time: "9:00 AM", activity: "Breakfast & Daily Overview", location: "Sanctuary", image: "" },
-                        { time: "10:30 AM", activity: "Indy Combined Preaching Session", location: "Downtown Indy", image: "" },
-                        { time: "6:00 PM", activity: "Dinner & Fellowship", location: "Fellowship Hall", image: "" }
-                    ],
+                    dailyPlans: {},
                     teams: [
                         { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy", image: "" },
                         { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North", image: "" }
@@ -1411,21 +1429,43 @@
                 };
             }
 
-            // Normalization for legacy format string activities
-            if (Array.isArray(appState.shortTermData.activities)) {
-                appState.shortTermData.activities = appState.shortTermData.activities.map(act => {
-                    if (typeof act === 'string') {
-                        const parts = act.split(' - ');
-                        return { time: parts[0] || '', activity: parts[1] || act, location: 'Sanctuary', image: '' };
-                    }
-                    return act;
-                });
+            if (!appState.shortTermData.dailyPlans || typeof appState.shortTermData.dailyPlans !== 'object') {
+                appState.shortTermData.dailyPlans = {};
+            }
+
+            // Legacy backward-compatibility conversion
+            if (Array.isArray(appState.shortTermData.activities) && appState.shortTermData.activities.length > 0) {
+                const todayKey = getLocalDateString(new Date());
+                if (!appState.shortTermData.dailyPlans[todayKey]) {
+                    appState.shortTermData.dailyPlans[todayKey] = {
+                        activities: appState.shortTermData.activities.map(act => {
+                            if (typeof act === 'string') {
+                                const parts = act.split(' - ');
+                                return { time: parts[0] || '', activity: parts[1] || act, location: 'Sanctuary', image: '' };
+                            }
+                            return act;
+                        }),
+                        planImage: appState.shortTermData.planImage || ""
+                    };
+                }
             }
 
             if (!Array.isArray(appState.shortTermData.teams)) appState.shortTermData.teams = [];
             if (!Array.isArray(appState.shortTermData.lodging)) appState.shortTermData.lodging = [];
 
             return appState.shortTermData;
+        }
+
+        function setStPlanDate(dateStr) {
+            currentStPlanDate = dateStr;
+            renderShortTermContent();
+        }
+
+        function changeStPlanDate(offset) {
+            let d = new Date((currentStPlanDate || getLocalDateString(new Date())) + 'T00:00:00');
+            d.setDate(d.getDate() + offset);
+            currentStPlanDate = getLocalDateString(d);
+            renderShortTermContent();
         }
 
         function switchShortTermSubTab(subTab) {
@@ -1477,10 +1517,21 @@
         function renderShortTermContent() {
             const data = getShortTermGroupData();
 
-            // 1. Daily Plan
+            // 1. Daily Plan with Date Cycler
+            if (!currentStPlanDate) currentStPlanDate = getLocalDateString(new Date());
+            const picker = document.getElementById('st-plan-date-picker');
+            if (picker) picker.value = currentStPlanDate;
+
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+            const formattedDate = new Date(currentStPlanDate + 'T00:00:00').toLocaleDateString('en-US', dateOptions);
+            const dateDisplay = document.getElementById('st-plan-date-display');
+            if (dateDisplay) dateDisplay.innerText = formattedDate;
+
+            const currentDayPlan = (data.dailyPlans && data.dailyPlans[currentStPlanDate]) ? data.dailyPlans[currentStPlanDate] : { activities: [], planImage: "" };
+
             const planContainer = document.getElementById('st-plan-container');
             if (planContainer) {
-                planContainer.innerHTML = (data.activities && data.activities.length > 0) ? data.activities.map(act => {
+                planContainer.innerHTML = (currentDayPlan.activities && currentDayPlan.activities.length > 0) ? currentDayPlan.activities.map(act => {
                     const time = act.time || 'Time';
                     const title = act.activity || 'Activity';
                     const loc = act.location ? `📍 ${act.location}` : '';
@@ -1497,12 +1548,13 @@
                             ${thumb}
                         </div>
                     `;
-                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No daily itinerary scheduled.</p>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No itinerary scheduled for ${formattedDate}.</p>`;
             }
 
             const planImg = document.getElementById('st-plan-image-display');
+            const dayImg = currentDayPlan.planImage || data.planImage;
             if (planImg) {
-                planImg.innerHTML = (data.planImage && data.planImage.trim()) ? `<img src="${data.planImage}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.planImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded.</p>`;
+                planImg.innerHTML = (dayImg && dayImg.trim()) ? `<img src="${dayImg}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${dayImg}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded for this date.</p>`;
             }
 
             // 2. Preaching Teams
@@ -1598,11 +1650,62 @@
         // ==========================================
         // SHORT TERM ADMIN BUILDER
         // ==========================================
-        function populateAdminShortTermUI() {
+        function switchAdminStPlanDate(dateStr) {
+            harvestAdminStPlanDateActivities();
+            currentAdminStPlanDate = dateStr;
+            populateAdminStPlanForDate(dateStr);
+        }
+
+        function populateAdminStPlanForDate(dateStr) {
             const data = getShortTermGroupData();
-            document.getElementById('input-st-activities').value = (data.activities || []).map(a => `${a.time} - ${a.activity}${a.location ? ` | ${a.location}` : ''}`).join('\n');
+            const picker = document.getElementById('admin-st-plan-date-picker');
+            if (picker) picker.value = dateStr;
+
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+            const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', dateOptions);
+            const lbl = document.getElementById('admin-st-plan-date-label');
+            if (lbl) lbl.innerText = `(${formatted})`;
+
+            const plan = (data.dailyPlans && data.dailyPlans[dateStr]) ? data.dailyPlans[dateStr] : { activities: [], planImage: "" };
+            document.getElementById('input-st-activities').value = (plan.activities || []).map(a => `${a.time} - ${a.activity}${a.location ? ` | ${a.location}` : ''}`).join('\n');
 
             updateAdminImagePreviews();
+        }
+
+        function harvestAdminStPlanDateActivities() {
+            if (!currentAdminStPlanDate) return;
+            const data = getShortTermGroupData();
+            if (!data.dailyPlans) data.dailyPlans = {};
+
+            const raw = document.getElementById('input-st-activities').value;
+            const parsed = raw.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+                let loc = "Sanctuary";
+                let text = line;
+                if (line.includes('|')) {
+                    const p = line.split('|');
+                    text = p[0].trim();
+                    loc = p[1].trim();
+                }
+                const parts = text.split(' - ');
+                return {
+                    time: parts[0] || 'TBD',
+                    activity: parts[1] || text,
+                    location: loc,
+                    image: ""
+                };
+            });
+
+            if (!data.dailyPlans[currentAdminStPlanDate]) {
+                data.dailyPlans[currentAdminStPlanDate] = { activities: [], planImage: "" };
+            }
+            data.dailyPlans[currentAdminStPlanDate].activities = parsed;
+        }
+
+        function populateAdminShortTermUI() {
+            const data = getShortTermGroupData();
+            if (!currentAdminStPlanDate) currentAdminStPlanDate = currentStPlanDate || getLocalDateString(new Date());
+
+            populateAdminStPlanForDate(currentAdminStPlanDate);
 
             // Teams (up to 10)
             const teamContainer = document.getElementById('st-teams-builder-rows');
@@ -1681,12 +1784,14 @@
 
         function updateAdminImagePreviews() {
             const data = getShortTermGroupData();
+            const currentPlan = (data.dailyPlans && data.dailyPlans[currentAdminStPlanDate]) ? data.dailyPlans[currentAdminStPlanDate] : { planImage: "" };
+            const planImgSrc = currentPlan.planImage || data.planImage;
 
             // Plan preview
-            document.getElementById('st-plan-img-status').innerText = data.planImage ? "✓ Image Loaded" : "";
+            document.getElementById('st-plan-img-status').innerText = planImgSrc ? "✓ Image Loaded" : "";
             const planPrev = document.getElementById('admin-st-plan-preview');
             if (planPrev) {
-                planPrev.innerHTML = data.planImage ? `<img src="${data.planImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.planImage}')" title="Click to view full">` : '';
+                planPrev.innerHTML = planImgSrc ? `<img src="${planImgSrc}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${planImgSrc}')" title="Click to view full">` : '';
             }
 
             // Teams preview
@@ -1779,24 +1884,8 @@
         }
 
         function harvestAdminShortTermRows() {
+            harvestAdminStPlanDateActivities();
             const data = getShortTermGroupData();
-
-            data.activities = document.getElementById('input-st-activities').value.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
-                let loc = "Sanctuary";
-                let text = line;
-                if (line.includes('|')) {
-                    const p = line.split('|');
-                    text = p[0].trim();
-                    loc = p[1].trim();
-                }
-                const parts = text.split(' - ');
-                return {
-                    time: parts[0] || 'TBD',
-                    activity: parts[1] || text,
-                    location: loc,
-                    image: ""
-                };
-            });
 
             let teams = [];
             document.querySelectorAll('#st-teams-builder-rows .st-team-row').forEach(r => {
@@ -1865,6 +1954,11 @@
                     const data = getShortTermGroupData();
 
                     if (type === 'plan') {
+                        if (!data.dailyPlans) data.dailyPlans = {};
+                        if (!data.dailyPlans[currentAdminStPlanDate]) {
+                            data.dailyPlans[currentAdminStPlanDate] = { activities: [], planImage: "" };
+                        }
+                        data.dailyPlans[currentAdminStPlanDate].planImage = resizedDataUrl;
                         data.planImage = resizedDataUrl;
                     }
                     if (type === 'teams') {
@@ -1885,7 +1979,12 @@
 
         function clearStImage(type) {
             const data = getShortTermGroupData();
-            if (type === 'plan') data.planImage = "";
+            if (type === 'plan') {
+                if (data.dailyPlans && data.dailyPlans[currentAdminStPlanDate]) {
+                    data.dailyPlans[currentAdminStPlanDate].planImage = "";
+                }
+                data.planImage = "";
+            }
             if (type === 'teams') data.teamsImage = "";
             if (type === 'lodging') data.lodgingImage = "";
 
@@ -2397,8 +2496,8 @@
                 input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
             } else if (currentBatchTarget === 'stdaily') {
                 title.innerText = "⚡ Batch Upload Short Term Daily Schedule";
-                instructions.innerHTML = `Paste schedule lines.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code>`;
-                input.placeholder = "9:00 AM, Breakfast & Strategy, Main Sanctuary\n11:00 AM, Downtown Outreach, Indy Center\n6:00 PM, Evening Fellowship, Fellowship Hall";
+                instructions.innerHTML = `Paste schedule for dates in advance.<br><b>Format 1 (Single/Current Day):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code><br><b>Format 2 (Multi-Day Batch):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">YYYY-MM-DD | Time, Activity, Location</code> or header <code class="bg-slate-100 text-slate-800 px-1 rounded">[YYYY-MM-DD]</code>`;
+                input.placeholder = "2026-08-21 | 11:00 AM, Preach (To-Go Lunch), Assigned Routes\n2026-08-21 | 7:00 PM, Dinner in Zion, Main Zion\n\n[2026-08-22]\n9:00 AM, Morning Worship, Main Sanctuary\n10:30 AM, Preach, Assigned Routes\n1:00 PM, Lunch, Fellowship Hall\n3:00 PM, Afternoon Worship, Main Sanctuary\n4:00 PM, Preach, Assigned Routes\n6:00 PM, Dinner, Fellowship Hall\n8:00 PM, Evening Worship, Main Sanctuary\n\n[2026-08-23]\n10:00 AM, Preach, Assigned Routes\n12:00 PM, Joint Preaching (To-Go Lunch), Assigned Routes\n5:30 PM, Dinner in Zion, Main Zion";
             } else if (currentBatchTarget === 'stteams') {
                 title.innerText = "⚡ Batch Upload Short Term Preaching Teams";
                 instructions.innerHTML = `Paste teams (up to 10).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Indy Member, Visiting Member, Time, Location</code>`;
@@ -2433,29 +2532,52 @@
             let updatedCount = 0;
 
             if (currentBatchTarget === 'stdaily') {
-                let parsedActs = [];
+                const data = getShortTermGroupData();
+                if (!data.dailyPlans) data.dailyPlans = {};
+
+                let activeContextDate = currentAdminStPlanDate || currentStPlanDate || getLocalDateString(new Date());
+
                 lines.forEach(line => {
-                    const parts = line.split(',').map(p => p.trim());
+                    let cleaned = line.trim();
+                    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+                        const dateExtract = cleaned.slice(1, -1).trim();
+                        if (dateExtract) activeContextDate = dateExtract;
+                        return;
+                    }
+
+                    let targetDate = activeContextDate;
+                    let payload = cleaned;
+
+                    if (cleaned.includes('|') && /^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
+                        const parts = cleaned.split('|');
+                        targetDate = parts[0].trim();
+                        payload = parts.slice(1).join('|').trim();
+                    }
+
+                    const parts = payload.split(',').map(p => p.trim());
                     if (parts.length >= 2) {
-                        parsedActs.push({
+                        if (!data.dailyPlans[targetDate]) {
+                            data.dailyPlans[targetDate] = { activities: [], planImage: "" };
+                        }
+
+                        data.dailyPlans[targetDate].activities.push({
                             time: parts[0] || 'TBD',
                             activity: parts[1] || '',
-                            location: parts[2] || 'Main Sanctuary',
+                            location: parts[2] || 'Main Zion',
                             image: ""
                         });
                         updatedCount++;
                     }
                 });
 
-                if (parsedActs.length > 0) {
-                    appState.shortTermData.activities = parsedActs;
+                if (updatedCount > 0) {
                     populateAdminShortTermUI();
                     renderShortTermContent();
                     await saveKeyToCloud('short_term_data', appState.shortTermData);
                     toggleBatchModal();
-                    alert(`Imported ${updatedCount} daily schedule items!`);
+                    alert(`Imported ${updatedCount} daily schedule items across configured dates!`);
                 } else {
-                    alert("Could not parse schedule. Format: Time, Activity, Location");
+                    alert("Could not parse schedule. Format: Time, Activity, Location OR YYYY-MM-DD | Time, Activity, Location");
                 }
             } else if (currentBatchTarget === 'stteams') {
                 let parsedTeams = [];
