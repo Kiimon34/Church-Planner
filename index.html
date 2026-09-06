@@ -13,8 +13,8 @@
     <meta name="apple-mobile-web-app-title" content="Zion Planner">
     <meta name="theme-color" content="#1e1b4b">
     
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- Stable Tailwind CSS CDN (Prevents blank FOUC freeze) -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
         .pin-digit:focus { border-color: #312e81; ring: 2px; }
@@ -141,6 +141,7 @@
                 </div>
             </div>
 
+            <!-- PRIMARY TABS SLIDER BAR (LOCAL MEMBERS ONLY) -->
             <div id="primary-tabs-bar" class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer">📅 Daily View</button>
@@ -1324,6 +1325,104 @@
             }
         }
 
+        async function submitPinCheck() {
+            let enteredPin = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
+            if (enteredPin === APP_ACCESS_PIN) {
+                sessionStorage.setItem('planner_unlocked', 'true');
+                sessionStorage.removeItem('guest_short_term');
+                isShortTermGuestMode = false;
+
+                document.getElementById('pin-login-screen').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.remove('hidden');
+                
+                applyGuestModeUI(false);
+                switchTab('daily');
+                loadDataFromCloud();
+                checkExistingAdminSession();
+                
+                if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
+                    openAnnouncementPopupModal();
+                }
+            } else {
+                document.getElementById('pin-error-msg').classList.remove('hidden');
+                document.getElementById('pin-input-container').classList.add('animate-shake');
+                document.querySelectorAll('.pin-digit').forEach(i => i.value = '');
+                document.querySelectorAll('.pin-digit')[0].focus();
+                setTimeout(() => document.getElementById('pin-input-container').classList.remove('animate-shake'), 400);
+            }
+        }
+
+        async function openShortTermGuestPortal() {
+            sessionStorage.setItem('planner_unlocked', 'true');
+            sessionStorage.setItem('guest_short_term', 'true');
+            isShortTermGuestMode = true;
+
+            document.getElementById('pin-login-screen').classList.add('hidden');
+            document.getElementById('app-wrapper').classList.remove('hidden');
+
+            applyGuestModeUI(true);
+            switchTab('shortterm');
+            loadDataFromCloud();
+            checkExistingAdminSession();
+        }
+
+        function applyGuestModeUI(isGuest) {
+            isShortTermGuestMode = isGuest;
+            const tabsBar = document.getElementById('primary-tabs-bar');
+            const hamburgerBtn = document.getElementById('hamburger-menu-btn');
+            const guestExitBtn = document.getElementById('guest-exit-btn');
+            const navTitle = document.getElementById('app-nav-title');
+
+            if (isGuest) {
+                tabsBar.classList.add('hidden');
+                hamburgerBtn.classList.add('hidden');
+                guestExitBtn.classList.remove('hidden');
+                navTitle.innerText = "Visiting Zion Portal (Short Term)";
+            } else {
+                tabsBar.classList.remove('hidden');
+                hamburgerBtn.classList.remove('hidden');
+                guestExitBtn.classList.add('hidden');
+                navTitle.innerText = "Zion Church Planner (INDY)";
+            }
+        }
+
+        function exitGuestMode() {
+            sessionStorage.removeItem('guest_short_term');
+            sessionStorage.removeItem('planner_unlocked');
+            isShortTermGuestMode = false;
+            lockApp();
+        }
+
+        function lockApp() {
+            logoutAdmin();
+            sessionStorage.removeItem('planner_unlocked');
+            sessionStorage.removeItem('guest_short_term');
+            isShortTermGuestMode = false;
+            document.getElementById('app-wrapper').classList.add('hidden');
+            document.getElementById('pin-login-screen').classList.remove('hidden');
+            document.querySelectorAll('.pin-digit').forEach(i => i.value = '');
+            document.querySelectorAll('.pin-digit')[0]?.focus();
+        }
+
+        function checkPinSession() {
+            if (sessionStorage.getItem('planner_unlocked') === 'true') {
+                const isGuest = sessionStorage.getItem('guest_short_term') === 'true';
+                document.getElementById('pin-login-screen').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.remove('hidden');
+                applyGuestModeUI(isGuest);
+                if (isGuest) {
+                    switchTab('shortterm');
+                } else {
+                    switchTab('daily');
+                }
+                loadDataFromCloud();
+                checkExistingAdminSession();
+            } else {
+                document.getElementById('pin-login-screen').classList.remove('hidden');
+                document.querySelectorAll('.pin-digit')[0]?.focus();
+            }
+        }
+
         function loadLocalCache() {
             try {
                 const raw = localStorage.getItem(OFFLINE_CACHE_KEY);
@@ -1381,6 +1480,40 @@
                 clearTimeout(timer);
             }
             return null;
+        }
+
+        async function revokeAllDevices() {
+            if (!confirm("Are you sure? This will invalidate all trusted devices globally on their next reload.")) return;
+            const newEpoch = Date.now().toString();
+            await saveKeyToCloud('global_device_epoch', newEpoch);
+            localStorage.removeItem(DEVICE_STORAGE_KEY);
+            alert("All devices invalidated. Reloading application.");
+            location.reload();
+        }
+
+        function linkifyText(text) {
+            if (!text) return "";
+            return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950 hover:text-amber-700 break-all">${url}</a>`);
+        }
+
+        function renderDailyAnnouncements() {
+            const section = document.getElementById('daily-announcements-section');
+            const textEl = document.getElementById('daily-announcements-text');
+            if (!section || !textEl) return;
+            if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
+                textEl.innerHTML = linkifyText(appState.persistentAnnouncement);
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+
+        function syncGlobalDatalists() {
+            const evList = (appState.masterEvangelists && appState.masterEvangelists.length > 0) ? appState.masterEvangelists : DEFAULT_EVANGELISTS;
+            const dutyList = (appState.masterDuties && appState.masterDuties.length > 0) ? appState.masterDuties : DEFAULT_DUTIES;
+
+            document.getElementById('dl-evangelists').innerHTML = evList.map(ev => `<option value="${ev}"></option>`).join('');
+            document.getElementById('dl-duties').innerHTML = dutyList.map(d => `<option value="${d}"></option>`).join('');
         }
 
         function renderAllViews() {
@@ -1502,543 +1635,921 @@
             }
         }
 
-        function renderBlessings() {
-            const container = document.getElementById('blessings-container');
-            if (!container) return;
+        function getShortTermGroupData() {
+            if (!appState.shortTermData || typeof appState.shortTermData !== 'object') {
+                appState.shortTermData = {};
+            }
+            if (!appState.shortTermData.dailyPlans) appState.shortTermData.dailyPlans = {};
+            if (!Array.isArray(appState.shortTermData.teams)) appState.shortTermData.teams = [];
+            if (!Array.isArray(appState.shortTermData.lodging)) appState.shortTermData.lodging = [];
+            return appState.shortTermData;
+        }
 
-            let mappedList = {};
-            (appState.blessingsList || []).forEach(b => {
-                if (typeof b === 'object' && b !== null) {
-                    mappedList[b.item] = { name: b.name || '', status: (b.status || 'Full').toLowerCase() };
-                } else if (typeof b === 'string') {
-                    const chunks = b.split(':');
-                    const name = chunks[0] ? chunks[0].trim() : '';
-                    const item = chunks[1] ? chunks[1].trim() : '';
-                    let status = chunks[2] ? chunks[2].trim().toLowerCase() : 'full';
-                    if (item) mappedList[item] = { name, status };
+        function setStPlanDate(dateStr) {
+            currentStPlanDate = dateStr;
+            renderShortTermContent();
+        }
+
+        function changeStPlanDate(offset) {
+            let d = new Date((currentStPlanDate || getLocalDateString(new Date())) + 'T00:00:00');
+            d.setDate(d.getDate() + offset);
+            currentStPlanDate = getLocalDateString(d);
+            renderShortTermContent();
+        }
+
+        function switchShortTermSubTab(subTab) {
+            activeShortTermSubTab = subTab;
+            ['plan', 'teams', 'lodging', 'rosters'].forEach(st => {
+                document.getElementById(`st-subview-${st}`)?.classList.add('hidden');
+                const btn = document.getElementById(`st-sub-${st}-btn`);
+                if (btn) {
+                    btn.className = "px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 font-bold whitespace-nowrap cursor-pointer";
                 }
             });
 
-            container.innerHTML = DEFAULT_BLESSINGS.map(bDef => {
-                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status.toLowerCase() };
-                let status = itemData.status;
+            document.getElementById(`st-subview-${subTab}`)?.classList.remove('hidden');
+            const targetBtn = document.getElementById(`st-sub-${subTab}-btn`);
+            if (targetBtn) {
+                targetBtn.className = "px-4 py-2 rounded-xl bg-indigo-900 text-white font-bold shadow-sm whitespace-nowrap cursor-pointer";
+            }
 
-                let colorClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                if (status === 'low') colorClass = "bg-amber-100 text-amber-800 border-amber-200";
-                if (status === 'empty') colorClass = "bg-rose-100 text-rose-800 border-rose-200";
+            const toggleContainer = document.getElementById('st-toggle-container');
+            if (toggleContainer) {
+                if (subTab === 'rosters') {
+                    toggleContainer.classList.add('hidden');
+                } else {
+                    toggleContainer.classList.remove('hidden');
+                }
+            }
 
-                return `
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-                        <div class="flex divide-x divide-slate-100 flex-1">
-                            <div class="w-1/2 p-3 font-bold text-indigo-950 text-xs flex items-center break-words">${bDef.item}</div>
-                            <div class="w-1/2 p-3 text-xs font-semibold text-slate-700 flex items-center break-words bg-slate-50/50">${itemData.name || '<span class="text-slate-400 italic">Unassigned</span>'}</div>
-                        </div>
-                        <div class="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Status:</span>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full border font-semibold uppercase ${colorClass}">${status}</span>
-                        </div>
-                    </div>`;
-            }).join('');
+            renderShortTermContent();
         }
 
-        function renderBlessingsBuilderUI() {
-            const container = document.getElementById('blessings-builder-rows');
+        function toggleShortTermDisplayMode(mode) {
+            activeShortTermDisplayMode = mode;
+            const textBtn = document.getElementById('st-mode-text-btn');
+            const imgBtn = document.getElementById('st-mode-image-btn');
+
+            if (mode === 'text') {
+                textBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900 cursor-pointer";
+                imgBtn.className = "px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer";
+                document.querySelectorAll('.st-content-text').forEach(el => el.classList.remove('hidden'));
+                document.querySelectorAll('.st-content-image').forEach(el => el.classList.add('hidden'));
+            } else {
+                imgBtn.className = "px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900 cursor-pointer";
+                textBtn.className = "px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer";
+                document.querySelectorAll('.st-content-text').forEach(el => el.classList.add('hidden'));
+                document.querySelectorAll('.st-content-image').forEach(el => el.classList.remove('hidden'));
+            }
+        }
+
+        function renderShortTermContent() {
+            const data = getShortTermGroupData();
+
+            if (!currentStPlanDate) currentStPlanDate = getLocalDateString(new Date());
+            const picker = document.getElementById('st-plan-date-picker');
+            if (picker) picker.value = currentStPlanDate;
+
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+            const formattedDate = new Date(currentStPlanDate + 'T00:00:00').toLocaleDateString('en-US', dateOptions);
+            const dateDisplay = document.getElementById('st-plan-date-display');
+            if (dateDisplay) dateDisplay.innerText = formattedDate;
+
+            const currentDayPlan = (data.dailyPlans && data.dailyPlans[currentStPlanDate]) ? data.dailyPlans[currentStPlanDate] : { activities: [], planImage: "" };
+
+            const planContainer = document.getElementById('st-plan-container');
+            if (planContainer) {
+                planContainer.innerHTML = (currentDayPlan.activities && currentDayPlan.activities.length > 0) ? currentDayPlan.activities.map(act => {
+                    const time = act.time || 'Time';
+                    const title = act.activity || 'Activity';
+                    const loc = act.location ? `📍 ${act.location}` : '';
+                    const thumb = act.image ? `<img src="${act.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${act.image}')" alt="Attachment" title="Click to view full image">` : '';
+                    return `
+                        <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-xs gap-3">
+                            <div class="flex items-start">
+                                <span class="bg-indigo-100 text-indigo-900 text-xs font-bold px-2.5 py-1 rounded-lg mr-3 whitespace-nowrap">${time}</span>
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-800">${title}</div>
+                                    ${loc ? `<div class="text-[11px] text-slate-500 mt-0.5">${loc}</div>` : ''}
+                                </div>
+                            </div>
+                            ${thumb}
+                        </div>
+                    `;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No itinerary scheduled for ${formattedDate}.</p>`;
+            }
+
+            const planImg = document.getElementById('st-plan-image-display');
+            const dayImg = currentDayPlan.planImage || data.planImage;
+            if (planImg) {
+                planImg.innerHTML = (dayImg && dayImg.trim()) ? `<img src="${dayImg}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${dayImg}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded for this date.</p>`;
+            }
+
+            const teamsContainer = document.getElementById('st-teams-container');
+            if (teamsContainer) {
+                teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => {
+                    const thumb = t.image ? `<img src="${t.image}" class="w-11 h-11 object-cover rounded-lg border border-indigo-200 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${t.image}')" alt="Route Map" title="Click to view full map/image">` : '';
+                    return `
+                        <div class="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl shadow-xs space-y-2">
+                            <div class="flex justify-between items-center border-b border-indigo-100 pb-2">
+                                <span class="text-xs font-black uppercase tracking-wider text-indigo-950">Team ${idx + 1}</span>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-[11px] bg-indigo-200 text-indigo-950 font-bold px-2 py-0.5 rounded-lg">${t.time || 'TBD'}</span>
+                                    ${thumb}
+                                </div>
+                            </div>
+                            <div class="text-xs font-bold text-slate-800 space-y-1">
+                                <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Indy Lead:</span> <span>${t.indy || 'Unassigned'}</span></div>
+                                <div class="flex items-center justify-between"><span class="text-slate-400 font-normal">Visiting:</span> <span class="text-amber-800">${t.visiting || 'Unassigned'}</span></div>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pt-1 flex items-center gap-1">📍 ${t.location || 'Main Zion'}</div>
+                        </div>
+                    `;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-2">No preaching teams paired.</p>`;
+            }
+
+            const teamsImg = document.getElementById('st-teams-image-display');
+            if (teamsImg) {
+                teamsImg.innerHTML = (data.teamsImage && data.teamsImage.trim()) ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.teamsImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
+            }
+
+            const lodgingContainer = document.getElementById('st-lodging-container');
+            if (lodgingContainer) {
+                lodgingContainer.innerHTML = (data.lodging && data.lodging.length > 0) ? data.lodging.map((h, idx) => {
+                    const thumb = h.image ? `<img src="${h.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-300 shadow-xs cursor-pointer shrink-0 hover:scale-105 transition-transform" onclick="openLightbox('${h.image}')" alt="Lodging" title="Click to view lodging photo">` : '';
+                    return `
+                        <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl shadow-xs flex flex-col justify-between space-y-3">
+                            <div class="space-y-1.5">
+                                <div class="flex justify-between items-start gap-2">
+                                    <div>
+                                        <h4 class="font-bold text-xs text-indigo-950">${h.host || `Host House ${idx + 1}`}</h4>
+                                        <p class="text-[11px] text-slate-500">${h.address || 'Address provided by host'}</p>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        ${h.mapUrl ? `<a href="${h.mapUrl}" target="_blank" rel="noopener noreferrer" class="text-[10px] bg-indigo-100 hover:bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded-md flex items-center gap-1">🗺️ Map</a>` : ''}
+                                        ${thumb}
+                                    </div>
+                                </div>
+                                <div class="pt-2">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Assigned Guests (${(h.guests||[]).length}/8):</span>
+                                    <ul class="mt-1 space-y-1 text-xs font-semibold text-slate-800">
+                                        ${(h.guests && h.guests.length > 0) ? h.guests.map(g => `<li class="flex items-center gap-1.5"><span class="text-amber-500">•</span> ${g}</li>`).join('') : `<li class="text-slate-400 italic text-[11px]">No guests assigned</li>`}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center col-span-3">No lodging houses configured.</p>`;
+            }
+
+            const lodgingImg = document.getElementById('st-lodging-image-display');
+            if (lodgingImg) {
+                lodgingImg.innerHTML = (data.lodgingImage && data.lodgingImage.trim()) ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.lodgingImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
+            }
+
+            const rostersContainer = document.getElementById('st-rosters-container');
+            if (rostersContainer) {
+                const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+                rostersContainer.innerHTML = zionList.map(zionName => {
+                    const members = appState.shortTermZionRosters[zionName] || [];
+                    const activeCount = members.filter(Boolean).length;
+                    return `
+                        <div class="bg-white border-2 border-amber-200/80 rounded-2xl p-4 shadow-sm space-y-3 flex flex-col justify-between">
+                            <div class="border-b border-slate-100 pb-2 flex justify-between items-center">
+                                <h4 class="font-extrabold text-xs text-indigo-950 flex items-center gap-1.5">
+                                    <span>📍</span> ${zionName}
+                                </h4>
+                                <span class="text-[10px] bg-amber-100 text-amber-900 font-bold px-2 py-0.5 rounded-full">${activeCount}/10</span>
+                            </div>
+                            <ul class="space-y-1 text-xs font-semibold text-slate-700 flex-1">
+                                ${members.length > 0 && activeCount > 0 ? members.filter(Boolean).map((m, i) => `
+                                    <li class="flex items-center gap-1.5"><span class="text-indigo-400 text-[10px] font-bold">${i + 1}.</span> <span>${m}</span></li>
+                                `).join('') : `<li class="text-slate-400 italic text-[11px] py-2 text-center">No visiting members registered</li>`}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function switchAdminStPlanDate(dateStr) {
+            harvestAdminStPlanDateActivities();
+            currentAdminStPlanDate = dateStr;
+            populateAdminStPlanForDate(dateStr);
+        }
+
+        function populateAdminStPlanForDate(dateStr) {
+            const data = getShortTermGroupData();
+            const picker = document.getElementById('admin-st-plan-date-picker');
+            if (picker) picker.value = dateStr;
+
+            const dateOptions = { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' };
+            const formatted = new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', dateOptions);
+            const lbl = document.getElementById('admin-st-plan-date-label');
+            if (lbl) lbl.innerText = `(${formatted})`;
+
+            const plan = (data.dailyPlans && data.dailyPlans[dateStr]) ? data.dailyPlans[dateStr] : { activities: [], planImage: "" };
+            document.getElementById('input-st-activities').value = (plan.activities || []).map(a => `${a.time} - ${a.activity}${a.location ? ` | ${a.location}` : ''}`).join('\n');
+
+            updateAdminImagePreviews();
+        }
+
+        function harvestAdminStPlanDateActivities() {
+            if (!currentAdminStPlanDate) return;
+            const data = getShortTermGroupData();
+            if (!data.dailyPlans) data.dailyPlans = {};
+
+            const raw = document.getElementById('input-st-activities').value;
+            const parsed = raw.split('\n').map(l => l.trim()).filter(Boolean).map(line => {
+                let loc = "Sanctuary";
+                let text = line;
+                if (line.includes('|')) {
+                    const p = line.split('|');
+                    text = p[0].trim();
+                    loc = p[1].trim();
+                }
+                const parts = text.split(' - ');
+                return {
+                    time: parts[0] || 'TBD',
+                    activity: parts[1] || text,
+                    location: loc,
+                    image: ""
+                };
+            });
+
+            if (!data.dailyPlans[currentAdminStPlanDate]) {
+                data.dailyPlans[currentAdminStPlanDate] = { activities: [], planImage: "" };
+            }
+            data.dailyPlans[currentAdminStPlanDate].activities = parsed;
+        }
+
+        function populateAdminShortTermUI() {
+            const data = getShortTermGroupData();
+            if (!currentAdminStPlanDate) currentAdminStPlanDate = currentStPlanDate || getLocalDateString(new Date());
+
+            populateAdminStPlanForDate(currentAdminStPlanDate);
+
+            const teamContainer = document.getElementById('st-teams-builder-rows');
+            teamContainer.innerHTML = "";
+            (data.teams || []).forEach(t => addShortTermTeamRow(t.indy, t.visiting, t.time, t.location, t.image));
+            if (!data.teams || data.teams.length === 0) addShortTermTeamRow();
+
+            const lodgingContainer = document.getElementById('st-lodging-builder-rows');
+            lodgingContainer.innerHTML = "";
+            const hostHomes = data.lodging && data.lodging.length === 5 ? data.lodging : [
+                { host: "Host Home 1", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 2", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 3", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 4", address: "", mapUrl: "", guests: [], image: "" },
+                { host: "Host Home 5", address: "", mapUrl: "", guests: [], image: "" }
+            ];
+
+            hostHomes.forEach((h, idx) => {
+                const div = document.createElement('div');
+                div.className = "p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs st-lodging-row";
+                const imgThumb = h.image ? `<img src="${h.image}" class="w-8 h-8 rounded border object-cover cursor-pointer" onclick="openLightbox('${h.image}')">` : '';
+                div.innerHTML = `
+                    <div class="flex gap-2">
+                        <input type="text" placeholder="Host House ${idx + 1} Name..." value="${h.host || ''}" class="st-host-input font-bold border border-slate-300 rounded p-1.5 flex-1">
+                        <input type="text" placeholder="Google Maps URL..." value="${h.mapUrl || ''}" class="st-map-input border border-slate-300 rounded p-1.5 flex-1">
+                    </div>
+                    <input type="text" placeholder="Address..." value="${h.address || ''}" class="st-address-input border border-slate-300 rounded p-1.5 w-full">
+                    <div>
+                        <label class="block text-[10px] font-bold uppercase text-slate-500 mb-0.5">Assigned Guests (Up to 8, comma separated):</label>
+                        <input type="text" placeholder="Guest 1, Guest 2, Guest 3..." value="${(h.guests || []).join(', ')}" class="st-guests-input border border-slate-300 rounded p-1.5 w-full">
+                    </div>
+                    <div class="flex items-center justify-between pt-1">
+                        <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold px-2 py-1 rounded text-[11px] flex items-center gap-1">
+                            📷 Attach Lodging Photo
+                            <input type="file" accept="image/*" onchange="handleItemImageUpload(event, this)" class="hidden">
+                        </label>
+                        <div class="flex items-center gap-2 lodging-img-holder">
+                            ${imgThumb}
+                            <input type="hidden" class="st-lodge-img-data" value="${h.image || ''}">
+                        </div>
+                    </div>
+                `;
+                lodgingContainer.appendChild(div);
+            });
+
+            const rostersContainer = document.getElementById('st-rosters-builder-rows');
+            rostersContainer.innerHTML = "";
+            const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
+
+            zionList.forEach(zionName => {
+                const savedMembers = appState.shortTermZionRosters[zionName] || [];
+                const block = document.createElement('div');
+                block.className = "p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 st-zion-roster-block";
+                block.setAttribute('data-zion', zionName);
+
+                let inputsHtml = "";
+                for (let i = 0; i < 10; i++) {
+                    const val = savedMembers[i] || "";
+                    inputsHtml += `<input type="text" placeholder="Member ${i + 1}..." value="${val}" class="st-member-input border border-slate-300 rounded p-1.5 text-xs font-semibold">`;
+                }
+
+                block.innerHTML = `
+                    <div class="font-bold text-xs text-indigo-950 border-b pb-1 flex items-center justify-between">
+                        <span>📍 ${zionName} Directory</span>
+                        <span class="text-[10px] text-slate-400">Max 10 Members</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 pt-1">
+                        ${inputsHtml}
+                    </div>
+                `;
+                rostersContainer.appendChild(block);
+            });
+        }
+
+        function updateAdminImagePreviews() {
+            const data = getShortTermGroupData();
+            const currentPlan = (data.dailyPlans && data.dailyPlans[currentAdminStPlanDate]) ? data.dailyPlans[currentAdminStPlanDate] : { planImage: "" };
+            const planImgSrc = currentPlan.planImage || data.planImage;
+
+            document.getElementById('st-plan-img-status').innerText = planImgSrc ? "✓ Image Loaded" : "";
+            const planPrev = document.getElementById('admin-st-plan-preview');
+            if (planPrev) {
+                planPrev.innerHTML = planImgSrc ? `<img src="${planImgSrc}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${planImgSrc}')" title="Click to view full">` : '';
+            }
+
+            document.getElementById('st-teams-img-status').innerText = data.teamsImage ? "✓ Image Loaded" : "";
+            const teamsPrev = document.getElementById('admin-st-teams-preview');
+            if (teamsPrev) {
+                teamsPrev.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.teamsImage}')" title="Click to view full">` : '';
+            }
+
+            document.getElementById('st-lodging-img-status').innerText = data.lodgingImage ? "✓ Image Loaded" : "";
+            const lodgingPrev = document.getElementById('admin-st-lodging-preview');
+            if (lodgingPrev) {
+                lodgingPrev.innerHTML = data.lodgingImage ? `<img src="${data.lodgingImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.lodgingImage}')" title="Click to view full">` : '';
+            }
+        }
+
+        function addShortTermTeamRow(indyVal = "", visitingVal = "", timeVal = "", locVal = "", imgVal = "") {
+            const container = document.getElementById('st-teams-builder-rows');
+            if (container.children.length >= 10) {
+                alert("Maximum 10 teams allowed.");
+                return;
+            }
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap gap-1.5 items-center p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs st-team-row w-full";
+            const imgThumb = imgVal ? `<img src="${imgVal}" class="w-7 h-7 rounded border object-cover cursor-pointer" onclick="openLightbox('${imgVal}')">` : '';
+            row.innerHTML = `
+                <input type="text" list="dl-evangelists" placeholder="Indy Leader..." value="${indyVal}" class="st-t-indy border border-slate-300 rounded p-1 flex-1 font-semibold">
+                <input type="text" placeholder="Visiting Member..." value="${visitingVal}" class="st-t-visiting border border-slate-300 rounded p-1 flex-1 font-semibold">
+                <input type="text" placeholder="Time..." value="${timeVal || '11:00 AM - 4:00 PM'}" class="st-t-time border border-slate-300 rounded p-1 w-28">
+                <input type="text" placeholder="Location..." value="${locVal || 'Main Zion'}" class="st-t-loc border border-slate-300 rounded p-1 w-24">
+                <label class="cursor-pointer bg-slate-200 hover:bg-slate-300 px-1.5 py-1 rounded text-[10px] font-bold" title="Attach Route Map">
+                    📷
+                    <input type="file" accept="image/*" onchange="handleItemImageUpload(event, this)" class="hidden">
+                </label>
+                <div class="team-img-holder flex items-center">
+                    ${imgThumb}
+                    <input type="hidden" class="st-t-img-data" value="${imgVal || ''}">
+                </div>
+                <button type="button" onclick="this.closest('.st-team-row').remove()" class="text-rose-500 font-bold px-1.5">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function handleItemImageUpload(event, inputEl) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 900;
+                    const MAX_HEIGHT = 900;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const resized = canvas.toDataURL('image/jpeg', 0.82);
+                    const parent = inputEl.closest('.st-team-row') || inputEl.closest('.st-lodging-row');
+                    if (parent) {
+                        const holder = parent.querySelector('.team-img-holder') || parent.querySelector('.lodging-img-holder');
+                        const dataInput = parent.querySelector('.st-t-img-data') || parent.querySelector('.st-lodge-img-data');
+                        if (dataInput) dataInput.value = resized;
+                        if (holder) {
+                            holder.innerHTML = `<img src="${resized}" class="w-8 h-8 rounded border object-cover cursor-pointer" onclick="openLightbox('${resized}')"><input type="hidden" class="${dataInput.className}" value="${resized}">`;
+                        }
+                    }
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function harvestAdminShortTermRows() {
+            harvestAdminStPlanDateActivities();
+            const data = getShortTermGroupData();
+
+            let teams = [];
+            document.querySelectorAll('#st-teams-builder-rows .st-team-row').forEach(r => {
+                const indy = r.querySelector('.st-t-indy').value.trim();
+                const visiting = r.querySelector('.st-t-visiting').value.trim();
+                const time = r.querySelector('.st-t-time').value.trim();
+                const location = r.querySelector('.st-t-loc').value.trim();
+                const imgEl = r.querySelector('.st-t-img-data');
+                const image = imgEl ? imgEl.value : "";
+                if (indy || visiting) teams.push({ indy, visiting, time, location, image });
+            });
+            data.teams = teams;
+
+            let lodging = [];
+            document.querySelectorAll('#st-lodging-builder-rows .st-lodging-row').forEach(r => {
+                const host = r.querySelector('.st-host-input').value.trim();
+                const mapUrl = r.querySelector('.st-map-input').value.trim();
+                const address = r.querySelector('.st-address-input').value.trim();
+                const guestsRaw = r.querySelector('.st-guests-input').value.split(',').map(g => g.trim()).filter(Boolean).slice(0, 8);
+                const imgEl = r.querySelector('.st-lodge-img-data');
+                const image = imgEl ? imgEl.value : "";
+                lodging.push({ host, mapUrl, address, guests: guestsRaw, image });
+            });
+            data.lodging = lodging;
+
+            document.querySelectorAll('.st-zion-roster-block').forEach(block => {
+                const zionName = block.getAttribute('data-zion');
+                const members = Array.from(block.querySelectorAll('.st-member-input')).map(input => input.value.trim()).filter(Boolean);
+                appState.shortTermZionRosters[zionName] = members;
+            });
+        }
+
+        function handleStImageUpload(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(readerEvent) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_WIDTH = 1200;
+                    const MAX_HEIGHT = 1200;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+                    const data = getShortTermGroupData();
+
+                    if (type === 'plan') {
+                        if (!data.dailyPlans) data.dailyPlans = {};
+                        if (!data.dailyPlans[currentAdminStPlanDate]) {
+                            data.dailyPlans[currentAdminStPlanDate] = { activities: [], planImage: "" };
+                        }
+                        data.dailyPlans[currentAdminStPlanDate].planImage = resizedDataUrl;
+                        data.planImage = resizedDataUrl;
+                    }
+                    if (type === 'teams') {
+                        data.teamsImage = resizedDataUrl;
+                    }
+                    if (type === 'lodging') {
+                        data.lodgingImage = resizedDataUrl;
+                    }
+
+                    updateAdminImagePreviews();
+                    renderShortTermContent();
+                    alert(`Image for ${type.toUpperCase()} selected! Click 'Save Changes' to update cloud.`);
+                };
+                img.src = readerEvent.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearStImage(type) {
+            const data = getShortTermGroupData();
+            if (type === 'plan') {
+                if (data.dailyPlans && data.dailyPlans[currentAdminStPlanDate]) {
+                    data.dailyPlans[currentAdminStPlanDate].planImage = "";
+                }
+                data.planImage = "";
+            }
+            if (type === 'teams') data.teamsImage = "";
+            if (type === 'lodging') data.lodgingImage = "";
+
+            updateAdminImagePreviews();
+            renderShortTermContent();
+            alert(`Removed ${type.toUpperCase()} image. Click 'Save Changes' to push changes.`);
+        }
+
+        function renderCookingSchedule() {
+            const body = document.getElementById('cooking-schedule-body');
+            if (!body) return;
+            body.innerHTML = (appState.cookingSchedule || []).map((row) => `
+                <tr class="divide-x divide-slate-100 hover:bg-slate-50 transition-colors">
+                    <td class="p-3 font-bold bg-emerald-900/10 text-emerald-950 border-l-4 border-emerald-700">${row.week}</td>
+                    <td class="p-3 font-semibold text-slate-800">${row.dinner || 'Unassigned'}</td>
+                    <td class="p-3 font-semibold text-slate-800">${row.snacks || 'Unassigned'}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderCleaningSchedule() {
+            const groupGrid = document.getElementById('cleaning-groups-grid');
+            const specialGrid = document.getElementById('cleaning-special-grid');
+
+            if (groupGrid) {
+                groupGrid.innerHTML = (appState.cleaningGroups || []).map(g => `
+                    <div class="border-2 ${g.color || 'border-slate-200 bg-slate-50'} rounded-2xl p-5 shadow-sm space-y-3">
+                        <h3 class="font-bold text-sm tracking-wide border-b pb-2 text-slate-900 flex items-center gap-2">
+                            <span>👥</span> ${g.title}
+                        </h3>
+                        <ul class="space-y-1.5 text-xs text-slate-700 font-medium">
+                            ${(g.tasks || []).map(t => `<li class="flex items-start gap-1.5"><span class="text-slate-400">•</span> <span>${t}</span></li>`).join('')}
+                        </ul>
+                    </div>
+                `).join('');
+            }
+
+            if (specialGrid) {
+                specialGrid.innerHTML = (appState.cleaningSpecials || []).map(s => `
+                    <div class="${s.color || 'bg-slate-100 text-slate-900'} border rounded-2xl p-4 text-center space-y-2 shadow-sm">
+                        <div class="text-3xl">${s.icon || '📍'}</div>
+                        <h4 class="font-extrabold text-xs uppercase tracking-wider">${s.title}</h4>
+                        <p class="text-xs font-semibold underline">${s.evangelists || 'Unassigned'}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
+            const container = document.getElementById('preaching-builder-rows');
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-indigo-100 shadow-sm preaching-row w-full";
+            
+            row.innerHTML = `
+                <input type="text" list="dl-evangelists" placeholder="Leader 1..." value="${e1}" class="e1-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 2..." value="${e2}" class="e2-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 3..." value="${e3}" class="e3-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" placeholder="Time (11:00 AM - 1:30 PM)" value="${timeVal}" class="time-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                <input type="text" placeholder="Location" value="${loc || 'Main Zion'}" class="loc-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                <button type="button" onclick="this.closest('.preaching-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
+            `;
+            container.appendChild(row);
+        }
+
+        function harvestCurrentPreachingGroupRows() {
+            if (!currentPGroup) return;
+            if (!appState.database[currentSelectedDate]) {
+                appState.database[currentSelectedDate] = { activities: [], preaching: [], duties: [] };
+            }
+            const dateObj = appState.database[currentSelectedDate];
+            const otherGroups = (dateObj.preaching || []).filter(p => (p.group || "").trim().toLowerCase() !== currentPGroup.trim().toLowerCase());
+            
+            let harvested = [];
+            document.querySelectorAll('.preaching-row').forEach(r => {
+                const e1 = r.querySelector('.e1-input').value.trim();
+                const e2 = r.querySelector('.e2-input').value.trim();
+                const e3 = r.querySelector('.e3-input').value.trim();
+                const time = r.querySelector('.time-input').value.trim() || 'TBD';
+                const loc = r.querySelector('.loc-input').value.trim() || 'Main Zion';
+
+                let teamMembers = [e1, e2, e3].map(m => m.replace(/&/g, '').trim()).filter(Boolean);
+                if (teamMembers.length > 0) {
+                    harvested.push({ team: teamMembers.join(' & '), time, location: loc, group: currentPGroup });
+                }
+            });
+
+            dateObj.preaching = [...otherGroups, ...harvested];
+        }
+
+        function switchPreachingGroupScope(newGroup) {
+            harvestCurrentPreachingGroupRows();
+            currentPGroup = newGroup;
+            loadPreachingRowsForGroup(newGroup);
+        }
+
+        function loadPreachingRowsForGroup(selectedGroup) {
+            const container = document.getElementById('preaching-builder-rows');
+            container.innerHTML = "";
+            currentPGroup = selectedGroup;
+            
+            const dayData = appState.database[currentSelectedDate] || { preaching: [] };
+            const groupTeams = (dayData.preaching || []).filter(p => (p.group || "").trim().toLowerCase() === (selectedGroup || "").trim().toLowerCase());
+
+            if (groupTeams.length > 0) {
+                groupTeams.forEach(p => {
+                    const members = (p.team || '').split(' & ').map(m => m.trim());
+                    addPreachingBuilderRow(members[0] || "", members[1] || "", members[2] || "", p.time || "", p.location || "");
+                });
+            } else {
+                addPreachingBuilderRow();
+            }
+        }
+
+        function addDutyBuilderRow(roleVal = "", m1 = "", m2 = "", m3 = "", m4 = "", m5 = "") {
+            const container = document.getElementById('duties-builder-rows');
+            const row = document.createElement('div');
+            row.className = "p-3 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full space-y-2";
+
+            row.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <input type="text" list="dl-duties" placeholder="Role (e.g. Presider)..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-bold text-indigo-950">
+                    <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕ Remove</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-1.5">
+                    <input type="text" list="dl-evangelists" placeholder="Member 1..." value="${m1}" class="m1-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 2..." value="${m2}" class="m2-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 3..." value="${m3}" class="m3-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 4..." value="${m4}" class="m4-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 5..." value="${m5}" class="m5-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function harvestCurrentDutyGroupRows() {
+            if (!currentDGroup) return;
+            if (!appState.database[currentSelectedDate]) {
+                appState.database[currentSelectedDate] = { activities: [], preaching: [], duties: [] };
+            }
+            const dateObj = appState.database[currentSelectedDate];
+            const otherDuties = (dateObj.duties || []).filter(d => {
+                if (typeof d === 'object') {
+                    return (d.group || "").trim().toLowerCase() !== currentDGroup.trim().toLowerCase();
+                }
+                return true;
+            });
+
+            let harvested = [];
+            document.querySelectorAll('.duty-row').forEach(r => {
+                const role = r.querySelector('.role-input').value.trim();
+                const m1 = r.querySelector('.m1-input').value.trim();
+                const m2 = r.querySelector('.m2-input').value.trim();
+                const m3 = r.querySelector('.m3-input').value.trim();
+                const m4 = r.querySelector('.m4-input').value.trim();
+                const m5 = r.querySelector('.m5-input').value.trim();
+
+                const members = [m1, m2, m3, m4, m5]
+                    .map(m => m.replace(/&/g, '').trim())
+                    .filter(Boolean);
+
+                if (role && members.length > 0) {
+                    harvested.push({ role, name: members.join(' & '), group: currentDGroup });
+                }
+            });
+
+            dateObj.duties = [...otherDuties, ...harvested];
+        }
+
+        function switchDutyGroupScope(newGroup) {
+            harvestCurrentDutyGroupRows();
+            currentDGroup = newGroup;
+            loadDutyRowsForGroup(newGroup);
+        }
+
+        function loadDutyRowsForGroup(selectedGroup) {
+            const container = document.getElementById('duties-builder-rows');
+            container.innerHTML = "";
+            currentDGroup = selectedGroup;
+
+            const dayData = appState.database[currentSelectedDate] || { duties: [] };
+            const groupDuties = (dayData.duties || []).filter(d => {
+                if (typeof d === 'object') {
+                    return (d.group || "").trim().toLowerCase() === (selectedGroup || "").trim().toLowerCase();
+                }
+                return false;
+            });
+
+            if (groupDuties.length > 0) {
+                groupDuties.forEach(d => {
+                    const members = (d.name || '').split(' & ').map(m => m.trim());
+                    addDutyBuilderRow(d.role || "", members[0] || "", members[1] || "", members[2] || "", members[3] || "", members[4] || "");
+                });
+            } else {
+                addDutyBuilderRow();
+            }
+        }
+
+        function renderMonthlyAdminListUI() {
+            const container = document.getElementById('monthly-admin-list');
             if (!container) return;
             container.innerHTML = "";
 
-            let mappedList = {};
-            (appState.blessingsList || []).forEach(b => {
-                if (typeof b === 'object' && b !== null) {
-                    mappedList[b.item] = { name: b.name || '', status: b.status || 'Full' };
-                } else if (typeof b === 'string') {
-                    const chunks = b.split(':');
-                    const name = chunks[0] ? chunks[0].trim() : '';
-                    const item = chunks[1] ? chunks[1].trim() : '';
-                    const status = chunks[2] ? chunks[2].trim() : 'Full';
-                    if (item) mappedList[item] = { name, status };
+            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+            for (let day = 1; day <= totalDaysInMonth; day++) {
+                const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const eventText = appState.calendarEventsDb[dateKey] || "";
+
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs";
+                row.innerHTML = `
+                    <span class="font-bold text-indigo-950 w-24">${mNames[currentCalendarMonth].slice(0, 3)} ${day}:</span>
+                    <input type="text" data-datekey="${dateKey}" value="${eventText}" placeholder="Events (e.g. 2:00pm Preaching)" class="monthly-event-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        function renderPermanentRosterUI(containerId, dutiesArray, existingDutiesList = []) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = "";
+
+            let mappedExisting = {};
+            (existingDutiesList || []).forEach(d => {
+                const idx = d.indexOf(':');
+                if (idx !== -1) {
+                    mappedExisting[d.substring(idx + 1).trim()] = d.substring(0, idx).trim();
                 }
             });
 
-            DEFAULT_BLESSINGS.forEach(bDef => {
-                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status };
+            dutiesArray.forEach(role => {
+                const assignedName = mappedExisting[role] || "";
                 const row = document.createElement('div');
-                row.className = "flex flex-wrap gap-2 items-center p-2.5 bg-slate-50 border border-slate-200 rounded-xl blessing-row w-full";
-                row.setAttribute('data-item', bDef.item);
-
-                const st = (itemData.status || 'Full').toLowerCase();
+                row.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs permanent-duty-row";
+                row.setAttribute('data-role', role);
 
                 row.innerHTML = `
-                    <span class="font-bold text-xs text-slate-800 flex-1 min-w-[140px] leading-tight">${bDef.item}</span>
-                    <input type="text" list="dl-evangelists" placeholder="Member..." value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-48 outline-none bg-white font-semibold">
-                    <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none bg-white font-bold">
-                        <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
-                        <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
-                        <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty (Red)</option>
-                    </select>
+                    <span class="font-bold text-slate-800 w-1/2 pr-2 leading-tight">${role}</span>
+                    <input type="text" list="dl-evangelists" placeholder="Leader..." value="${assignedName}" class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
                 `;
                 container.appendChild(row);
             });
         }
 
-        function getLocalDateString(dateObj) {
-            let offset = dateObj.getTimezoneOffset();
-            return new Date(dateObj.getTime() - (offset*60*1000)).toISOString().split('T')[0];
-        }
+        function renderCookingBuilderUI() {
+            const container = document.getElementById('cooking-builder-rows');
+            if (!container) return;
+            container.innerHTML = "";
 
-        window.addEventListener('DOMContentLoaded', () => {
-            const todayObj = new Date();
-            currentCalendarYear = todayObj.getFullYear();
-            currentCalendarMonth = todayObj.getMonth();
+            (appState.cookingSchedule || []).forEach((row) => {
+                const div = document.createElement('div');
+                div.className = "flex flex-col sm:flex-row gap-2 items-center p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs cooking-builder-row";
+                div.setAttribute('data-week', row.week);
 
-            const isTrusted = checkDeviceTrust();
-            if (isTrusted) {
-                checkPinSession();
-            }
-        });
-
-        async function handleDateChange(dateString) {
-            currentSelectedDate = dateString;
-            const picker = document.getElementById('date-picker');
-            if (picker) picker.value = dateString;
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
-
-            loadKeyFromCloud(`daily_${dateString}`).then(dateData => {
-                if (dateData) {
-                    appState.database[dateString] = dateData;
-                    saveLocalCache();
-                }
-                renderDashboardData();
+                div.innerHTML = `
+                    <span class="font-bold text-indigo-900 w-full sm:w-24">${row.week}</span>
+                    <div class="flex-1 w-full flex items-center gap-1">
+                        <span class="text-slate-400 font-semibold">Dinner:</span>
+                        <input type="text" value="${row.dinner || ''}" class="c-dinner-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none">
+                    </div>
+                    <div class="flex-1 w-full flex items-center gap-1">
+                        <span class="text-slate-400 font-semibold">Snacks:</span>
+                        <input type="text" value="${row.snacks || ''}" class="c-snack-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none">
+                    </div>
+                `;
+                container.appendChild(div);
             });
         }
 
-        function changeDate(offset) {
-            let d = new Date(currentSelectedDate + 'T00:00:00');
-            d.setDate(d.getDate() + offset);
-            handleDateChange(getLocalDateString(d));
-        }
+        function renderCleaningBuilderUI() {
+            const groupsContainer = document.getElementById('cleaning-groups-builder-rows');
+            const specialsContainer = document.getElementById('cleaning-specials-builder-rows');
 
-        function changeMonth(offset) {
-            currentCalendarMonth += offset;
-            if (currentCalendarMonth > 11) { currentCalendarMonth = 0; currentCalendarYear += 1; }
-            else if (currentCalendarMonth < 0) { currentCalendarMonth = 11; currentCalendarYear -= 1; }
-            renderMonthlyCalendar();
-        }
-
-        function renderDashboardData() {
-            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-
-            renderDailyAnnouncements();
-
-            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
-                const p = act.split(' - ');
-                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
-
-            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
-                <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm shadow-sm space-y-1">
-                    <div class="flex justify-between items-center">
-                        <span class="font-extrabold text-indigo-950">${p.team}</span>
-                        <span class="text-xs bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded">${p.time}</span>
+            if (groupsContainer) {
+                groupsContainer.innerHTML = (appState.cleaningGroups || []).map((g, idx) => `
+                    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs cleaning-group-builder-row" data-idx="${idx}">
+                        <div class="font-bold text-slate-800">${g.title}</div>
+                        <input type="text" value="${(g.tasks || []).join(', ')}" class="cg-tasks-input border border-slate-300 rounded p-1 text-xs w-full outline-none">
                     </div>
-                    <div class="flex justify-between items-center text-xs text-slate-600">
-                        <span>📍 ${p.location}</span>
-                        ${p.group ? `<span class="bg-white px-2 py-0.5 rounded border border-indigo-100 font-semibold text-[11px] text-indigo-800">${p.group}</span>` : ''}
+                `).join('');
+            }
+
+            if (specialsContainer) {
+                specialsContainer.innerHTML = (appState.cleaningSpecials || []).map((s, idx) => `
+                    <div class="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs cleaning-special-builder-row" data-idx="${idx}">
+                        <span class="font-bold text-indigo-950 w-1/3">${s.icon || '📍'} ${s.title}</span>
+                        <input type="text" value="${s.evangelists || ''}" class="cs-evangelists-input border border-slate-300 rounded p-1 text-xs w-2/3 outline-none">
                     </div>
-                </div>
-            `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
-
-            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
-                if (typeof d === 'object') {
-                    return `
-                        <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm">
-                            <div class="flex justify-between items-center mb-0.5">
-                                <span class="font-bold text-slate-400 uppercase text-[10px]">${d.role}</span>
-                                ${d.group ? `<span class="bg-white px-1.5 py-0.2 rounded border text-[10px] text-slate-500 font-semibold">${d.group}</span>` : ''}
-                            </div>
-                            <span class="text-slate-800 font-semibold">${d.name}</span>
-                        </div>
-                    `;
-                }
-                const idx = d.indexOf(':');
-                return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
-        }
-
-        function renderSabbathAndFeast(type) {
-            let source = appState.sabbathSchedule;
-            if (type === 'thirdday') source = appState.thirddaySchedule;
-            if (type === 'feast') source = appState.feastSchedule;
-            
-            if (!source) source = { activities: [], duties: [] };
-
-            const actContainer = document.getElementById(`${type}-activities`);
-            if (actContainer) {
-                actContainer.innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
-                    const parts = a.split(' - ');
-                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
-                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
-            }
-
-            const dutyContainer = document.getElementById(`${type}-duties`);
-            if (dutyContainer) {
-                dutyContainer.innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
-                    const idx = d.indexOf(':');
-                    const name = idx !== -1 ? d.substring(0, idx).trim() : 'Unassigned';
-                    const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
-                    return `<div class="grid grid-cols-3 bg-white border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-100 shadow-sm"><div class="col-span-1 p-3 bg-indigo-50/40 font-bold text-indigo-950 text-xs flex items-center leading-tight">${duty}</div><div class="col-span-2 p-3 text-xs font-semibold text-slate-700 flex items-center">${name}</div></div>`;
-                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
+                `).join('');
             }
         }
 
-        function revealAdminButton() {
-            document.getElementById('admin-trigger-btn').classList.remove('hidden');
+        function clearSearch(inputId, filterFunc) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = "";
+                filterFunc("");
+            }
         }
 
-        function switchTab(viewName) {
-            if (isShortTermGuestMode) {
-                viewName = 'shortterm';
-            } else if (viewName === 'shortterm' && currentAdminRole !== 'master') {
-                viewName = 'daily';
-            }
-
-            ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
-                document.getElementById(`view-${t}`)?.classList.add('hidden');
-                const btn = document.getElementById(`tab-${t}-btn`);
-                if (btn) btn.className = "px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer";
+        function filterBlessingsView(query) {
+            const q = query.trim().toLowerCase();
+            const container = document.getElementById('blessings-container');
+            if (!container) return;
+            Array.from(container.children).forEach(card => {
+                if (card.tagName === 'P') return;
+                card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
             });
-
-            document.getElementById(`view-${viewName}`)?.classList.remove('hidden');
-            const targetBtn = document.getElementById(`tab-${viewName}-btn`);
-            if (targetBtn) {
-                targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer";
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            if (viewName === 'daily') renderDashboardData();
-            if (viewName === 'monthly') renderMonthlyCalendar();
-            if (viewName === 'blessings') renderBlessings();
-            if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
-            if (viewName === 'thirdday') renderSabbathAndFeast('thirdday');
-            if (viewName === 'feast') renderSabbathAndFeast('feast');
-            if (viewName === 'shortterm') renderShortTermContent();
-            if (viewName === 'cooking') renderCookingSchedule();
-            if (viewName === 'cleaning') renderCleaningSchedule();
         }
 
-        function switchAdminSubTab(subTab) {
-            if (currentAdminRole === 'limited' && subTab !== 'daily' && subTab !== 'blessings') {
-                subTab = 'daily';
-            }
-
-            currentActiveAdminTab = subTab;
-
-            document.querySelectorAll('.admin-panel-section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200");
-
-            document.getElementById(`ap-${subTab}`)?.classList.remove('hidden');
-            const targetBtn = document.getElementById(`as-${subTab}`);
-            if (targetBtn) targetBtn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
-
-            if (subTab === 'monthly') {
-                renderMonthlyAdminListUI();
-            }
-            if (subTab === 'shortterm') {
-                populateAdminShortTermUI();
-            }
-        }
-
-        function toggleAdminModal() {
-            const m = document.getElementById('admin-modal');
-            m.classList.toggle('hidden');
-            if (!m.classList.contains('hidden')) {
-                document.querySelectorAll('.master-only').forEach(el => {
-                    if (currentAdminRole === 'master') el.classList.remove('hidden');
-                    else el.classList.add('hidden');
+        function filterSabbathView(query) {
+            const q = query.trim().toLowerCase();
+            ['sabbath-activities', 'sabbath-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
                 });
+            });
+        }
 
-                document.getElementById('admin-panel-title').innerText = currentAdminRole === 'master' ? 'Master Admin Panel' : 'Limited Admin Panel';
-                
-                switchAdminSubTab('daily');
-                
-                const dData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-                document.getElementById('input-announcements').value = appState.persistentAnnouncement || "";
-                document.getElementById('input-activities').value = (dData.activities || []).join('\n');
-                
-                const pGroupSelect = document.getElementById('preaching-group-selector');
-                const dGroupSelect = document.getElementById('duty-group-selector');
-                const groupsToUse = (appState.masterGroups && appState.masterGroups.length > 0) ? appState.masterGroups : DEFAULT_GROUPS;
-                const groupOptions = groupsToUse.map(g => `<option value="${g}">${g}</option>`).join('');
+        function filterThirdDayView(query) {
+            const q = query.trim().toLowerCase();
+            ['thirdday-activities', 'thirdday-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
 
-                if (pGroupSelect) {
-                    pGroupSelect.innerHTML = groupOptions;
-                    currentPGroup = pGroupSelect.value;
-                    loadPreachingRowsForGroup(pGroupSelect.value);
-                }
+        function filterFeastView(query) {
+            const q = query.trim().toLowerCase();
+            ['feast-activities', 'feast-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
 
-                if (dGroupSelect) {
-                    dGroupSelect.innerHTML = groupOptions;
-                    currentDGroup = dGroupSelect.value;
-                    loadDutyRowsForGroup(dGroupSelect.value);
-                }
+        function filterCookingView(query) {
+            const q = query.trim().toLowerCase();
+            const body = document.getElementById('cooking-schedule-body');
+            if (!body) return;
+            Array.from(body.children).forEach(row => {
+                row.style.display = (q === "" || row.innerText.toLowerCase().includes(q)) ? "" : "none";
+            });
+        }
 
-                renderBlessingsBuilderUI();
+        function filterCleaningView(query) {
+            const q = query.trim().toLowerCase();
+            const groupGrid = document.getElementById('cleaning-groups-grid');
+            const specialGrid = document.getElementById('cleaning-special-grid');
 
-                if (currentAdminRole === 'master') {
-                    renderCookingBuilderUI();
-                    renderCleaningBuilderUI();
-
-                    document.getElementById('input-sabbath-activities').value = (appState.sabbathSchedule.activities || []).join('\n');
-                    document.getElementById('input-thirdday-activities').value = (appState.thirddaySchedule.activities || []).join('\n');
-                    document.getElementById('input-feast-activities').value = (appState.feastSchedule.activities || []).join('\n');
-
-                    renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties || []);
-                    renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties || []);
-                    renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties || []);
-
-                    document.getElementById('input-master-evangelists').value = (appState.masterEvangelists || []).join('\n');
-                    document.getElementById('input-master-groups').value = (appState.masterGroups || []).join('\n');
-                    document.getElementById('input-master-stgroups').value = (appState.masterShortTermGroups || DEFAULT_ST_GROUPS).join('\n');
-                    document.getElementById('input-master-duties').value = (appState.masterDuties || []).join('\n');
-                }
+            if (groupGrid) {
+                Array.from(groupGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            }
+            if (specialGrid) {
+                Array.from(specialGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
             }
         }
 
-        async function saveAdminData(e) {
-            e.preventDefault();
-            
-            const saveBtn = document.getElementById('admin-save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerText = "Synchronizing...";
-
-            const activeTab = currentActiveAdminTab;
-
-            if (activeTab === 'daily') {
-                harvestCurrentPreachingGroupRows();
-                harvestCurrentDutyGroupRows();
-
-                const targetDateData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-
-                if (currentAdminRole === 'master') {
-                    appState.persistentAnnouncement = document.getElementById('input-announcements').value.trim();
-                    await saveKeyToCloud('persistent_announcement', appState.persistentAnnouncement);
-                    targetDateData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                }
-
-                appState.database[currentSelectedDate] = targetDateData;
-                await saveKeyToCloud(`daily_${currentSelectedDate}`, targetDateData);
-            }
-
-            if (activeTab === 'monthly' && currentAdminRole === 'master') {
-                document.querySelectorAll('.monthly-event-input').forEach(input => {
-                    const dateKey = input.getAttribute('data-datekey');
-                    const val = input.value.trim();
-                    if (val) {
-                        appState.calendarEventsDb[dateKey] = val;
-                    } else {
-                        delete appState.calendarEventsDb[dateKey];
-                    }
-                });
-                renderMonthlyCalendar();
-                await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
-            }
-
-            if (activeTab === 'shortterm' && currentAdminRole === 'master') {
-                harvestAdminShortTermRows();
-                await saveKeyToCloud('short_term_data', appState.shortTermData);
-                await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
-                renderShortTermContent();
-            }
-
-            if (activeTab === 'blessings') {
-                let blessingLines = [];
-                document.querySelectorAll('#blessings-builder-rows .blessing-row').forEach(r => {
-                    const item = r.getAttribute('data-item');
-                    const name = r.querySelector('.b-name-input').value.trim();
-                    const status = r.querySelector('.b-status-input').value;
-                    if (item) blessingLines.push(`${item} : ${name} : ${status}`);
-                });
-                appState.blessingsList = blessingLines;
-                await saveKeyToCloud('blessings_list', appState.blessingsList);
-            }
-
-            if (activeTab === 'sabbath' && currentAdminRole === 'master') {
-                let sabLines = [];
-                document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) sabLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.sabbathSchedule.duties = sabLines;
-                appState.sabbathSchedule.activities = document.getElementById('input-sabbath-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
-            }
-
-            if (activeTab === 'thirdday' && currentAdminRole === 'master') {
-                let tdLines = [];
-                document.querySelectorAll('#thirdday-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) tdLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.thirddaySchedule.duties = tdLines;
-                appState.thirddaySchedule.activities = document.getElementById('input-thirdday-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
-            }
-
-            if (activeTab === 'feast' && currentAdminRole === 'master') {
-                let fLines = [];
-                document.querySelectorAll('#feast-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) fLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.feastSchedule.duties = fLines;
-                appState.feastSchedule.activities = document.getElementById('input-feast-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('feast_schedule', appState.feastSchedule);
-            }
-
-            if (activeTab === 'settings' && currentAdminRole === 'master') {
-                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterShortTermGroups = document.getElementById('input-master-stgroups').value.split('\n').map(l=>l.trim()).filter(Boolean).slice(0, 4);
-                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
-
-                syncGlobalDatalists();
-
-                await saveKeyToCloud('master_lists', {
-                    masterEvangelists: appState.masterEvangelists,
-                    masterGroups: appState.masterGroups,
-                    masterShortTermGroups: appState.masterShortTermGroups,
-                    masterDuties: appState.masterDuties
-                });
-            }
-
-            saveLocalCache();
-            toggleAdminModal();
-            renderAllViews();
-
-            saveBtn.disabled = false;
-            saveBtn.innerText = "Save Changes";
-        }
-
-        function renderMonthlyCalendar() {
-            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('monthly-calendar-title').innerText = `${mNames[currentCalendarMonth]} ${currentCalendarYear}`;
+        function filterMonthlyCalendar(query) {
+            const q = query.trim().toLowerCase();
             const gridContainer = document.getElementById('calendar-grid-cells');
-            gridContainer.innerHTML = ""; 
-            const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
-            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-
-            for (let i = 0; i < firstDayIndex; i++) {
-                gridContainer.appendChild(document.createElement('div'));
-            }
-
-            for (let day = 1; day <= totalDaysInMonth; day++) {
-                const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const cell = document.createElement('div');
-                cell.className = "bg-white border border-slate-200 rounded-xl p-2 min-h-[105px] flex flex-col justify-between transition-all hover:border-indigo-400 hover:bg-indigo-50/10 cursor-pointer shadow-sm";
-                cell.setAttribute('onclick', `openCalendarViewModal('${dateKey}')`);
-
-                const topRow = document.createElement('div');
-                topRow.className = "flex justify-between items-center";
-                topRow.innerHTML = `<span class="font-bold text-sm text-slate-400">${day}</span>`;
-                cell.appendChild(topRow);
-
-                const eventsContainer = document.createElement('div');
-                eventsContainer.className = "text-[11px] text-indigo-950 font-medium overflow-hidden max-h-[70px] mt-1 space-y-1";
-                const cellContentText = appState.calendarEventsDb[dateKey] || "";
-                if (cellContentText) {
-                    cellContentText.split(',').forEach(item => {
-                        const bullet = document.createElement('div');
-                        bullet.className = "bg-indigo-50 border border-indigo-100/60 rounded px-1 py-0.5 truncate";
-                        bullet.innerText = `• ${item.trim()}`;
-                        eventsContainer.appendChild(bullet);
-                    });
+            if (!gridContainer) return;
+            Array.from(gridContainer.children).forEach(cell => {
+                if (q === "") {
+                    cell.style.opacity = "1";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
+                } else if (cell.innerText.toLowerCase().includes(q)) {
+                    cell.style.opacity = "1";
+                    cell.classList.add('ring-2', 'ring-indigo-500');
+                } else {
+                    cell.style.opacity = "0.3";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
                 }
-                cell.appendChild(eventsContainer);
-                gridContainer.appendChild(cell);
-            }
-        }
-
-        function openCalendarViewModal(dateKey) {
-            const dateObj = new Date(dateKey + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('cv-modal-date-title').innerText = dateObj.toLocaleDateString('en-US', options);
-
-            const eventsText = appState.calendarEventsDb[dateKey] || "";
-            const contentContainer = document.getElementById('cv-modal-events-content');
-            contentContainer.innerHTML = "";
-
-            if (eventsText.trim() === "") {
-                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4 text-center">No events mapped for this day.</p>`;
-            } else {
-                eventsText.split(',').forEach(item => {
-                    const lineCard = document.createElement('div');
-                    lineCard.className = "p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-950 font-semibold text-sm shadow-sm leading-relaxed";
-                    lineCard.innerText = item.trim();
-                    contentContainer.appendChild(lineCard);
-                });
-            }
-
-            document.getElementById('calendar-view-modal').classList.remove('hidden');
-        }
-
-        function closeCalendarViewModal() {
-            document.getElementById('calendar-view-modal').classList.add('hidden');
-        }
-
-        function exportToIcsCalendar() {
-            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const currentMonthName = mNames[currentCalendarMonth];
-            const targetMonthPrefix = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`;
-            
-            let icsLines = [
-                "BEGIN:VCALENDAR",
-                "VERSION:2.0",
-                `PRODID:-//Zion Church Planner (INDY) - ${currentMonthName} ${currentCalendarYear}//EN`,
-                "CALSCALE:GREGORIAN"
-            ];
-
-            let eventsExported = 0;
-
-            if (appState.calendarEventsDb) {
-                Object.keys(appState.calendarEventsDb).forEach((dateKey) => {
-                    if (dateKey.startsWith(targetMonthPrefix)) {
-                        const eventString = appState.calendarEventsDb[dateKey];
-                        if (eventString && eventString.trim()) {
-                            const formattedDateStr = dateKey.replace(/-/g, '');
-                            eventString.split(',').forEach((item, idx) => {
-                                icsLines.push("BEGIN:VEVENT");
-                                icsLines.push(`UID:cal-${formattedDateStr}-${idx}@graceplanner.org`);
-                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
-                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
-                                icsLines.push(`SUMMARY:${item.trim().replace(/,/g, '\\,')}`);
-                                icsLines.push("END:VEVENT");
-                                eventsExported++;
-                            });
-                        }
-                    }
-                });
-            }
-
-            icsLines.push("END:VCALENDAR");
-
-            if (eventsExported === 0) {
-                alert(`No events found for ${currentMonthName} ${currentCalendarYear}.`);
-                return;
-            }
-
-            const blob = new Blob([icsLines.join("\r\n")], { type: 'text/calendar;charset=utf-8;' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Church_Calendar_${currentMonthName}_${currentCalendarYear}.ics`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            window.URL.revokeObjectURL(url);
+            });
         }
 
         function toggleBatchModal() {
@@ -2147,7 +2658,7 @@
                     renderShortTermContent();
                     await saveKeyToCloud('short_term_data', appState.shortTermData);
                     toggleBatchModal();
-                    alert(`Imported ${updatedCount} daily schedule items across configured dates!`);
+                    alert(`Imported ${updatedCount} daily schedule items!`);
                 } else {
                     alert("Could not parse schedule. Format: Time, Activity, Location OR YYYY-MM-DD | Time, Activity, Location");
                 }
