@@ -129,12 +129,10 @@
                         ⚙️ Admin
                     </button>
                     
-                    <!-- Guest Exit Button -->
                     <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1">
                         🚪 Exit Guest Mode
                     </button>
 
-                    <!-- Hamburger Drawer Toggle -->
                     <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -888,8 +886,8 @@
         const MASTER_ADMIN_PASSWORD = "Grace2026";
         const LIMITED_ADMIN_PASSWORD = "Team2026";
         
-        // SHA-256 target hash of "ZION-1948-1985"
-        const ENROLLMENT_HASH = "80f1244e8249826d95ccb61b96db575bf3d827f311c12513904a6225a071ee9e";
+        // Target SHA-256 hash of "ZION-1948-1985"
+        const ENROLLMENT_HASH = "db443579be6a8947f61ef5fc0a9e7019672ebff1aaee0c5f49e7b233a3915f0c";
         const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
 
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
@@ -1443,7 +1441,6 @@
             handleDateChange(lastKnownLocalDate);
 
             try {
-                // Cloud epoch check for device revocation
                 const cloudEpoch = await loadKeyFromCloud('global_device_epoch');
                 const localEpoch = localStorage.getItem('local_device_epoch');
                 if (cloudEpoch && cloudEpoch !== localEpoch) {
@@ -1545,7 +1542,6 @@
                 appState.shortTermData.dailyPlans = {};
             }
 
-            // Legacy backward-compatibility conversion
             if (Array.isArray(appState.shortTermData.activities) && appState.shortTermData.activities.length > 0) {
                 const todayKey = getLocalDateString(new Date());
                 if (!appState.shortTermData.dailyPlans[todayKey]) {
@@ -1629,7 +1625,6 @@
         function renderShortTermContent() {
             const data = getShortTermGroupData();
 
-            // 1. Daily Plan with Date Cycler
             if (!currentStPlanDate) currentStPlanDate = getLocalDateString(new Date());
             const picker = document.getElementById('st-plan-date-picker');
             if (picker) picker.value = currentStPlanDate;
@@ -1669,7 +1664,7 @@
                 planImg.innerHTML = (dayImg && dayImg.trim()) ? `<img src="${dayImg}" alt="Plan Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${dayImg}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No plan image chart uploaded for this date.</p>`;
             }
 
-            // 2. Preaching Teams
+            // Preaching Teams
             const teamsContainer = document.getElementById('st-teams-container');
             if (teamsContainer) {
                 teamsContainer.innerHTML = (data.teams && data.teams.length > 0) ? data.teams.map((t, idx) => {
@@ -1698,7 +1693,7 @@
                 teamsImg.innerHTML = (data.teamsImage && data.teamsImage.trim()) ? `<img src="${data.teamsImage}" alt="Teams Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.teamsImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No teams image chart uploaded.</p>`;
             }
 
-            // 3. Lodging
+            // Lodging
             const lodgingContainer = document.getElementById('st-lodging-container');
             if (lodgingContainer) {
                 lodgingContainer.innerHTML = (data.lodging && data.lodging.length > 0) ? data.lodging.map((h, idx) => {
@@ -1733,7 +1728,7 @@
                 lodgingImg.innerHTML = (data.lodgingImage && data.lodgingImage.trim()) ? `<img src="${data.lodgingImage}" alt="Lodging Chart" class="max-h-[550px] mx-auto rounded-2xl shadow-md border border-slate-200 block cursor-pointer hover:opacity-95" onclick="openLightbox('${data.lodgingImage}')" title="Click to enlarge">` : `<p class="text-slate-400 text-xs italic py-8">No lodging image chart uploaded.</p>`;
             }
 
-            // 4. Visiting Zion Rosters
+            // Visiting Zion Rosters
             const rostersContainer = document.getElementById('st-rosters-container');
             if (rostersContainer) {
                 const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
@@ -1819,13 +1814,11 @@
 
             populateAdminStPlanForDate(currentAdminStPlanDate);
 
-            // Teams (up to 10)
             const teamContainer = document.getElementById('st-teams-builder-rows');
             teamContainer.innerHTML = "";
             (data.teams || []).forEach(t => addShortTermTeamRow(t.indy, t.visiting, t.time, t.location, t.image));
             if (!data.teams || data.teams.length === 0) addShortTermTeamRow();
 
-            // Lodging (5 homes)
             const lodgingContainer = document.getElementById('st-lodging-builder-rows');
             lodgingContainer.innerHTML = "";
             const hostHomes = data.lodging && data.lodging.length === 5 ? data.lodging : [
@@ -1864,7 +1857,6 @@
                 lodgingContainer.appendChild(div);
             });
 
-            // Visiting Zion Rosters Builder
             const rostersContainer = document.getElementById('st-rosters-builder-rows');
             rostersContainer.innerHTML = "";
             const zionList = appState.masterShortTermGroups && appState.masterShortTermGroups.length > 0 ? appState.masterShortTermGroups : DEFAULT_ST_GROUPS;
@@ -1899,21 +1891,18 @@
             const currentPlan = (data.dailyPlans && data.dailyPlans[currentAdminStPlanDate]) ? data.dailyPlans[currentAdminStPlanDate] : { planImage: "" };
             const planImgSrc = currentPlan.planImage || data.planImage;
 
-            // Plan preview
             document.getElementById('st-plan-img-status').innerText = planImgSrc ? "✓ Image Loaded" : "";
             const planPrev = document.getElementById('admin-st-plan-preview');
             if (planPrev) {
                 planPrev.innerHTML = planImgSrc ? `<img src="${planImgSrc}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${planImgSrc}')" title="Click to view full">` : '';
             }
 
-            // Teams preview
             document.getElementById('st-teams-img-status').innerText = data.teamsImage ? "✓ Image Loaded" : "";
             const teamsPrev = document.getElementById('admin-st-teams-preview');
             if (teamsPrev) {
                 teamsPrev.innerHTML = data.teamsImage ? `<img src="${data.teamsImage}" class="h-20 rounded-lg border shadow-xs object-cover cursor-pointer" onclick="openLightbox('${data.teamsImage}')" title="Click to view full">` : '';
             }
 
-            // Lodging preview
             document.getElementById('st-lodging-img-status').innerText = data.lodgingImage ? "✓ Image Loaded" : "";
             const lodgingPrev = document.getElementById('admin-st-lodging-preview');
             if (lodgingPrev) {
@@ -2023,7 +2012,6 @@
             });
             data.lodging = lodging;
 
-            // Harvest Visiting Zion Rosters
             document.querySelectorAll('.st-zion-roster-block').forEach(block => {
                 const zionName = block.getAttribute('data-zion');
                 const members = Array.from(block.querySelectorAll('.st-member-input')).map(input => input.value.trim()).filter(Boolean);
@@ -2974,7 +2962,7 @@
                 return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
             }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
 
-            // PREACHING TEAMS
+            // Preaching Teams
             document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
                 <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm shadow-sm space-y-1">
                     <div class="flex justify-between items-center">
@@ -2988,7 +2976,7 @@
                 </div>
             `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
 
-            // DUTIES & ROLES
+            // Duties & Roles
             document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
                 if (typeof d === 'object') {
                     return `
@@ -3037,7 +3025,6 @@
         }
 
         function switchTab(viewName) {
-            // Strict role-based isolation
             if (isShortTermGuestMode) {
                 viewName = 'shortterm';
             } else if (viewName === 'shortterm' && currentAdminRole !== 'master') {
