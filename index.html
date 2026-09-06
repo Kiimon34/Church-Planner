@@ -1432,11 +1432,11 @@
         }
 
         async function loadDataFromCloud() {
-            document.getElementById('loading-spinner').classList.add('hidden');
+            document.getElementById('loading-spinner').classList.remove('hidden');
             lastKnownLocalDate = getLocalDateString(new Date());
+            currentSelectedDate = lastKnownLocalDate;
             currentStPlanDate = lastKnownLocalDate;
             currentAdminStPlanDate = lastKnownLocalDate;
-            handleDateChange(lastKnownLocalDate);
 
             try {
                 const cloudEpoch = await loadKeyFromCloud('global_device_epoch');
@@ -1452,7 +1452,9 @@
                 if (pAnnounce) appState.persistentAnnouncement = pAnnounce;
 
                 const bData = await loadKeyFromCloud('blessings_list');
-                if (bData && Array.isArray(bData) && bData.length > 0) appState.blessingsList = bData;
+                if (bData && Array.isArray(bData) && bData.length > 0) {
+                    appState.blessingsList = bData;
+                }
 
                 const sabData = await loadKeyFromCloud('sabbath_schedule');
                 if (sabData) {
@@ -1496,11 +1498,23 @@
                         appState.masterDuties = masterData.masterDuties;
                     }
                 }
+
+                const dateData = await loadKeyFromCloud(`daily_${currentSelectedDate}`);
+                if (dateData) appState.database[currentSelectedDate] = dateData;
+
             } catch (err) {
-                console.log("Using cached baseline");
+                console.log("Using cached baseline:", err);
             } finally {
+                document.getElementById('loading-spinner').classList.add('hidden');
+                
+                const picker = document.getElementById('date-picker');
+                if (picker) picker.value = currentSelectedDate;
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                document.getElementById('display-date-sub').innerText = new Date(currentSelectedDate + 'T00:00:00').toLocaleDateString('en-US', options);
+
                 syncGlobalDatalists();
                 renderDailyAnnouncements();
+                renderDashboardData();
                 renderMonthlyCalendar();
                 renderCookingSchedule();
                 renderCleaningSchedule();
@@ -2289,11 +2303,15 @@
 
             let mappedList = {};
             (appState.blessingsList || []).forEach(b => {
-                const chunks = b.split(':');
-                const name = chunks[0] ? chunks[0].trim() : '';
-                const item = chunks[1] ? chunks[1].trim() : '';
-                const status = chunks[2] ? chunks[2].trim() : 'Full';
-                if (item) mappedList[item] = { name, status };
+                if (typeof b === 'object' && b !== null) {
+                    mappedList[b.item] = { name: b.name || '', status: b.status || 'Full' };
+                } else if (typeof b === 'string') {
+                    const chunks = b.split(':');
+                    const name = chunks[0] ? chunks[0].trim() : '';
+                    const item = chunks[1] ? chunks[1].trim() : '';
+                    const status = chunks[2] ? chunks[2].trim() : 'Full';
+                    if (item) mappedList[item] = { name, status };
+                }
             });
 
             DEFAULT_BLESSINGS.forEach(bDef => {
@@ -2315,6 +2333,45 @@
                 `;
                 container.appendChild(row);
             });
+        }
+
+        function renderBlessings() {
+            const container = document.getElementById('blessings-container');
+            if (!container) return;
+
+            let mappedList = {};
+            (appState.blessingsList || []).forEach(b => {
+                if (typeof b === 'object' && b !== null) {
+                    mappedList[b.item] = { name: b.name || '', status: (b.status || 'Full').toLowerCase() };
+                } else if (typeof b === 'string') {
+                    const chunks = b.split(':');
+                    const name = chunks[0] ? chunks[0].trim() : '';
+                    const item = chunks[1] ? chunks[1].trim() : '';
+                    let status = chunks[2] ? chunks[2].trim().toLowerCase() : 'full';
+                    if (item) mappedList[item] = { name, status };
+                }
+            });
+
+            container.innerHTML = DEFAULT_BLESSINGS.map(bDef => {
+                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status.toLowerCase() };
+                let status = itemData.status;
+
+                let colorClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
+                if (status === 'low') colorClass = "bg-amber-100 text-amber-800 border-amber-200";
+                if (status === 'empty') colorClass = "bg-rose-100 text-rose-800 border-rose-200";
+
+                return `
+                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
+                        <div class="flex divide-x divide-slate-100 flex-1">
+                            <div class="w-1/2 p-3 font-bold text-indigo-950 text-xs flex items-center break-words">${bDef.item}</div>
+                            <div class="w-1/2 p-3 text-xs font-semibold text-slate-700 flex items-center break-words bg-slate-50/50">${itemData.name || '<span class="text-slate-400 italic">Unassigned</span>'}</div>
+                        </div>
+                        <div class="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Status:</span>
+                            <span class="text-xs px-2.5 py-0.5 rounded-full border font-semibold uppercase ${colorClass}">${status}</span>
+                        </div>
+                    </div>`;
+            }).join('');
         }
 
         function renderMonthlyAdminListUI() {
@@ -2565,423 +2622,325 @@
         }
 
         // ==========================================
-        // INITIALIZATION
+        // UNIVERSAL BATCH MODAL SYSTEM
         // ==========================================
-        window.addEventListener('DOMContentLoaded', () => {
-            const todayObj = new Date();
-            currentCalendarYear = todayObj.getFullYear();
-            currentCalendarMonth = todayObj.getMonth();
+        function toggleBatchModal() {
+            document.getElementById('universal-batch-modal').classList.toggle('hidden');
+        }
 
-            // Synchronous direct-token device verification
-            const isTrusted = checkDeviceTrust();
-            if (isTrusted) {
-                checkPinSession();
+        function openBatchModalForCurrentTab(targetType = null) {
+            currentBatchTarget = targetType || currentActiveAdminTab;
+            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'stdaily', 'stteams', 'stlodging', 'stroster', 'shortterm'];
+            if (!supportedTabs.includes(currentBatchTarget)) {
+                alert("Batch update is not available for this tab.");
+                return;
             }
-        });
 
-        async function handleDateChange(dateString) {
+            if (currentBatchTarget === 'shortterm') {
+                currentBatchTarget = 'stdaily';
+            }
+
+            const title = document.getElementById('batch-modal-title');
+            const instructions = document.getElementById('batch-modal-instructions');
+            const input = document.getElementById('batch-modal-input');
+            input.value = "";
+
+            if (currentBatchTarget === 'monthly') {
+                title.innerText = "⚡ Batch Update Monthly Calendar";
+                instructions.innerHTML = `Paste events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code>`;
+                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
+            } else if (currentBatchTarget === 'stdaily') {
+                title.innerText = "⚡ Batch Upload Short Term Daily Schedule";
+                instructions.innerHTML = `Paste schedule for dates in advance.<br><b>Format 1 (Single/Current Day):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code><br><b>Format 2 (Multi-Day Batch):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">YYYY-MM-DD | Time, Activity, Location</code> or header <code class="bg-slate-100 text-slate-800 px-1 rounded">[YYYY-MM-DD]</code>`;
+                input.placeholder = "2026-08-21 | 11:00 AM, Preach (To-Go Lunch), Assigned Routes\n2026-08-21 | 7:00 PM, Dinner in Zion, Main Zion\n\n[2026-08-22]\n9:00 AM, Morning Worship, Main Sanctuary\n10:30 AM, Preach, Assigned Routes\n1:00 PM, Lunch, Fellowship Hall\n3:00 PM, Afternoon Worship, Main Sanctuary\n4:00 PM, Preach, Assigned Routes\n6:00 PM, Dinner, Fellowship Hall\n8:00 PM, Evening Worship, Main Sanctuary\n\n[2026-08-23]\n10:00 AM, Preach, Assigned Routes\n12:00 PM, Joint Preaching (To-Go Lunch), Assigned Routes\n5:30 PM, Dinner in Zion, Main Zion";
+            } else if (currentBatchTarget === 'stteams') {
+                title.innerText = "⚡ Batch Upload Short Term Preaching Teams";
+                instructions.innerHTML = `Paste teams (up to 10).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Indy Member, Visiting Member, Time, Location</code>`;
+                input.placeholder = "B.Kiimon, Visiting Brother 1, 11:00 AM - 4:00 PM, Downtown\nB.Ryan, Visiting Brother 2, 11:00 AM - 4:00 PM, Carmel";
+            } else if (currentBatchTarget === 'stlodging') {
+                title.innerText = "⚡ Batch Upload Lodging Matrix";
+                instructions.innerHTML = `Paste host homes (up to 5).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Host Name (Phone | MapURL), Guest 1 / Guest 2 / Guest 3</code>`;
+                input.placeholder = "D.James (720-949-8770 | https://maps.google.com/?q=Noblesville), D.Jack / B.Geonhee\nB.Jemis (616-260-3298 | https://maps.google.com/?q=Indianapolis), B.Tyler / B.Ethan";
+            } else if (currentBatchTarget === 'stroster') {
+                title.innerText = "⚡ Batch Upload Visiting Rosters";
+                instructions.innerHTML = `Paste roster per Zion.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Zion Name: Member 1, Member 2, Member 3</code>`;
+                input.placeholder = "Columbus Zion: Bro John, Sis Mary, Bro Luke\nNaperville Zion: Bro Mark, Sis Anna";
+            } else if (currentBatchTarget === 'blessings') {
+                title.innerText = "⚡ Batch Update Blessings & Inventory";
+                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code>`;
+                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full";
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                const tabTitle = currentBatchTarget.charAt(0).toUpperCase() + currentBatchTarget.slice(1);
+                title.innerText = `⚡ Batch Update ${tabTitle} Worship Duties`;
+                instructions.innerHTML = `Paste roles line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code>`;
+                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Sound : B.Kiimon";
+            }
+
+            toggleBatchModal();
+        }
+
+        async function processUniversalBatchData() {
+            const rawText = document.getElementById('batch-modal-input').value;
+            if (!rawText.trim()) return;
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+            let updatedCount = 0;
+
+            if (currentBatchTarget === 'stdaily') {
+                const data = getShortTermGroupData();
+                if (!data.dailyPlans) data.dailyPlans = {};
+
+                let activeContextDate = currentAdminStPlanDate || currentStPlanDate || getLocalDateString(new Date());
+
+                lines.forEach(line => {
+                    let cleaned = line.trim();
+                    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+                        const dateExtract = cleaned.slice(1, -1).trim();
+                        if (dateExtract) activeContextDate = dateExtract;
+                        return;
+                    }
+
+                    let targetDate = activeContextDate;
+                    let payload = cleaned;
+
+                    if (cleaned.includes('|') && /^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
+                        const parts = cleaned.split('|');
+                        targetDate = parts[0].trim();
+                        payload = parts.slice(1).join('|').trim();
+                    }
+
+                    const parts = payload.split(',').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        if (!data.dailyPlans[targetDate]) {
+                            data.dailyPlans[targetDate] = { activities: [], planImage: "" };
+                        }
+
+                        data.dailyPlans[targetDate].activities.push({
+                            time: parts[0] || 'TBD',
+                            activity: parts[1] || '',
+                            location: parts[2] || 'Main Zion',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} daily schedule items across configured dates!`);
+                } else {
+                    alert("Could not parse schedule. Format: Time, Activity, Location OR YYYY-MM-DD | Time, Activity, Location");
+                }
+            } else if (currentBatchTarget === 'stteams') {
+                let parsedTeams = [];
+                lines.forEach(line => {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 2 && parsedTeams.length < 10) {
+                        parsedTeams.push({
+                            indy: parts[0] || '',
+                            visiting: parts[1] || '',
+                            time: parts[2] || '11:00 AM - 4:00 PM',
+                            location: parts[3] || 'Main Zion',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedTeams.length > 0) {
+                    appState.shortTermData.teams = parsedTeams;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} preaching teams!`);
+                } else {
+                    alert("Could not parse teams. Format: Indy Lead, Visiting, Time, Location");
+                }
+            } else if (currentBatchTarget === 'stlodging') {
+                let parsedLodging = [];
+                lines.forEach(line => {
+                    if (parsedLodging.length >= 5) return;
+                    let host = "";
+                    let mapUrl = "";
+                    let address = "";
+                    let guests = [];
+
+                    const commaIdx = line.indexOf(',');
+                    if (commaIdx !== -1) {
+                        const hostPart = line.substring(0, commaIdx).trim();
+                        const guestsPart = line.substring(commaIdx + 1).trim();
+
+                        guests = guestsPart.split(/[/,]/).map(g => g.trim()).filter(Boolean).slice(0, 8);
+
+                        if (hostPart.includes('http')) {
+                            const urlMatch = hostPart.match(/https?:\/\/[^\s\)\|\,]+/);
+                            if (urlMatch) mapUrl = urlMatch[0];
+                        }
+
+                        host = hostPart.replace(/\([^)]*\)/g, '').replace(/https?:\/\/[^\s\)\|\,]+/g, '').replace(/[\|\:]/g, '').trim();
+                        address = hostPart.includes('|') ? hostPart.split('|')[0].replace(/[()]/g, '').trim() : '';
+
+                        parsedLodging.push({ host: host || "Host House", address: address || "See Map", mapUrl, guests, image: "" });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedLodging.length > 0) {
+                    while (parsedLodging.length < 5) {
+                        parsedLodging.push({ host: `Host Home ${parsedLodging.length + 1}`, address: "", mapUrl: "", guests: [], image: "" });
+                    }
+                    appState.shortTermData.lodging = parsedLodging;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} lodging homes!`);
+                } else {
+                    alert("Could not parse lodging. Format: Host (Details | MapURL), Guest 1 / Guest 2");
+                }
+            } else if (currentBatchTarget === 'stroster') {
+                lines.forEach(line => {
+                    if (line.includes(':')) {
+                        const colonIdx = line.indexOf(':');
+                        const zion = line.substring(0, colonIdx).trim();
+                        const members = line.substring(colonIdx + 1).split(/[,/]/).map(m => m.trim()).filter(Boolean).slice(0, 10);
+                        if (zion) {
+                            appState.shortTermZionRosters[zion] = members;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
+                    toggleBatchModal();
+                    alert(`Imported rosters for ${updatedCount} visiting Zion locations!`);
+                } else {
+                    alert("Could not parse roster. Format: Zion Name: Member 1, Member 2");
+                }
+            } else if (currentBatchTarget === 'monthly') {
+                const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+                lines.forEach(line => {
+                    let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
+                    if (!cleaned || !cleaned.includes(':')) return;
+
+                    const colonIdx = cleaned.indexOf(':');
+                    const datePart = cleaned.substring(0, colonIdx).trim().toLowerCase();
+                    const eventsPart = cleaned.substring(colonIdx + 1).trim();
+
+                    let matchedMonth = currentCalendarMonth + 1;
+                    let matchedDay = null;
+
+                    mNames.forEach((mName, idx) => {
+                        if (datePart.includes(mName)) {
+                            matchedMonth = idx + 1;
+                            const dayMatch = datePart.match(/\d+/);
+                            if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                        }
+                    });
+
+                    if (!matchedDay && datePart.includes('/')) {
+                        const parts = datePart.split('/');
+                        matchedMonth = parseInt(parts[0]);
+                        matchedDay = parseInt(parts[1]);
+                    } else if (!matchedDay) {
+                        const dayMatch = datePart.match(/\d+/);
+                        if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                    }
+
+                    if (matchedDay) {
+                        const dateKey = `${currentCalendarYear}-${String(matchedMonth).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
+                        if (eventsPart && eventsPart.toLowerCase() !== '(blank)') {
+                            appState.calendarEventsDb[dateKey] = eventsPart;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    renderMonthlyCalendar();
+                    renderMonthlyAdminListUI();
+                    await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} monthly events!`);
+                } else {
+                    alert("Could not parse dates. Please use 'Month Day: Events' format.");
+                }
+            } else if (currentBatchTarget === 'blessings') {
+                let parsedBlessings = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const item = parts[0];
+                        const name = parts[1];
+                        const status = parts[2] ? parts[2] : 'Full';
+                        parsedBlessings.push(`${name} : ${item} : ${status}`);
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedBlessings.length > 0) {
+                    appState.blessingsList = parsedBlessings;
+                    renderBlessings();
+                    renderBlessingsBuilderUI();
+                    await saveKeyToCloud('blessings_list', appState.blessingsList);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} blessing items!`);
+                } else {
+                    alert("Could not parse blessings. Please use 'Item : Name : Status' format.");
+                }
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                let parsedDuties = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const role = parts[0];
+                        const name = parts[1];
+                        parsedDuties.push(`${name || 'Unassigned'} : ${role}`);
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedDuties.length > 0) {
+                    if (currentBatchTarget === 'sabbath') {
+                        appState.sabbathSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties);
+                        await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
+                    } else if (currentBatchTarget === 'thirdday') {
+                        appState.thirddaySchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties);
+                        await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
+                    } else if (currentBatchTarget === 'feast') {
+                        appState.feastSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties);
+                        await saveKeyToCloud('feast_schedule', appState.feastSchedule);
+                    }
+                    renderSabbathAndFeast(currentBatchTarget);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} duties for ${currentBatchTarget}!`);
+                } else {
+                    alert("Could not parse duties. Please use 'Role : Name' format.");
+                }
+            }
+        }
+
+        function handleDateChange(dateString) {
             currentSelectedDate = dateString;
             const picker = document.getElementById('date-picker');
             if (picker) picker.value = dateString;
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
 
-            const dateData = await loadKeyFromCloud(`daily_${dateString}`);
-            if (dateData) appState.database[dateString] = dateData;
-
-            renderDashboardData();
-        }
-
-        function changeDate(offset) {
-            let d = new Date(currentSelectedDate + 'T00:00:00');
-            d.setDate(d.getDate() + offset);
-            handleDateChange(getLocalDateString(d));
-        }
-
-        function changeMonth(offset) {
-            currentCalendarMonth += offset;
-            if (currentCalendarMonth > 11) { currentCalendarMonth = 0; currentCalendarYear += 1; }
-            else if (currentCalendarMonth < 0) { currentCalendarMonth = 11; currentCalendarYear -= 1; }
-            renderMonthlyCalendar();
-        }
-
-        function renderDashboardData() {
-            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-
-            renderDailyAnnouncements();
-
-            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
-                const p = act.split(' - ');
-                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
-
-            // Preaching Teams
-            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
-                <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm shadow-sm space-y-1">
-                    <div class="flex justify-between items-center">
-                        <span class="font-extrabold text-indigo-950">${p.team}</span>
-                        <span class="text-xs bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded">${p.time}</span>
-                    </div>
-                    <div class="flex justify-between items-center text-xs text-slate-600">
-                        <span>📍 ${p.location}</span>
-                        ${p.group ? `<span class="bg-white px-2 py-0.5 rounded border border-indigo-100 font-semibold text-[11px] text-indigo-800">${p.group}</span>` : ''}
-                    </div>
-                </div>
-            `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
-
-            // Duties & Roles
-            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
-                if (typeof d === 'object') {
-                    return `
-                        <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm">
-                            <div class="flex justify-between items-center mb-0.5">
-                                <span class="font-bold text-slate-400 uppercase text-[10px]">${d.role}</span>
-                                ${d.group ? `<span class="bg-white px-1.5 py-0.2 rounded border text-[10px] text-slate-500 font-semibold">${d.group}</span>` : ''}
-                            </div>
-                            <span class="text-slate-800 font-semibold">${d.name}</span>
-                        </div>
-                    `;
-                }
-                const idx = d.indexOf(':');
-                return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
-            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
-        }
-
-        function renderSabbathAndFeast(type) {
-            let source = appState.sabbathSchedule;
-            if (type === 'thirdday') source = appState.thirddaySchedule;
-            if (type === 'feast') source = appState.feastSchedule;
-            
-            if (!source) source = { activities: [], duties: [] };
-
-            const actContainer = document.getElementById(`${type}-activities`);
-            if (actContainer) {
-                actContainer.innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
-                    const parts = a.split(' - ');
-                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
-                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
-            }
-
-            const dutyContainer = document.getElementById(`${type}-duties`);
-            if (dutyContainer) {
-                dutyContainer.innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
-                    const idx = d.indexOf(':');
-                    const name = idx !== -1 ? d.substring(0, idx).trim() : 'Unassigned';
-                    const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
-                    return `<div class="grid grid-cols-3 bg-white border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-100 shadow-sm"><div class="col-span-1 p-3 bg-indigo-50/40 font-bold text-indigo-950 text-xs flex items-center leading-tight">${duty}</div><div class="col-span-2 p-3 text-xs font-semibold text-slate-700 flex items-center">${name}</div></div>`;
-                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
-            }
-        }
-
-        function revealAdminButton() {
-            document.getElementById('admin-trigger-btn').classList.remove('hidden');
-        }
-
-        function switchTab(viewName) {
-            if (isShortTermGuestMode) {
-                viewName = 'shortterm';
-            } else if (viewName === 'shortterm' && currentAdminRole !== 'master') {
-                viewName = 'daily';
-            }
-
-            ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
-                document.getElementById(`view-${t}`)?.classList.add('hidden');
-                const btn = document.getElementById(`tab-${t}-btn`);
-                if (btn) btn.className = "px-3 py-1 rounded-lg text-indigo-200 hover:text-white";
+            loadKeyFromCloud(`daily_${dateString}`).then(dateData => {
+                if (dateData) appState.database[dateString] = dateData;
+                renderDashboardData();
             });
-
-            document.getElementById(`view-${viewName}`)?.classList.remove('hidden');
-            const targetBtn = document.getElementById(`tab-${viewName}-btn`);
-            if (targetBtn) {
-                targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold";
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            if (viewName === 'daily') renderDashboardData();
-            if (viewName === 'monthly') renderMonthlyCalendar();
-            if (viewName === 'blessings') renderBlessings();
-            if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
-            if (viewName === 'thirdday') renderSabbathAndFeast('thirdday');
-            if (viewName === 'feast') renderSabbathAndFeast('feast');
-            if (viewName === 'shortterm') renderShortTermContent();
-            if (viewName === 'cooking') renderCookingSchedule();
-            if (viewName === 'cleaning') renderCleaningSchedule();
-        }
-
-        function switchAdminSubTab(subTab) {
-            if (currentAdminRole === 'limited' && subTab !== 'daily' && subTab !== 'blessings') {
-                subTab = 'daily';
-            }
-
-            currentActiveAdminTab = subTab;
-
-            document.querySelectorAll('.admin-panel-section').forEach(el => el.classList.add('hidden'));
-            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg text-indigo-200");
-
-            document.getElementById(`ap-${subTab}`)?.classList.remove('hidden');
-            const targetBtn = document.getElementById(`as-${subTab}`);
-            if (targetBtn) targetBtn.className = "admin-tab-btn px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white";
-
-            if (subTab === 'monthly') {
-                renderMonthlyAdminListUI();
-            }
-            if (subTab === 'shortterm') {
-                populateAdminShortTermUI();
-            }
-        }
-
-        function toggleAdminModal() {
-            const m = document.getElementById('admin-modal');
-            m.classList.toggle('hidden');
-            if (!m.classList.contains('hidden')) {
-                document.querySelectorAll('.master-only').forEach(el => {
-                    if (currentAdminRole === 'master') el.classList.remove('hidden');
-                    else el.classList.add('hidden');
-                });
-
-                document.getElementById('admin-panel-title').innerText = currentAdminRole === 'master' ? 'Master Admin Panel' : 'Limited Admin Panel';
-                
-                switchAdminSubTab('daily');
-                
-                const dData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-                document.getElementById('input-announcements').value = appState.persistentAnnouncement || "";
-                document.getElementById('input-activities').value = (dData.activities || []).join('\n');
-                
-                const pGroupSelect = document.getElementById('preaching-group-selector');
-                const dGroupSelect = document.getElementById('duty-group-selector');
-                const groupsToUse = (appState.masterGroups && appState.masterGroups.length > 0) ? appState.masterGroups : DEFAULT_GROUPS;
-                const groupOptions = groupsToUse.map(g => `<option value="${g}">${g}</option>`).join('');
-
-                if (pGroupSelect) {
-                    pGroupSelect.innerHTML = groupOptions;
-                    currentPGroup = pGroupSelect.value;
-                    loadPreachingRowsForGroup(pGroupSelect.value);
-                }
-
-                if (dGroupSelect) {
-                    dGroupSelect.innerHTML = groupOptions;
-                    currentDGroup = dGroupSelect.value;
-                    loadDutyRowsForGroup(dGroupSelect.value);
-                }
-
-                renderBlessingsBuilderUI();
-
-                if (currentAdminRole === 'master') {
-                    renderCookingBuilderUI();
-                    renderCleaningBuilderUI();
-
-                    document.getElementById('input-sabbath-activities').value = (appState.sabbathSchedule.activities || []).join('\n');
-                    document.getElementById('input-thirdday-activities').value = (appState.thirddaySchedule.activities || []).join('\n');
-                    document.getElementById('input-feast-activities').value = (appState.feastSchedule.activities || []).join('\n');
-
-                    renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties || []);
-                    renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties || []);
-                    renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties || []);
-
-                    document.getElementById('input-master-evangelists').value = (appState.masterEvangelists || []).join('\n');
-                    document.getElementById('input-master-groups').value = (appState.masterGroups || []).join('\n');
-                    document.getElementById('input-master-stgroups').value = (appState.masterShortTermGroups || DEFAULT_ST_GROUPS).join('\n');
-                    document.getElementById('input-master-duties').value = (appState.masterDuties || []).join('\n');
-                }
-            }
-        }
-
-        async function saveAdminData(e) {
-            e.preventDefault();
-            
-            const saveBtn = document.getElementById('admin-save-btn');
-            saveBtn.disabled = true;
-            saveBtn.innerText = "Synchronizing...";
-
-            const activeTab = currentActiveAdminTab;
-
-            // DAILY VIEW SAVE
-            if (activeTab === 'daily') {
-                harvestCurrentPreachingGroupRows();
-                harvestCurrentDutyGroupRows();
-
-                const targetDateData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-
-                if (currentAdminRole === 'master') {
-                    appState.persistentAnnouncement = document.getElementById('input-announcements').value.trim();
-                    await saveKeyToCloud('persistent_announcement', appState.persistentAnnouncement);
-                    targetDateData.activities = document.getElementById('input-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                }
-
-                appState.database[currentSelectedDate] = targetDateData;
-                await saveKeyToCloud(`daily_${currentSelectedDate}`, targetDateData);
-            }
-
-            // MONTHLY VIEW SAVE
-            if (activeTab === 'monthly' && currentAdminRole === 'master') {
-                document.querySelectorAll('.monthly-event-input').forEach(input => {
-                    const dateKey = input.getAttribute('data-datekey');
-                    const val = input.value.trim();
-                    if (val) {
-                        appState.calendarEventsDb[dateKey] = val;
-                    } else {
-                        delete appState.calendarEventsDb[dateKey];
-                    }
-                });
-                renderMonthlyCalendar();
-                await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
-            }
-
-            // SHORT TERM SAVE
-            if (activeTab === 'shortterm' && currentAdminRole === 'master') {
-                harvestAdminShortTermRows();
-                await saveKeyToCloud('short_term_data', appState.shortTermData);
-                await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
-                renderShortTermContent();
-            }
-
-            // BLESSINGS SAVE
-            if (activeTab === 'blessings') {
-                let blessingLines = [];
-                document.querySelectorAll('#blessings-builder-rows .blessing-row').forEach(r => {
-                    const item = r.getAttribute('data-item');
-                    const name = r.querySelector('.b-name-input').value.trim();
-                    const status = r.querySelector('.b-status-input').value;
-                    if (item) blessingLines.push(`${name} : ${item} : ${status}`);
-                });
-                appState.blessingsList = blessingLines;
-                await saveKeyToCloud('blessings_list', appState.blessingsList);
-            }
-
-            // SABBATH ROSTER & ACTIVITIES SAVE
-            if (activeTab === 'sabbath' && currentAdminRole === 'master') {
-                let sabLines = [];
-                document.querySelectorAll('#sabbath-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) sabLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.sabbathSchedule.duties = sabLines;
-                appState.sabbathSchedule.activities = document.getElementById('input-sabbath-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
-            }
-
-            // THIRD-DAY ROSTER & ACTIVITIES SAVE
-            if (activeTab === 'thirdday' && currentAdminRole === 'master') {
-                let tdLines = [];
-                document.querySelectorAll('#thirdday-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) tdLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.thirddaySchedule.duties = tdLines;
-                appState.thirddaySchedule.activities = document.getElementById('input-thirdday-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
-            }
-
-            // FEAST ROSTER & ACTIVITIES SAVE
-            if (activeTab === 'feast' && currentAdminRole === 'master') {
-                let fLines = [];
-                document.querySelectorAll('#feast-permanent-roster .permanent-duty-row').forEach(r => {
-                    const role = r.getAttribute('data-role');
-                    const name = r.querySelector('.perm-name-input').value.trim();
-                    if (role) fLines.push(`${name || 'Unassigned'} : ${role}`);
-                });
-                appState.feastSchedule.duties = fLines;
-                appState.feastSchedule.activities = document.getElementById('input-feast-activities').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                await saveKeyToCloud('feast_schedule', appState.feastSchedule);
-            }
-
-            // MASTER SETTINGS SAVE
-            if (activeTab === 'settings' && currentAdminRole === 'master') {
-                appState.masterEvangelists = document.getElementById('input-master-evangelists').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterGroups = document.getElementById('input-master-groups').value.split('\n').map(l=>l.trim()).filter(Boolean);
-                appState.masterShortTermGroups = document.getElementById('input-master-stgroups').value.split('\n').map(l=>l.trim()).filter(Boolean).slice(0, 4);
-                appState.masterDuties = document.getElementById('input-master-duties').value.split('\n').map(l=>l.trim()).filter(Boolean);
-
-                syncGlobalDatalists();
-
-                await saveKeyToCloud('master_lists', {
-                    masterEvangelists: appState.masterEvangelists,
-                    masterGroups: appState.masterGroups,
-                    masterShortTermGroups: appState.masterShortTermGroups,
-                    masterDuties: appState.masterDuties
-                });
-            }
-
-            renderDailyAnnouncements();
-            toggleAdminModal();
-            renderDashboardData();
-            renderBlessings();
-            renderSabbathAndFeast('sabbath');
-            renderSabbathAndFeast('thirdday');
-            renderSabbathAndFeast('feast');
-            renderShortTermContent();
-
-            saveBtn.disabled = false;
-            saveBtn.innerText = "Save Changes";
-        }
-
-        function renderMonthlyCalendar() {
-            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('monthly-calendar-title').innerText = `${mNames[currentCalendarMonth]} ${currentCalendarYear}`;
-            const gridContainer = document.getElementById('calendar-grid-cells');
-            gridContainer.innerHTML = ""; 
-            const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
-            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-
-            for (let i = 0; i < firstDayIndex; i++) {
-                gridContainer.appendChild(document.createElement('div'));
-            }
-
-            for (let day = 1; day <= totalDaysInMonth; day++) {
-                const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const cell = document.createElement('div');
-                cell.className = "bg-white border border-slate-200 rounded-xl p-2 min-h-[105px] flex flex-col justify-between transition-all hover:border-indigo-400 hover:bg-indigo-50/10 cursor-pointer shadow-sm";
-                cell.setAttribute('onclick', `openCalendarViewModal('${dateKey}')`);
-
-                const topRow = document.createElement('div');
-                topRow.className = "flex justify-between items-center";
-                topRow.innerHTML = `<span class="font-bold text-sm text-slate-400">${day}</span>`;
-                cell.appendChild(topRow);
-
-                const eventsContainer = document.createElement('div');
-                eventsContainer.className = "text-[11px] text-indigo-950 font-medium overflow-hidden max-h-[70px] mt-1 space-y-1";
-                const cellContentText = appState.calendarEventsDb[dateKey] || "";
-                if (cellContentText) {
-                    cellContentText.split(',').forEach(item => {
-                        const bullet = document.createElement('div');
-                        bullet.className = "bg-indigo-50 border border-indigo-100/60 rounded px-1 py-0.5 truncate";
-                        bullet.innerText = `• ${item.trim()}`;
-                        eventsContainer.appendChild(bullet);
-                    });
-                }
-                cell.appendChild(eventsContainer);
-                gridContainer.appendChild(cell);
-            }
-        }
-
-        function openCalendarViewModal(dateKey) {
-            const dateObj = new Date(dateKey + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('cv-modal-date-title').innerText = dateObj.toLocaleDateString('en-US', options);
-
-            const eventsText = appState.calendarEventsDb[dateKey] || "";
-            const contentContainer = document.getElementById('cv-modal-events-content');
-            contentContainer.innerHTML = "";
-
-            if (eventsText.trim() === "") {
-                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4 text-center">No events mapped for this day.</p>`;
-            } else {
-                eventsText.split(',').forEach(item => {
-                    const lineCard = document.createElement('div');
-                    lineCard.className = "p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-950 font-semibold text-sm shadow-sm leading-relaxed";
-                    lineCard.innerText = item.trim();
-                    contentContainer.appendChild(lineCard);
-                });
-            }
-
-            document.getElementById('calendar-view-modal').classList.remove('hidden');
-        }
-
-        function closeCalendarViewModal() {
-            document.getElementById('calendar-view-modal').classList.add('hidden');
         }
     </script>
 </body>
