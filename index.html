@@ -1376,12 +1376,19 @@
             }
         }
 
+        // FAIL-SAFE LOAD FUNCTION WITH 4-SECOND ABORT TIMEOUT
         async function loadKeyFromCloud(keyName) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 4000);
+
             try {
                 const response = await fetch(`${CLOUD_URL}/get/${keyName}`, {
                     method: 'GET',
-                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` }
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+
                 if (response.ok) {
                     const result = await response.json();
                     if (!result || result.result === undefined || result.result === null) return null;
@@ -1392,7 +1399,9 @@
                     }
                 }
             } catch (err) {
-                console.error(`Load error ${keyName}:`, err);
+                // Aborted or network failure fails silently to allow cached baseline
+            } finally {
+                clearTimeout(timeoutId);
             }
             return null;
         }
@@ -1431,15 +1440,43 @@
             document.getElementById('dl-duties').innerHTML = dutyList.map(d => `<option value="${d}"></option>`).join('');
         }
 
+        // PARALLEL SYNCHRONIZATION WITH SAFE ERROR HANDLING
         async function loadDataFromCloud() {
-            document.getElementById('loading-spinner').classList.remove('hidden');
+            const spinner = document.getElementById('loading-spinner');
+            if (spinner) spinner.classList.remove('hidden');
+
             lastKnownLocalDate = getLocalDateString(new Date());
             currentSelectedDate = lastKnownLocalDate;
             currentStPlanDate = lastKnownLocalDate;
             currentAdminStPlanDate = lastKnownLocalDate;
 
             try {
-                const cloudEpoch = await loadKeyFromCloud('global_device_epoch');
+                const [
+                    cloudEpoch,
+                    pAnnounce,
+                    bData,
+                    sabData,
+                    tdData,
+                    fData,
+                    stCloud,
+                    stRostersCloud,
+                    calData,
+                    masterData,
+                    dateData
+                ] = await Promise.allSettled([
+                    loadKeyFromCloud('global_device_epoch'),
+                    loadKeyFromCloud('persistent_announcement'),
+                    loadKeyFromCloud('blessings_list'),
+                    loadKeyFromCloud('sabbath_schedule'),
+                    loadKeyFromCloud('thirdday_schedule'),
+                    loadKeyFromCloud('feast_schedule'),
+                    loadKeyFromCloud('short_term_data'),
+                    loadKeyFromCloud('short_term_zion_rosters'),
+                    loadKeyFromCloud('calendar_events'),
+                    loadKeyFromCloud('master_lists'),
+                    loadKeyFromCloud(`daily_${currentSelectedDate}`)
+                ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : null));
+
                 const localEpoch = localStorage.getItem('local_device_epoch');
                 if (cloudEpoch && cloudEpoch !== localEpoch) {
                     localStorage.removeItem(DEVICE_STORAGE_KEY);
@@ -1448,69 +1485,53 @@
                     return;
                 }
 
-                const pAnnounce = await loadKeyFromCloud('persistent_announcement');
                 if (pAnnounce) appState.persistentAnnouncement = pAnnounce;
 
-                const bData = await loadKeyFromCloud('blessings_list');
                 if (bData && Array.isArray(bData) && bData.length > 0) {
                     appState.blessingsList = bData;
                 }
 
-                const sabData = await loadKeyFromCloud('sabbath_schedule');
                 if (sabData) {
                     if (sabData.duties && sabData.duties.length > 0) appState.sabbathSchedule.duties = sabData.duties;
                     if (sabData.activities && Array.isArray(sabData.activities)) appState.sabbathSchedule.activities = sabData.activities;
                 }
 
-                const tdData = await loadKeyFromCloud('thirdday_schedule');
                 if (tdData) {
                     if (tdData.duties && tdData.duties.length > 0) appState.thirddaySchedule.duties = tdData.duties;
                     if (tdData.activities && Array.isArray(tdData.activities)) appState.thirddaySchedule.activities = tdData.activities;
                 }
 
-                const fData = await loadKeyFromCloud('feast_schedule');
                 if (fData) {
                     if (fData.duties && fData.duties.length > 0) appState.feastSchedule.duties = fData.duties;
                     if (fData.activities && Array.isArray(fData.activities)) appState.feastSchedule.activities = fData.activities;
                 }
 
-                const stCloud = await loadKeyFromCloud('short_term_data');
                 if (stCloud) appState.shortTermData = stCloud;
-
-                const stRostersCloud = await loadKeyFromCloud('short_term_zion_rosters');
                 if (stRostersCloud) appState.shortTermZionRosters = stRostersCloud;
-
-                const calData = await loadKeyFromCloud('calendar_events');
                 if (calData) appState.calendarEventsDb = calData;
 
-                const masterData = await loadKeyFromCloud('master_lists');
                 if (masterData) {
-                    if (masterData.masterEvangelists && Array.isArray(masterData.masterEvangelists) && masterData.masterEvangelists.length > 0) {
-                        appState.masterEvangelists = masterData.masterEvangelists;
-                    }
-                    if (masterData.masterGroups && Array.isArray(masterData.masterGroups) && masterData.masterGroups.length > 0) {
-                        appState.masterGroups = masterData.masterGroups;
-                    }
-                    if (masterData.masterShortTermGroups && Array.isArray(masterData.masterShortTermGroups) && masterData.masterShortTermGroups.length > 0) {
-                        appState.masterShortTermGroups = masterData.masterShortTermGroups;
-                    }
-                    if (masterData.masterDuties && Array.isArray(masterData.masterDuties) && masterData.masterDuties.length > 0) {
-                        appState.masterDuties = masterData.masterDuties;
-                    }
+                    if (masterData.masterEvangelists?.length) appState.masterEvangelists = masterData.masterEvangelists;
+                    if (masterData.masterGroups?.length) appState.masterGroups = masterData.masterGroups;
+                    if (masterData.masterShortTermGroups?.length) appState.masterShortTermGroups = masterData.masterShortTermGroups;
+                    if (masterData.masterDuties?.length) appState.masterDuties = masterData.masterDuties;
                 }
 
-                const dateData = await loadKeyFromCloud(`daily_${currentSelectedDate}`);
                 if (dateData) appState.database[currentSelectedDate] = dateData;
 
             } catch (err) {
-                console.log("Using cached baseline:", err);
+                console.warn("Using offline fallback cache:", err);
             } finally {
-                document.getElementById('loading-spinner').classList.add('hidden');
-                
+                if (spinner) spinner.classList.add('hidden');
+
                 const picker = document.getElementById('date-picker');
                 if (picker) picker.value = currentSelectedDate;
-                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-                document.getElementById('display-date-sub').innerText = new Date(currentSelectedDate + 'T00:00:00').toLocaleDateString('en-US', options);
+
+                const dateTitleSub = document.getElementById('display-date-sub');
+                if (dateTitleSub) {
+                    const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                    dateTitleSub.innerText = new Date(currentSelectedDate + 'T00:00:00').toLocaleDateString('en-US', options);
+                }
 
                 syncGlobalDatalists();
                 renderDailyAnnouncements();
@@ -1523,6 +1544,10 @@
                 renderSabbathAndFeast('thirdday');
                 renderSabbathAndFeast('feast');
                 renderShortTermContent();
+
+                if (isShortTermGuestMode) {
+                    switchTab('shortterm');
+                }
             }
         }
 
@@ -2930,7 +2955,19 @@
             }
         }
 
-        function handleDateChange(dateString) {
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            const todayObj = new Date();
+            currentCalendarYear = todayObj.getFullYear();
+            currentCalendarMonth = todayObj.getMonth();
+
+            const isTrusted = checkDeviceTrust();
+            if (isTrusted) {
+                checkPinSession();
+            }
+        });
+
+        async function handleDateChange(dateString) {
             currentSelectedDate = dateString;
             const picker = document.getElementById('date-picker');
             if (picker) picker.value = dateString;
