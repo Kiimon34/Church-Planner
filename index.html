@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zion Church Planner (INDY)</title>
     
-    <!-- PWA Meta Tags & Manifest -->
     <link rel="manifest" href="manifest.json">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -13,7 +12,6 @@
     <meta name="apple-mobile-web-app-title" content="Zion Planner">
     <meta name="theme-color" content="#1e1b4b">
     
-    <!-- Stable Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; }
@@ -42,106 +40,77 @@
 </head>
 <body class="bg-slate-50 text-slate-800 min-h-screen">
 
-    <!-- GLOBAL AUTOCOMPLETE DATALISTS -->
     <datalist id="dl-evangelists"></datalist>
     <datalist id="dl-duties"></datalist>
 
-    <!-- LAYER 1: DEVICE AUTHORIZATION GATE -->
     <div id="device-enroll-screen" class="fixed inset-0 bg-slate-950 z-[110] flex items-center justify-center p-4">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-slate-800">
-            <div class="inline-flex p-4 bg-indigo-50 text-indigo-950 rounded-2xl text-3xl shadow-sm">
-                🛡️
-            </div>
+            <div class="inline-flex p-4 bg-indigo-50 text-indigo-950 rounded-2xl text-3xl shadow-sm">🛡️</div>
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Device Authorization</h1>
-                <p class="text-xs text-slate-500 mt-1">This browser is not registered. Enter the 12-digit church authorization key to trust this device.</p>
+                <p class="text-xs text-slate-500 mt-1">Enter the 12-digit church authorization key to trust this device.</p>
             </div>
-
             <div class="space-y-2">
                 <input type="text" id="device-passkey-input" maxlength="14" placeholder="XXXX-XXXX-XXXX" 
                     class="w-full text-center tracking-widest font-mono text-base font-bold border-2 border-slate-200 rounded-xl p-3 text-slate-900 focus:border-indigo-800 outline-none uppercase"
                     oninput="formatPasskeyInput(this)" onkeydown="if(event.key==='Enter') verifyDevicePasskey()">
                 <p id="device-error-msg" class="text-xs font-semibold text-rose-600 hidden">Invalid authorization key.</p>
             </div>
-
             <button type="button" onclick="verifyDevicePasskey()" class="w-full bg-indigo-950 hover:bg-indigo-900 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs tracking-wide cursor-pointer">
                 Authorize Device
             </button>
-
-            <p class="text-[11px] text-slate-400">Device approval is permanent on this browser unless site cookies/storage are cleared.</p>
+            <p class="text-[11px] text-slate-400">Device approval is permanent unless site data is cleared.</p>
         </div>
     </div>
 
-    <!-- LAYER 2: PIN LOGIN SCREEN -->
     <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-indigo-900/20">
-            <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
-                📖
-            </div>
+            <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">📖</div>
             <div>
                 <h1 class="text-2xl font-bold text-indigo-950">Zion Church Planner (INDY)</h1>
                 <p class="text-xs text-slate-500 mt-1">Enter 4-digit PIN or open Visiting Teams Portal</p>
             </div>
-
             <div id="pin-input-container" class="flex justify-center space-x-3">
-                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 0)" onkeydown="handlePinBackspace(event, 0)">
-                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 1)" onkeydown="handlePinBackspace(event, 1)">
-                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 2)" onkeydown="handlePinBackspace(event, 2)">
-                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none transition-all shadow-sm" oninput="handlePinInput(this, 3)" onkeydown="handlePinBackspace(event, 3)">
+                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none shadow-sm" oninput="handlePinInput(this, 0)" onkeydown="handlePinBackspace(event, 0)">
+                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none shadow-sm" oninput="handlePinInput(this, 1)" onkeydown="handlePinBackspace(event, 1)">
+                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none shadow-sm" oninput="handlePinInput(this, 2)" onkeydown="handlePinBackspace(event, 2)">
+                <input type="password" maxlength="1" pattern="\d*" inputmode="numeric" class="pin-digit w-12 h-14 border-2 border-slate-200 rounded-xl text-center text-2xl font-bold text-indigo-950 focus:border-indigo-800 outline-none shadow-sm" oninput="handlePinInput(this, 3)" onkeydown="handlePinBackspace(event, 3)">
             </div>
-
-            <p id="pin-error-msg" class="text-xs font-semibold text-rose-600 hidden">Incorrect PIN. Please try again.</p>
-
-            <button type="button" onclick="submitPinCheck()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-sm cursor-pointer">
+            <p id="pin-error-msg" class="text-xs font-semibold text-rose-600 hidden">Incorrect PIN.</p>
+            <button type="button" onclick="submitPinCheck()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-3.5 rounded-xl shadow-md text-sm cursor-pointer">
                 Unlock Main Planner
             </button>
-
             <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
                 <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams</span>
                 <div class="flex-grow border-t border-slate-200"></div>
             </div>
-
-            <button type="button" onclick="openShortTermGuestPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2 cursor-pointer">
+            <button type="button" onclick="openShortTermGuestPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3.5 rounded-xl shadow-md text-xs flex items-center justify-center gap-2 cursor-pointer">
                 ✈️ Visiting Short Term Portal (Guest Access)
             </button>
         </div>
     </div>
 
-    <!-- MAIN APP CONTENT -->
     <div id="app-wrapper" class="hidden">
         <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
+                <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()">
                     <span class="text-2xl">📖</span>
                     <span class="font-bold text-lg tracking-wide" id="app-nav-title">Zion Church Planner (INDY)</span>
                 </div>
-                
                 <div class="flex items-center space-x-2">
                     <div id="admin-active-group" class="hidden flex items-center space-x-2">
                         <span id="admin-status" class="text-xs bg-amber-500 text-slate-900 font-bold px-2.5 py-1 rounded-lg">🛠️ Master Admin Active</span>
-                        <button onclick="logoutAdmin()" class="bg-rose-800 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow transition-all cursor-pointer">
-                            🔒 Logout
-                        </button>
+                        <button onclick="logoutAdmin()" class="bg-rose-800 hover:bg-rose-700 text-white px-2.5 py-1 rounded-lg text-xs font-semibold shadow cursor-pointer">🔒 Logout</button>
                     </div>
-
-                    <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shadow hidden cursor-pointer">
-                        ⚙️ Admin
-                    </button>
-                    
-                    <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1 cursor-pointer">
-                        🚪 Exit Guest Mode
-                    </button>
-
-                    <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none cursor-pointer" title="Menu">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-                        </svg>
+                    <button id="admin-trigger-btn" onclick="checkPasswordAndOpen()" class="bg-amber-600 hover:bg-amber-500 px-3 py-1 rounded-lg text-xs font-semibold transition-colors shadow hidden cursor-pointer">⚙️ Admin</button>
+                    <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow flex items-center gap-1 cursor-pointer">🚪 Exit Guest Mode</button>
+                    <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl cursor-pointer" title="Menu">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
                     </button>
                 </div>
             </div>
 
-            <!-- PRIMARY TABS SLIDER BAR (LOCAL MEMBERS ONLY) -->
             <div id="primary-tabs-bar" class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer">📅 Daily View</button>
@@ -153,38 +122,23 @@
             </div>
         </nav>
 
-        <!-- HAMBURGER DRAWER -->
-        <div id="hamburger-drawer" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[95] hidden transition-all" onclick="toggleHamburgerMenu()">
+        <div id="hamburger-drawer" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[95] hidden" onclick="toggleHamburgerMenu()">
             <div class="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 flex flex-col justify-between space-y-6" onclick="event.stopPropagation()">
-                <div class="space-y-6">
+                <div class="space-y-4">
                     <div class="flex justify-between items-center border-b pb-3">
-                        <h3 class="font-bold text-slate-900 text-lg flex items-center gap-2">📂 Secondary Tabs</h3>
-                        <button type="button" onclick="toggleHamburgerMenu()" class="text-2xl text-slate-400 hover:text-slate-600 font-bold cursor-pointer">&times;</button>
+                        <h3 class="font-bold text-slate-900 text-lg">📂 Secondary Tabs</h3>
+                        <button type="button" onclick="toggleHamburgerMenu()" class="text-2xl text-slate-400 hover:text-slate-600 font-bold cursor-pointer">×</button>
                     </div>
-
                     <div class="space-y-2">
-                        <button onclick="switchTab('blessings'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">
-                            <span>✨</span> Blessings & Inventory
-                        </button>
-                        <button onclick="switchTab('cooking'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">
-                            <span>🍲</span> Cooking Schedule
-                        </button>
-                        <button onclick="switchTab('cleaning'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">
-                            <span>🧹</span> Cleaning Responsibilities
-                        </button>
-                        <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">
-                            <span>🔧</span> Zion Maintenance
-                        </button>
+                        <button onclick="switchTab('blessings'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">✨ Blessings & Inventory</button>
+                        <button onclick="switchTab('cooking'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🍲 Cooking Schedule</button>
+                        <button onclick="switchTab('cleaning'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🧹 Cleaning Tasks</button>
+                        <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🔧 Maintenance</button>
                     </div>
                 </div>
-
                 <div class="space-y-2 border-t pt-4">
-                    <button type="button" onclick="triggerPwaInstall(); toggleHamburgerMenu();" class="w-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border border-emerald-200 cursor-pointer">
-                        📱 Install App to Home Screen
-                    </button>
-                    <button type="button" onclick="lockApp()" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer">
-                        🔒 Lock Planner
-                    </button>
+                    <button type="button" onclick="triggerPwaInstall(); toggleHamburgerMenu();" class="w-full bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 border border-emerald-200 cursor-pointer">📱 Install App</button>
+                    <button type="button" onclick="lockApp()" class="w-full bg-slate-100 text-slate-700 hover:bg-slate-200 font-bold py-2.5 rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer">🔒 Lock Planner</button>
                 </div>
             </div>
         </div>
@@ -196,17 +150,11 @@
             </div>
 
             <div id="main-content" class="space-y-6">
-                <!-- TAB 1: DAILY VIEW -->
                 <div id="view-daily" class="space-y-6">
-                    <div id="daily-announcements-section" class="hidden">
-                        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-sm flex items-start justify-between gap-3 border border-amber-200/60">
-                            <div class="space-y-1">
-                                <h3 class="font-bold text-amber-950 text-sm flex items-center gap-2">📢 Church Announcement</h3>
-                                <div class="text-amber-900 leading-relaxed text-xs whitespace-pre-wrap break-words" id="daily-announcements-text"></div>
-                            </div>
-                            <button type="button" onclick="openAnnouncementPopupModal()" class="text-xs bg-amber-200/70 hover:bg-amber-200 text-amber-950 font-bold px-2.5 py-1 rounded-lg transition-all shrink-0 cursor-pointer">
-                                View
-                            </button>
+                    <div id="daily-announcements-section" class="hidden bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-2xl shadow-sm flex items-start justify-between gap-3 border border-amber-200">
+                        <div class="space-y-1">
+                            <h3 class="font-bold text-amber-950 text-sm flex items-center gap-2">📢 Church Announcement</h3>
+                            <div class="text-amber-900 text-xs whitespace-pre-wrap" id="daily-announcements-text"></div>
                         </div>
                     </div>
 
@@ -215,7 +163,6 @@
                             <h1 class="text-2xl font-bold text-slate-900" id="display-date-title">Today's Schedule</h1>
                             <p class="text-slate-500 text-sm" id="display-date-sub">Loading...</p>
                         </div>
-                        
                         <div class="flex items-center space-x-2">
                             <button onclick="changeDate(-1)" class="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg font-bold cursor-pointer">← Prev</button>
                             <input type="date" id="date-picker" onchange="handleDateChange(this.value)" class="border border-slate-300 rounded-lg p-2 font-medium focus:ring-2 focus:ring-indigo-500 outline-none">
@@ -230,912 +177,254 @@
                         </div>
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                             <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">📋 Preaching Teams</h2>
-                            <div id="preaching-container" class="space-y-3 h-auto min-h-[60px] w-full overflow-visible transition-all"></div>
+                            <div id="preaching-container" class="space-y-3"></div>
                         </div>
                         <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                             <h2 class="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 mb-4">🛠️ Duties & Roles</h2>
-                            <div id="duties-container" class="space-y-3 h-auto min-h-[60px] w-full overflow-visible transition-all"></div>
+                            <div id="duties-container" class="space-y-3"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 2: MONTHLY GRID CALENDAR VIEW -->
                 <div id="view-monthly" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div>
                             <h1 id="monthly-calendar-title" class="text-2xl font-bold text-slate-900">Monthly Calendar</h1>
-                            <p class="text-slate-500 text-xs font-semibold">💡 Click directly on any day box below to view details or edit!</p>
+                            <p class="text-slate-500 text-xs font-semibold">💡 Click on any day to view scheduled details or edit.</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button onclick="exportToIcsCalendar()" type="button" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold transition-all shadow-sm flex items-center gap-1 cursor-pointer">
-                                📅 Sync Month to Calendar
-                            </button>
+                            <button onclick="exportToIcsCalendar()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold shadow-sm cursor-pointer">📅 Export .ics</button>
                             <button onclick="changeMonth(-1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm cursor-pointer">← Prev</button>
                             <button onclick="changeMonth(1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm cursor-pointer">Next →</button>
                         </div>
                     </div>
-
                     <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 overflow-x-auto">
                         <div class="min-w-[700px]">
-                            <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 uppercase text-xs tracking-wider mb-2">
-                                <div class="py-2 bg-slate-50 rounded-lg">Sun</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Mon</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Tue</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Wed</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Thu</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Fri</div>
-                                <div class="py-2 bg-slate-50 rounded-lg">Sat</div>
+                            <div class="grid grid-cols-7 gap-2 text-center font-bold text-slate-500 uppercase text-xs mb-2">
+                                <div class="py-2 bg-slate-50 rounded-lg">Sun</div><div class="py-2 bg-slate-50 rounded-lg">Mon</div><div class="py-2 bg-slate-50 rounded-lg">Tue</div>
+                                <div class="py-2 bg-slate-50 rounded-lg">Wed</div><div class="py-2 bg-slate-50 rounded-lg">Thu</div><div class="py-2 bg-slate-50 rounded-lg">Fri</div><div class="py-2 bg-slate-50 rounded-lg">Sat</div>
                             </div>
                             <div id="calendar-grid-cells" class="grid grid-cols-7 gap-2"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 3: BLESSINGS VIEW -->
                 <div id="view-blessings" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                        <h1 class="text-2xl font-bold text-slate-900 border-b border-slate-100 pb-3">✨ Blessings & Thanksgiving</h1>
+                        <h1 class="text-2xl font-bold text-slate-900 border-b pb-3">✨ Blessings & Thanksgiving</h1>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="blessings-container"></div>
                     </div>
                 </div>
 
-                <!-- TAB 4: SABBATH VIEW -->
                 <div id="view-sabbath" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <h1 class="text-2xl font-bold text-slate-900">🕊️ Holy Sabbath Schedule</h1>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
-                                <div id="sabbath-activities" class="space-y-3"></div>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
-                                <div id="sabbath-duties" class="space-y-3"></div>
-                            </div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">⏱️ Activities & Times</h2><div id="sabbath-activities" class="space-y-3"></div></div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">📋 Worship Duties</h2><div id="sabbath-duties" class="space-y-3"></div></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 5: THIRD-DAY VIEW -->
                 <div id="view-thirdday" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <h1 class="text-2xl font-bold text-slate-900">🌅 Third-Day Schedule</h1>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
-                                <div id="thirdday-activities" class="space-y-3"></div>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
-                                <div id="thirdday-duties" class="space-y-3"></div>
-                            </div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">⏱️ Activities & Times</h2><div id="thirdday-activities" class="space-y-3"></div></div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">📋 Worship Duties</h2><div id="thirdday-duties" class="space-y-3"></div></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 6: FEAST WORSHIP VIEW -->
                 <div id="view-feast" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <h1 class="text-2xl font-bold text-slate-900">🎉 Feast Worship Schedule</h1>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">⏱️ Activities & Times</h2>
-                                <div id="feast-activities" class="space-y-3"></div>
-                            </div>
-                            <div>
-                                <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-4">📋 Worship Duties</h2>
-                                <div id="feast-duties" class="space-y-3"></div>
-                            </div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">⏱️ Activities & Times</h2><div id="feast-activities" class="space-y-3"></div></div>
+                            <div><h2 class="text-lg font-bold border-b pb-2 mb-4">📋 Worship Duties</h2><div id="feast-duties" class="space-y-3"></div></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 7: SHORT TERM EXTENSION (VISITING PORTAL EXCLUSIVE) -->
                 <div id="view-shortterm" class="space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200 space-y-6">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
+                        <div class="border-b pb-3 flex justify-between items-center">
                             <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="text-2xl">✈️</span>
-                                    <h1 class="text-2xl font-black text-indigo-950 tracking-tight">Visiting Short Term Portal</h1>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Explore visiting itinerary, pair assignments, lodging locations, and church rosters.</p>
+                                <h1 class="text-2xl font-black text-indigo-950 flex items-center gap-2"><span>✈️</span> Visiting Short Term Portal</h1>
+                                <p class="text-xs text-slate-500">Short-term schedules, pairs, lodging, and directory rosters.</p>
                             </div>
                         </div>
 
-                        <!-- SHORT TERM SUB TABS & DISPLAY TOGGLE -->
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-slate-100 p-1.5 rounded-2xl">
-                            <div class="flex space-x-1 text-xs font-bold w-full sm:w-auto overflow-x-auto">
+                            <div class="flex space-x-1 text-xs font-bold overflow-x-auto w-full sm:w-auto">
                                 <button id="st-sub-plan-btn" onclick="switchShortTermSubTab('plan')" class="px-4 py-2 rounded-xl bg-indigo-900 text-white shadow-sm whitespace-nowrap cursor-pointer">📅 Daily Plan</button>
                                 <button id="st-sub-teams-btn" onclick="switchShortTermSubTab('teams')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap cursor-pointer">📋 Preaching Teams</button>
                                 <button id="st-sub-lodging-btn" onclick="switchShortTermSubTab('lodging')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap cursor-pointer">🏡 Lodging & Hosts</button>
-                                <button id="st-sub-rosters-btn" onclick="switchShortTermSubTab('rosters')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap cursor-pointer">🏛️ Visiting Zion Rosters</button>
+                                <button id="st-sub-rosters-btn" onclick="switchShortTermSubTab('rosters')" class="px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap cursor-pointer">🏛️ Rosters</button>
+                            </div>
+                            <div id="st-toggle-container" class="flex items-center gap-1 bg-white p-1 rounded-xl shadow-xs border border-slate-200 self-end sm:self-auto">
+                                <button id="st-mode-text-btn" onclick="toggleShortTermDisplayMode('text')" class="px-3 py-1 rounded-lg text-xs font-bold bg-amber-500 text-slate-900 cursor-pointer">📝 Text View</button>
+                                <button id="st-mode-image-btn" onclick="toggleShortTermDisplayMode('image')" class="px-3 py-1 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 cursor-pointer">🖼️ Image Chart</button>
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW 1: DAILY PLAN -->
                         <div id="st-subview-plan" class="space-y-4">
                             <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                                 <div>
                                     <h4 class="text-xs font-bold uppercase tracking-wider text-indigo-900">Itinerary Date</h4>
-                                    <p class="text-sm font-extrabold text-indigo-950" id="st-plan-date-display">Today</p>
+                                    <p class="text-sm font-extrabold text-indigo-950" id="st-plan-date-display">Date</p>
                                 </div>
                                 <div class="flex items-center space-x-2">
                                     <button onclick="changeStPlanDate(-1)" class="p-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold shadow-xs cursor-pointer">← Prev Day</button>
-                                    <input type="date" id="st-plan-date-picker" onchange="setStPlanDate(this.value)" class="border border-slate-300 rounded-lg p-1.5 text-xs font-bold bg-white text-indigo-950 outline-none focus:ring-2 focus:ring-indigo-500 shadow-xs">
+                                    <input type="date" id="st-plan-date-picker" onchange="setStPlanDate(this.value)" class="border border-slate-300 rounded-lg p-1.5 text-xs font-bold bg-white outline-none">
                                     <button onclick="changeStPlanDate(1)" class="p-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-bold shadow-xs cursor-pointer">Next Day →</button>
                                 </div>
                             </div>
-                            <div id="st-plan-container" class="space-y-3"></div>
+                            <div class="st-content-text space-y-3">
+                                <div id="st-plan-container" class="space-y-3"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-plan-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
                         </div>
 
-                        <!-- SUB-VIEW 2: PREACHING TEAMS -->
                         <div id="st-subview-teams" class="space-y-4 hidden">
-                            <div id="st-teams-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                            <div class="st-content-text">
+                                <div id="st-teams-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-teams-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
                         </div>
 
-                        <!-- SUB-VIEW 3: LODGING -->
                         <div id="st-subview-lodging" class="space-y-4 hidden">
-                            <div id="st-lodging-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                            <div class="st-content-text">
+                                <div id="st-lodging-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+                            </div>
+                            <div class="st-content-image hidden">
+                                <div id="st-lodging-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-4 text-center"></div>
+                            </div>
                         </div>
 
-                        <!-- SUB-VIEW 4: VISITING ZION ROSTERS -->
                         <div id="st-subview-rosters" class="space-y-4 hidden">
                             <div id="st-rosters-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- TAB 8: COOKING SCHEDULE -->
                 <div id="view-cooking" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                        <div class="bg-purple-800 text-white p-4 rounded-xl text-center">
-                            <h1 class="text-xl font-bold tracking-wide">Sabbath Day Dinner Blessing</h1>
-                            <p class="text-xs text-purple-200 mt-0.5">Weekly Group Food & Snack Preparation</p>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm border-collapse rounded-xl overflow-hidden shadow-sm">
-                                <thead>
-                                    <tr class="bg-purple-900 text-white text-left text-xs uppercase tracking-wider divide-x divide-purple-800">
-                                        <th class="p-3 bg-emerald-800 w-1/4">Date / Week</th>
-                                        <th class="p-3 w-3/8">Dinner</th>
-                                        <th class="p-3 w-3/8">Snacks</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="cooking-schedule-body" class="divide-y divide-slate-200 bg-white"></tbody>
-                            </table>
-                        </div>
+                        <div class="bg-purple-800 text-white p-4 rounded-xl text-center"><h1 class="text-xl font-bold">Sabbath Day Dinner Blessing</h1></div>
+                        <table class="w-full text-sm border-collapse rounded-xl overflow-hidden shadow-sm">
+                            <thead><tr class="bg-purple-900 text-white text-xs uppercase"><th class="p-3">Week</th><th class="p-3">Dinner</th><th class="p-3">Snacks</th></tr></thead>
+                            <tbody id="cooking-schedule-body" class="divide-y divide-slate-200 bg-white"></tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- TAB 9: CLEANING RESPONSIBILITIES -->
                 <div id="view-cleaning" class="space-y-6 hidden">
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
-                        <div class="text-center space-y-1">
-                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">GROUP CLEANING AREAS</h1>
-                            <p class="text-sm font-semibold text-emerald-600 italic">"Many hands, brighter space!" ✨</p>
-                        </div>
+                        <h1 class="text-2xl font-bold text-center">Cleaning Responsibilities</h1>
                         <div id="cleaning-groups-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
-                        <div class="pt-4 border-t border-slate-100 space-y-4">
-                            <div class="bg-indigo-950 text-white py-2 px-4 rounded-xl text-center font-bold tracking-wider text-sm">
-                                ★ SPECIAL AREAS
-                            </div>
-                            <div id="cleaning-special-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
-                        </div>
                     </div>
                 </div>
 
-                <!-- TAB 10: MAINTENANCE VIEW -->
                 <div id="view-maintenance" class="space-y-6 hidden">
-                    <div class="bg-white rounded-2xl p-8 shadow-sm border border-slate-100 max-w-2xl mx-auto text-center space-y-6">
-                        <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-full text-3xl">
-                            🔧
-                        </div>
-                        <h1 class="text-2xl font-bold text-slate-900">Zion Maintenance & Projects</h1>
-                        <p class="text-slate-600 leading-relaxed text-base">
-                            Let us keep Zion beautiful. If you see something that needs to be fixed, please click the link below to submit a ticket.
-                        </p>
-                        <div class="pt-2">
-                            <a href="https://forms.gle/bgpGJnzz65u9iDBW8" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 bg-indigo-900 hover:bg-indigo-800 text-white font-semibold px-6 py-3 rounded-xl shadow-md transition-all hover:scale-105 cursor-pointer">
-                                📋 Submit Maintenance Ticket ↗
-                            </a>
-                        </div>
+                    <div class="bg-white rounded-2xl p-8 text-center max-w-xl mx-auto space-y-4">
+                        <div class="text-4xl">🔧</div>
+                        <h1 class="text-2xl font-bold">Zion Maintenance Ticket</h1>
+                        <p class="text-slate-600 text-sm">Submit any building or supply issues directly.</p>
+                        <a href="https://forms.gle/bgpGJnzz65u9iDBW8" target="_blank" rel="noopener noreferrer" class="inline-block bg-indigo-900 text-white font-bold px-6 py-3 rounded-xl shadow cursor-pointer">Submit Ticket ↗</a>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- FULL SCREEN IMAGE LIGHTBOX MODAL -->
-    <div id="imageLightboxModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[150] flex items-center justify-center hidden p-4 cursor-zoom-out" onclick="closeLightbox()">
-        <img id="lightboxImg" src="" alt="Full view preview" class="max-w-[90vw] max-h-[85vh] object-contain rounded-xl border border-slate-700 shadow-2xl" />
+    <div id="calendar-view-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[120] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 id="cv-modal-date-title" class="font-bold text-lg text-indigo-950">Date Details</h3>
+                <button onclick="closeCalendarViewModal()" class="text-2xl font-bold text-slate-400 hover:text-slate-600">×</button>
+            </div>
+            <div id="cv-modal-events-content" class="space-y-2 text-sm"></div>
+            <div class="flex justify-end gap-2 pt-2 border-t">
+                <button onclick="jumpCalendarToDay()" class="bg-indigo-900 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">Go to Day Schedule →</button>
+                <button onclick="closeCalendarViewModal()" class="bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">Close</button>
+            </div>
+        </div>
     </div>
 
-    <!-- JAVASCRIPT LOGIC ENGINE -->
+    <div id="admin-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[130] flex items-center justify-center hidden p-4">
+        <div class="bg-white w-full max-w-3xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-indigo-900 text-white p-4 flex justify-between items-center">
+                <h2 id="admin-panel-title" class="text-lg font-bold">Master Admin Panel</h2>
+                <button onclick="toggleAdminModal()" class="text-2xl font-bold hover:text-slate-300">×</button>
+            </div>
+            <div class="bg-indigo-950 px-4 py-2 flex flex-wrap gap-1 border-t border-indigo-800">
+                <button onclick="switchAdminSubTab('daily')" id="as-daily" class="px-3 py-1 text-xs font-bold rounded-lg bg-indigo-700 text-white cursor-pointer">Daily</button>
+                <button onclick="switchAdminSubTab('monthly')" id="as-monthly" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 hover:text-white cursor-pointer">Monthly</button>
+                <button onclick="switchAdminSubTab('shortterm')" id="as-shortterm" class="px-3 py-1 text-xs font-bold rounded-lg text-amber-300 hover:text-white cursor-pointer">✈️ Short Term</button>
+                <button onclick="switchAdminSubTab('blessings')" id="as-blessings" class="px-3 py-1 text-xs font-bold rounded-lg text-indigo-200 hover:text-white cursor-pointer">Blessings</button>
+                <button onclick="switchAdminSubTab('settings')" id="as-settings" class="px-3 py-1 text-xs font-bold rounded-lg text-rose-300 hover:text-white cursor-pointer">⚙️ Master</button>
+            </div>
+            <form onsubmit="saveAdminData(event)" class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div id="ap-daily" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Persistent Church Announcement</label>
+                        <textarea id="input-announcements" rows="2" class="w-full border rounded-xl p-2 text-xs"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold uppercase text-slate-600 mb-1">Activities for Selected Day (Time - Activity)</label>
+                        <textarea id="input-activities" rows="4" class="w-full border rounded-xl p-2 font-mono text-xs"></textarea>
+                    </div>
+                </div>
+                <div id="ap-monthly" class="space-y-3 hidden">
+                    <label class="block text-xs font-bold uppercase text-slate-600">Quick Event Mapper (Date: Event)</label>
+                    <textarea id="input-admin-monthly-raw" rows="8" placeholder="2026-09-12: Feast of Trumpets" class="w-full border rounded-xl p-2 font-mono text-xs"></textarea>
+                </div>
+                <div id="ap-shortterm" class="space-y-4 hidden">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <label class="text-xs font-bold text-slate-700 block">Short Term Itinerary (Selected Date)</label>
+                        <textarea id="input-st-admin-plan" rows="4" placeholder="11:00 AM - Preach | Assigned Routes" class="w-full border rounded-xl p-2 font-mono text-xs"></textarea>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                        <label class="text-xs font-bold text-slate-700 block">Chart Images (Upload to embed Base64)</label>
+                        <div class="flex flex-wrap gap-2 text-xs">
+                            <label class="bg-indigo-900 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                                📷 Plan Chart Image <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'plan')" class="hidden">
+                            </label>
+                            <label class="bg-indigo-900 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                                📷 Teams Chart Image <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'teams')" class="hidden">
+                            </label>
+                            <label class="bg-indigo-900 text-white font-bold px-3 py-1.5 rounded-lg cursor-pointer">
+                                📷 Lodging Chart Image <input type="file" accept="image/*" onchange="handleStImageUpload(event, 'lodging')" class="hidden">
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div id="ap-blessings" class="space-y-2 hidden">
+                    <label class="block text-xs font-bold uppercase text-slate-600">Raw Blessings Editor (Item : Name : Status)</label>
+                    <textarea id="input-admin-blessings-raw" rows="8" class="w-full border rounded-xl p-2 font-mono text-xs"></textarea>
+                </div>
+                <div id="ap-settings" class="space-y-3 hidden">
+                    <button type="button" onclick="revokeAllDevices()" class="bg-rose-800 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer">⚠️ De-authorize All Registered Devices</button>
+                </div>
+                <div class="pt-4 border-t flex justify-end gap-2">
+                    <button type="button" onclick="toggleAdminModal()" class="px-4 py-2 border rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-900 text-white rounded-xl text-xs font-bold cursor-pointer shadow">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="imageLightboxModal" class="fixed inset-0 bg-black/90 z-[150] flex items-center justify-center hidden p-4 cursor-zoom-out" onclick="closeLightbox()">
+        <img id="lightboxImg" src="" class="max-w-[90vw] max-h-[85vh] object-contain rounded-xl shadow-2xl">
+    </div>
+
     <script>
         const APP_ACCESS_PIN = "1948";
         const MASTER_ADMIN_PASSWORD = "Grace2026";
         const LIMITED_ADMIN_PASSWORD = "Team2026";
-        
         const ENROLLMENT_PASSKEY = "ZION-1948-1985";
-        const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
-        const OFFLINE_CACHE_KEY = "zion_indy_cache_v7";
-
-        const CLOUD_URL = "https://clever-python-151784.upstash.io";
-        const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
-
-        const DEFAULT_BLESSINGS = [
-            { item: "Toilet Paper", status: "Full", name: "D. James" },
-            { item: "Multi-purpose Cleaner Refill", status: "Full", name: "B Jemis" },
-            { item: "Dry Sweeping Cloth", status: "Full", name: "" },
-            { item: "Trash Bag 30 Gallon", status: "Full", name: "B.Ryan" },
-            { item: "Tri-fold Paper Towels", status: "Full", name: "S Saira & B Luis" },
-            { item: "Window Cleaner Refill", status: "Full", name: "" },
-            { item: "Bleach", status: "Full", name: "B Jeff" },
-            { item: "Trash bag 13 Gallon", status: "Full", name: "S. Cesilia" },
-            { item: "Air Freshener", status: "Full", name: "S.Chelda" },
-            { item: "Hand Soap Refills", status: "Full", name: "B Micco" },
-            { item: "Mini Trash Bags (Bathroom)", status: "Low", name: "B Kiimon" },
-            { item: "Ground Cofee", status: "Full", name: "S Veronica" },
-            { item: "Forks", status: "Full", name: "D. Helen" },
-            { item: "Spoons", status: "Full", name: "S.Sherice" },
-            { item: "Dispenser Napkins", status: "Full", name: "D.Madai" },
-            { item: "Plate Regular", status: "Full", name: "S.Candies" },
-            { item: "Dish soap", status: "Full", name: "S.LaNia" },
-            { item: "Kitchen paper towel", status: "Low", name: "S.Patricia" },
-            { item: "Ziplock (snack)", status: "Full", name: "S.Elizabeth" },
-            { item: "Ziploc (quart)", status: "Low", name: "S.Elizabeth" },
-            { item: "Ziplock (gallon)", status: "Low", name: "S.Elizabeth" },
-            { item: "Tea", status: "Full", name: "S.Mercy" },
-            { item: "Stirrers", status: "Full", name: "S.Mercy" },
-            { item: "Ibuprofen", status: "Full", name: "S.Jessica P." },
-            { item: "Zyrtec / Claritin", status: "Full", name: "S.Bethany" },
-            { item: "Cold Medication", status: "Full", name: "S.Bethany" },
-            { item: "Knives", status: "Full", name: "D. Helen/Sherice" },
-            { item: "Long Grain Rice", status: "Full", name: "D Alan / D Samantha" },
-            { item: "Butter Sticks", status: "Full", name: "S.Robin" },
-            { item: "Small/ Large coffee filters", status: "Full", name: "S.Caniah" },
-            { item: "Sweetner and sugar packets", status: "Full", name: "S.Caniah" },
-            { item: "Cone Cups for Water", status: "Full", name: "" },
-            { item: "Sanitizer Refill (Big One)", status: "Full", name: "S. Suriha" },
-            { item: "Floor Cleaner", status: "Full", name: "" },
-            { item: "Pepto Bismol (Tabs)", status: "Full", name: "" },
-            { item: "Honey", status: "Full", name: "" },
-            { item: "K- Cups", status: "Low", name: "" },
-            { item: "Toilet Bowl Cleaner", status: "Full", name: "" },
-            { item: "Gloves for cleaning", status: "Empty", name: "" },
-            { item: "Snack plate/trays", status: "Empty", name: "" }
-        ];
-
-        let appState = {
-            persistentAnnouncement: "",
-            database: {
-                "2026-09-04": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
-                "2026-09-06": { activities: ["10:00 AM - 5:00 PM - Feast Cleaning"], preaching: [], duties: [] },
-                "2026-09-07": { activities: ["Labor Day"], preaching: [], duties: [] },
-                "2026-09-09": { activities: ["4:30 PM - Preaching Meeting", "7:00 PM - Preaching Meeting"], preaching: [], duties: [] },
-                "2026-09-10": { activities: ["4:30 PM - Preaching Meeting", "7:00 PM - Preaching Meeting"], preaching: [], duties: [] },
-                "2026-09-11": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
-                "2026-09-12": { activities: ["Feast of Trumpets"], preaching: [], duties: [] },
-                "2026-09-13": { activities: [], preaching: [], duties: [{ role: "Kitchen", name: "S.Saira", group: "Adult Sisters" }] },
-                "2026-09-18": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
-                "2026-09-20": { activities: [], preaching: [], duties: [{ role: "Kitchen", name: "S.Candies", group: "Adult Sisters" }] },
-                "2026-09-21": { activities: ["Day of Atonement"], preaching: [], duties: [] },
-                "2026-09-25": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
-                "2026-09-26": { activities: ["Feast of Tabernacles"], preaching: [], duties: [] },
-                "2026-09-27": { activities: ["Family Event (Open House)"], preaching: [], duties: [] }
-            },
-            calendarEventsDb: {
-                "2026-09-04": "Sabbath Day Preparation (7:00pm Dinner)",
-                "2026-09-06": "Feast Cleaning",
-                "2026-09-07": "Labor Day",
-                "2026-09-09": "Preaching Meeting 4:30pm & 7:00pm",
-                "2026-09-10": "Preaching Meeting 4:30pm & 7:00pm",
-                "2026-09-11": "Sabbath Day Preparation (7:00pm Dinner)",
-                "2026-09-12": "Trumpets",
-                "2026-09-13": "Cooking: S.Saira",
-                "2026-09-18": "Sabbath Day Preparation (7:00pm Dinner)",
-                "2026-09-20": "Cooking: S.Candies",
-                "2026-09-21": "Day of Atonement",
-                "2026-09-25": "Sabbath Day Preparation (7:00pm Dinner)",
-                "2026-09-26": "Tabernacles",
-                "2026-09-27": "Family Event (Open House)"
-            },
-            blessingsList: DEFAULT_BLESSINGS.map(b => `${b.item} : ${b.name} : ${b.status}`),
-            sabbathSchedule: {
-                activities: [
-                    "10:30 AM - F.I.F.A. Tournament (Japan vs Cameroon)",
-                    "11:30 AM - Special Video",
-                    "12:30 PM - Lunch",
-                    "1:15 PM - Sabbath School",
-                    "4:00 PM - Group by Group",
-                    "6:00 PM - Dinner",
-                    "6:50 PM - F.I.F.A. Tournament (South Korea vs Morocco)"
-                ],
-                duties: [
-                    "Morning Presider : B.Ezequiel", "Morning Prayer of Thanks : B.Ezequiel", "Morning Closing Prayer : D.Chris",
-                    "Morning Offering (Brothers) : S.Amber", "Morning Offering (Sisters) : S.Suriha", "Morning Usher : S.Ellie",
-                    "Morning Front desk : B.Jemis", "Morning Sound : B.Kiimon", "Morning Elementary : D.Chloe",
-                    "Morning Kids Room : S.Lania", "Morning Worship Diary : S.Bethany",
-                    "Afternoon Presider : B.Ryan", "Afternoon Closing Prayer : B.Ryan",
-                    "Afternoon Offering (Brothers) : S.Amber", "Afternoon Offering (Sisters) : S.Suriha", "Afternoon Usher : S.Suriha",
-                    "Afternoon Front desk : D.Chris", "Afternoon Translater : S.Ellie", "Afternoon Sound : B.Kiimon",
-                    "Afternoon Elementary : S.Saira", "Afternoon Kids Room : D.Madai", "Afternoon Worship Diary : S.Chelda",
-                    "Evening Presider : B.Jemis", "Evening Closing Prayer : D.Madai",
-                    "Evening Offering (Brothers) : S.Amber", "Evening Offering (Sisters) : S.Suriha", "Evening Usher : S.Veronica",
-                    "Evening Front desk : B.Ezequiel", "Evening Translater : S.Saira", "Evening Sound : B.Jemis",
-                    "Evening Elementary : S.Lania", "Evening Kids Room : D.Chloe", "Evening Worship Diary : S.Bethany"
-                ]
-            },
-            thirddaySchedule: {
-                activities: [],
-                duties: [
-                    "Evening Presider : B.Jemis", "Evening Closing Prayer : D.Madai", "Evening Usher : S.Veronica",
-                    "Evening Front desk : B.Ryan", "Evening Sound : B.Kiimon", "Evening Elementary : D.Chloe",
-                    "Evening Worship Diary : S.Chelda"
-                ]
-            },
-            feastSchedule: {
-                activities: [],
-                duties: [
-                    "Morning Presider : B.Ezequiel", "Morning Prayer of Thanks : B.Ezequiel", "Morning Closing Prayer : D.Chris",
-                    "Afternoon Presider : B.Ryan", "Afternoon Closing Prayer : B.Ryan"
-                ]
-            },
-            cookingSchedule: [
-                { week: "1st week", dinner: "Adult Sisters (D.Madai)", snacks: "Adult Brothers" },
-                { week: "2nd Week", dinner: "Adult Sisters (D.Helen)", snacks: "Young Adult Brothers&sisters" },
-                { week: "3rd Week", dinner: "Adult Brothers", snacks: "Adult Sisters (D.Madai)" },
-                { week: "4th Week", dinner: "Young Adult", snacks: "Adult Sisters (D.Helen)" },
-                { week: "5th Week", dinner: "Young Adult", snacks: "Young Adult Brother&Sisters" }
-            ],
-            cleaningGroups: [
-                { title: "ADULT BROTHERS", color: "border-emerald-500 bg-emerald-50", tasks: ["Landscaping", "Men's Restroom (Downstairs)", "Fellowship Area"] },
-                { title: "ADULT SISTERS — D. HELEN", color: "border-rose-400 bg-rose-50", tasks: ["Flower Area", "Downstairs Rooms", "Lobby Windows", "Front Desk"] },
-                { title: "ADULT SISTERS — D. MADAI", color: "border-purple-500 bg-purple-50", tasks: ["Sanctuary", "Kids' Room", "Women's Restroom (Downstairs)", "Serving Area"] },
-                { title: "YOUTH BROTHERS", color: "border-cyan-500 bg-cyan-50", tasks: ["Outside Area (Weed Removal)", "Men's Restroom (Upstairs)", "Stairs"] },
-                { title: "YOUTH SISTERS", color: "border-amber-500 bg-amber-50", tasks: ["Small Sanctuary", "Reception Room", "Conference Room", "Women's Restroom (Upstairs)"] },
-                { title: "2ND INDY SISTERS", color: "border-blue-600 bg-blue-50", tasks: ["Sanctuary"] }
-            ],
-            cleaningSpecials: [
-                { title: "TOOL ROOM", evangelists: "B. Ryan & B. Humberto", icon: "🛠️", color: "bg-amber-100 text-amber-900 border-amber-200" },
-                { title: "AUDIO BOOTH", evangelists: "B. Kiimon", icon: "🎛️", color: "bg-blue-100 text-blue-900 border-blue-200" },
-                { title: "ALTAR & BAPTISM", evangelists: "S. Veronica & D. Madai", icon: "🫧", color: "bg-rose-100 text-rose-900 border-rose-200" },
-                { title: "OFFICE", evangelists: "S. Ellie, S.CecLia", icon: "🖥️", color: "bg-emerald-100 text-emerald-900 border-emerald-200" }
-            ],
-            shortTermData: {
-                dailyPlans: {
-                    "2026-08-21": {
-                        activities: [
-                            { time: "11:00 AM", activity: "Preach (To-Go Lunch)", location: "Assigned Routes" },
-                            { time: "7:00 PM", activity: "Dinner in Zion", location: "Main Zion" }
-                        ]
-                    },
-                    "2026-08-22": {
-                        activities: [
-                            { time: "9:00 AM", activity: "Morning Worship", location: "Main Sanctuary" },
-                            { time: "10:30 AM", activity: "Preach", location: "Assigned Routes" },
-                            { time: "1:00 PM", activity: "Lunch", location: "Fellowship Hall" },
-                            { time: "3:00 PM", activity: "Afternoon Worship", location: "Main Sanctuary" },
-                            { time: "4:00 PM", activity: "Preach", location: "Assigned Routes" },
-                            { time: "6:00 PM", activity: "Dinner", location: "Fellowship Hall" },
-                            { time: "8:00 PM", activity: "Evening Worship", location: "Main Sanctuary" }
-                        ]
-                    },
-                    "2026-08-23": {
-                        activities: [
-                            { time: "10:00 AM", activity: "Preach", location: "Assigned Routes" },
-                            { time: "12:00 PM", activity: "Joint Preaching (To-Go Lunch)", location: "Assigned Routes" },
-                            { time: "5:30 PM", activity: "Dinner in Zion", location: "Main Zion" }
-                        ]
-                    }
-                },
-                teams: [
-                    { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy" },
-                    { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North" }
-                ],
-                lodging: [
-                    { host: "D.James (720-949-8770)", address: "337 N 11th St #339 B, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=337+N+11th+St+%23339+B,+Noblesville,+IN+46060", guests: ["D.Jack", "B.Geonhee"] },
-                    { host: "B.Jemis (616-260-3298)", address: "7649 Solana Dr Apt# 201, Indianapolis, IN 46240", mapUrl: "https://maps.google.com/?q=7649+Solana+Dr+Apt%23+201,+Indianapolis,+IN+46240", guests: ["B.Tyler", "B.Ethan", "B.Romeo", "B.Ian"] },
-                    { host: "B.Luis", address: "6448 Park Central Way Apt C, Indianapolis, IN 46260", mapUrl: "https://maps.google.com/?q=6448+Park+Central+Way+Apt+C,+Indianapolis,+IN+46260", guests: ["D.Keith", "D.Carlton", "B.Nick"] },
-                    { host: "D.Samantha (816-398-9465)", address: "905 Wild Opera Ct, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=905+Wild+Opera+Ct,+Noblesville,+IN+46060", guests: ["S.Lauren", "S.Perla", "S.Katerri"] },
-                    { host: "S.Suriha (260-750-9666)", address: "1614 Millers Ct, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=1614+Millers+Ct,+Noblesville,+IN+46060", guests: ["S.Amanda", "S.Samantha"] }
-                ],
-                shortTermZionRosters: {
-                    "Columbus Zion": ["Bro John", "Sis Mary"],
-                    "Oak Lawn Zion": ["Bro David", "Sis Sarah"],
-                    "Naperville Zion": ["Bro Luke", "Sis Rachel"],
-                    "Cincinnati Zion": ["Bro Paul", "Sis Grace"]
-                }
-            }
-        };
-
-        let currentSelectedDate = "2026-09-06";
-        let currentCalendarYear = 2026;
-        let currentCalendarMonth = 8; // September
-        let currentAdminRole = null; 
-        let isShortTermGuestMode = false;
-        let currentStPlanDate = "2026-08-21";
-
-        function formatPasskeyInput(input) {
-            let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-            let parts = [];
-            for (let i = 0; i < val.length; i += 4) parts.push(val.substring(i, i + 4));
-            input.value = parts.join('-').substring(0, 14);
-        }
-
-        function verifyDevicePasskey() {
-            const input = document.getElementById('device-passkey-input');
-            const errEl = document.getElementById('device-error-msg');
-            if (!input) return;
-
-            const cleanInput = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-            const cleanTarget = ENROLLMENT_PASSKEY.replace(/[^A-Z0-9]/gi, '').toUpperCase();
-
-            if (cleanInput === cleanTarget) {
-                if (errEl) errEl.classList.add('hidden');
-                localStorage.setItem(DEVICE_STORAGE_KEY, "auth_" + Date.now());
-                document.getElementById('device-enroll-screen').classList.add('hidden');
-                document.getElementById('pin-login-screen').classList.remove('hidden');
-                document.querySelectorAll('.pin-digit')[0]?.focus();
-            } else {
-                if (errEl) errEl.classList.remove('hidden');
-                input.classList.add('animate-shake');
-                setTimeout(() => input.classList.remove('animate-shake'), 400);
-            }
-        }
-
-        function checkDeviceTrust() {
-            const token = localStorage.getItem(DEVICE_STORAGE_KEY);
-            if (!token) {
-                document.getElementById('device-enroll-screen').classList.remove('hidden');
-                document.getElementById('pin-login-screen').classList.add('hidden');
-                return false;
-            }
-            document.getElementById('device-enroll-screen').classList.add('hidden');
-            return true;
-        }
-
-        function handlePinInput(input, idx) {
-            document.getElementById('pin-error-msg').classList.add('hidden');
-            if (input.value.length === 1 && idx < 3) {
-                document.querySelectorAll('.pin-digit')[idx + 1].focus();
-            }
-            const digits = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
-            if (digits.length === 4) submitPinCheck();
-        }
-
-        function handlePinBackspace(e, idx) {
-            if (e.key === 'Backspace' && idx > 0 && !e.target.value) {
-                document.querySelectorAll('.pin-digit')[idx - 1].focus();
-            }
-        }
-
-        function submitPinCheck() {
-            const digits = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
-            if (digits === APP_ACCESS_PIN) {
-                sessionStorage.setItem('planner_unlocked', 'true');
-                sessionStorage.removeItem('guest_short_term');
-                isShortTermGuestMode = false;
-                document.getElementById('pin-login-screen').classList.add('hidden');
-                document.getElementById('app-wrapper').classList.remove('hidden');
-                applyGuestModeUI(false);
-                switchTab('daily');
-                loadDataFromCloud();
-            } else {
-                document.getElementById('pin-error-msg').classList.remove('hidden');
-                document.getElementById('pin-input-container').classList.add('animate-shake');
-                document.querySelectorAll('.pin-digit').forEach(i => i.value = '');
-                document.querySelectorAll('.pin-digit')[0]?.focus();
-                setTimeout(() => document.getElementById('pin-input-container').classList.remove('animate-shake'), 400);
-            }
-        }
-
-        function openShortTermGuestPortal() {
-            sessionStorage.setItem('planner_unlocked', 'true');
-            sessionStorage.setItem('guest_short_term', 'true');
-            isShortTermGuestMode = true;
-            document.getElementById('pin-login-screen').classList.add('hidden');
-            document.getElementById('app-wrapper').classList.remove('hidden');
-            applyGuestModeUI(true);
-            switchTab('shortterm');
-            loadDataFromCloud();
-        }
-
-        function applyGuestModeUI(isGuest) {
-            isShortTermGuestMode = isGuest;
-            const tabsBar = document.getElementById('primary-tabs-bar');
-            const hamburgerBtn = document.getElementById('hamburger-menu-btn');
-            const guestExitBtn = document.getElementById('guest-exit-btn');
-            const navTitle = document.getElementById('app-nav-title');
-
-            if (isGuest) {
-                if (tabsBar) tabsBar.classList.add('hidden');
-                if (hamburgerBtn) hamburgerBtn.classList.add('hidden');
-                if (guestExitBtn) guestExitBtn.classList.remove('hidden');
-                if (navTitle) navTitle.innerText = "Visiting Short Term Portal";
-            } else {
-                if (tabsBar) tabsBar.classList.remove('hidden');
-                if (hamburgerBtn) hamburgerBtn.classList.remove('hidden');
-                if (guestExitBtn) guestExitBtn.classList.add('hidden');
-                if (navTitle) navTitle.innerText = "Zion Church Planner (INDY)";
-            }
-        }
-
-        function exitGuestMode() {
-            sessionStorage.clear();
-            location.reload();
-        }
-
-        function lockApp() {
-            sessionStorage.clear();
-            location.reload();
-        }
-
-        function toggleHamburgerMenu() {
-            document.getElementById('hamburger-drawer')?.classList.toggle('hidden');
-        }
-
-        function switchTab(tabId) {
-            if (isShortTermGuestMode) tabId = 'shortterm';
-            
-            const tabs = ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'];
-            tabs.forEach(t => {
-                const el = document.getElementById(`view-${t}`);
-                if (el) el.classList.add('hidden');
-                const btn = document.getElementById(`tab-${t}-btn`);
-                if (btn) btn.className = "px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer";
-            });
-
-            const target = document.getElementById(`view-${tabId}`);
-            if (target) target.classList.remove('hidden');
-            const targetBtn = document.getElementById(`tab-${tabId}-btn`);
-            if (targetBtn) targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer";
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            renderAllViews();
-        }
-
-        function renderBlessings() {
-            const container = document.getElementById('blessings-container');
-            if (!container) return;
-
-            let mapped = {};
-            (appState.blessingsList || []).forEach(b => {
-                if (typeof b === 'string' && b.includes(':')) {
-                    const parts = b.split(':').map(s => s.trim());
-                    mapped[parts[0].toLowerCase()] = { name: parts[1] || '', status: (parts[2] || 'Full').toLowerCase() };
-                }
-            });
-
-            container.innerHTML = DEFAULT_BLESSINGS.map(def => {
-                const item = mapped[def.item.toLowerCase()] || { name: def.name, status: def.status.toLowerCase() };
-                let color = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                if (item.status === 'low') color = "bg-amber-100 text-amber-800 border-amber-200";
-                if (item.status === 'empty') color = "bg-rose-100 text-rose-800 border-rose-200";
-
-                return `
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-                        <div class="flex divide-x divide-slate-100 p-3">
-                            <div class="w-1/2 font-bold text-indigo-950 text-xs">${def.item}</div>
-                            <div class="w-1/2 pl-2 text-xs font-semibold text-slate-700">${item.name || '<span class="text-slate-400 italic">Unassigned</span>'}</div>
-                        </div>
-                        <div class="bg-slate-50 px-3 py-2 border-t flex justify-between items-center text-xs">
-                            <span class="text-[10px] uppercase font-bold text-slate-400">Status</span>
-                            <span class="px-2 py-0.5 rounded-full border text-[11px] font-bold ${color}">${item.status.toUpperCase()}</span>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function renderDashboardData() {
-            const data = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
-            
-            const actContainer = document.getElementById('activities-container');
-            if (actContainer) {
-                actContainer.innerHTML = (data.activities && data.activities.length) ? data.activities.map(act => {
-                    const parts = act.split(' - ');
-                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-xs"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3">${parts[0] || ''}</span><span class="text-sm font-medium text-slate-800">${parts[1] || act}</span></div>`;
-                }).join('') : `<p class="text-slate-400 text-xs italic text-center py-4">No activities scheduled.</p>`;
-            }
-
-            const preachContainer = document.getElementById('preaching-container');
-            if (preachContainer) {
-                preachContainer.innerHTML = (data.preaching && data.preaching.length) ? data.preaching.map(p => `
-                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-xs space-y-1">
-                        <div class="font-bold text-indigo-950">${p.team} (${p.time})</div>
-                        <div class="text-slate-500">📍 ${p.location}</div>
-                    </div>
-                `).join('') : `<p class="text-slate-400 text-xs italic text-center py-4">No preaching teams assigned.</p>`;
-            }
-
-            const dutyContainer = document.getElementById('duties-container');
-            if (dutyContainer) {
-                dutyContainer.innerHTML = (data.duties && data.duties.length) ? data.duties.map(d => `
-                    <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs flex justify-between items-center">
-                        <span class="font-bold text-slate-500 uppercase">${d.role}</span>
-                        <span class="font-semibold text-slate-800">${d.name}</span>
-                    </div>
-                `).join('') : `<p class="text-slate-400 text-xs italic text-center py-4">No duties recorded.</p>`;
-            }
-        }
-
-        function renderMonthlyCalendar() {
-            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            const titleEl = document.getElementById('monthly-calendar-title');
-            if (titleEl) titleEl.innerText = `${mNames[currentCalendarMonth]} ${currentCalendarYear}`;
-            
-            const grid = document.getElementById('calendar-grid-cells');
-            if (!grid) return;
-            grid.innerHTML = "";
-            const totalDays = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
-            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
-
-            for (let i = 0; i < firstDay; i++) grid.appendChild(document.createElement('div'));
-            for (let day = 1; day <= totalDays; day++) {
-                const key = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const eventText = appState.calendarEventsDb[key] || "";
-                const cell = document.createElement('div');
-                cell.className = "bg-white border border-slate-200 rounded-xl p-2 min-h-[95px] flex flex-col justify-between shadow-xs hover:border-indigo-400 cursor-pointer";
-                cell.onclick = () => { currentSelectedDate = key; switchTab('daily'); };
-                cell.innerHTML = `
-                    <div class="font-bold text-xs text-slate-400">${day}</div>
-                    <div class="text-[10px] text-indigo-950 font-medium truncate">${eventText ? '• ' + eventText : ''}</div>
-                `;
-                grid.appendChild(cell);
-            }
-        }
-
-        function renderShortTermContent() {
-            const data = appState.shortTermData || {};
-            const plan = (data.dailyPlans && data.dailyPlans[currentStPlanDate]) || { activities: [] };
-            
-            const dateDisplay = document.getElementById('st-plan-date-display');
-            if (dateDisplay) dateDisplay.innerText = currentStPlanDate;
-
-            const planContainer = document.getElementById('st-plan-container');
-            if (planContainer) {
-                planContainer.innerHTML = (plan.activities || []).map(act => `
-                    <div class="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
-                        <span class="font-bold text-indigo-900 bg-indigo-100 px-2.5 py-1 rounded-lg mr-3 whitespace-nowrap">${act.time}</span>
-                        <span class="font-semibold flex-1 text-slate-800">${act.activity}</span>
-                        <span class="text-slate-400 text-[11px]">${act.location ? '📍 ' + act.location : ''}</span>
-                    </div>
-                `).join('') || `<p class="text-slate-400 text-xs italic py-4 text-center">No itinerary for this date.</p>`;
-            }
-
-            const teamsContainer = document.getElementById('st-teams-container');
-            if (teamsContainer) {
-                teamsContainer.innerHTML = (data.teams || []).map((t, idx) => `
-                    <div class="p-3 bg-indigo-50 border border-indigo-100 rounded-xl space-y-1 text-xs">
-                        <div class="font-bold text-indigo-950">Team ${idx + 1} (${t.time})</div>
-                        <div class="text-slate-700"><b>Indy:</b> ${t.indy} | <b>Visiting:</b> ${t.visiting}</div>
-                        <div class="text-slate-400">📍 ${t.location}</div>
-                    </div>
-                `).join('');
-            }
-
-            const lodgingContainer = document.getElementById('st-lodging-container');
-            if (lodgingContainer) {
-                lodgingContainer.innerHTML = (data.lodging || []).map(h => `
-                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-2">
-                        <div class="flex justify-between items-start">
-                            <div class="font-bold text-indigo-950">${h.host}</div>
-                            ${h.mapUrl ? `<a href="${h.mapUrl}" target="_blank" class="text-[10px] bg-indigo-100 px-2 py-0.5 rounded font-bold text-indigo-900">Map ↗</a>` : ''}
-                        </div>
-                        <div class="text-slate-500 text-[11px]">${h.address}</div>
-                        <div class="text-[11px] font-semibold text-slate-700"><b>Guests:</b> ${(h.guests || []).join(', ')}</div>
-                    </div>
-                `).join('');
-            }
-
-            const rostersContainer = document.getElementById('st-rosters-container');
-            if (rostersContainer) {
-                const zions = Object.keys(data.shortTermZionRosters || {});
-                rostersContainer.innerHTML = zions.map(z => `
-                    <div class="p-4 bg-white border border-amber-200 rounded-2xl shadow-xs space-y-2">
-                        <h4 class="font-bold text-xs text-indigo-950 border-b pb-1">📍 ${z}</h4>
-                        <ul class="text-xs space-y-1 text-slate-700 font-medium">
-                            ${(data.shortTermZionRosters[z] || []).map((m, i) => `<li>${i + 1}. ${m}</li>`).join('')}
-                        </ul>
-                    </div>
-                `).join('');
-            }
-        }
-
-        function changeStPlanDate(offset) {
-            const d = new Date(currentStPlanDate + 'T00:00:00');
-            d.setDate(d.getDate() + offset);
-            currentStPlanDate = d.toISOString().split('T')[0];
-            renderShortTermContent();
-        }
-
-        function setStPlanDate(val) {
-            if (val) {
-                currentStPlanDate = val;
-                renderShortTermContent();
-            }
-        }
-
-        function switchShortTermSubTab(sub) {
-            ['plan', 'teams', 'lodging', 'rosters'].forEach(s => {
-                const el = document.getElementById(`st-subview-${s}`);
-                if (el) el.classList.add('hidden');
-                const btn = document.getElementById(`st-sub-${s}-btn`);
-                if (btn) btn.className = "px-4 py-2 rounded-xl text-slate-600 hover:text-indigo-950 whitespace-nowrap cursor-pointer";
-            });
-            const target = document.getElementById(`st-subview-${sub}`);
-            if (target) target.classList.remove('hidden');
-            const targetBtn = document.getElementById(`st-sub-${sub}-btn`);
-            if (targetBtn) targetBtn.className = "px-4 py-2 rounded-xl bg-indigo-900 text-white shadow-sm whitespace-nowrap cursor-pointer";
-            renderShortTermContent();
-        }
-
-        function renderAllViews() {
-            const picker = document.getElementById('date-picker');
-            if (picker) picker.value = currentSelectedDate;
-            const sub = document.getElementById('display-date-sub');
-            if (sub) sub.innerText = new Date(currentSelectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
-
-            renderDashboardData();
-            renderMonthlyCalendar();
-            renderBlessings();
-            renderShortTermContent();
-
-            const cookBody = document.getElementById('cooking-schedule-body');
-            if (cookBody) {
-                cookBody.innerHTML = (appState.cookingSchedule || []).map(c => `
-                    <tr class="text-xs hover:bg-slate-50"><td class="p-3 font-bold border-l-4 border-emerald-600">${c.week}</td><td class="p-3">${c.dinner}</td><td class="p-3">${c.snacks}</td></tr>
-                `).join('');
-            }
-
-            const cleanGrid = document.getElementById('cleaning-groups-grid');
-            if (cleanGrid) {
-                cleanGrid.innerHTML = (appState.cleaningGroups || []).map(g => `
-                    <div class="border-2 ${g.color} rounded-2xl p-4 text-xs space-y-2">
-                        <h3 class="font-bold text-slate-900 border-b pb-1">${g.title}</h3>
-                        <ul class="space-y-1">${g.tasks.map(t => `<li>• ${t}</li>`).join('')}</ul>
-                    </div>
-                `).join('');
-            }
-
-            const cleanSpecial = document.getElementById('cleaning-special-grid');
-            if (cleanSpecial) {
-                cleanSpecial.innerHTML = (appState.cleaningSpecials || []).map(s => `
-                    <div class="${s.color} border rounded-2xl p-3 text-center space-y-1">
-                        <div class="text-2xl">${s.icon}</div>
-                        <div class="font-extrabold text-xs">${s.title}</div>
-                        <div class="text-xs font-semibold">${s.evangelists}</div>
-                    </div>
-                `).join('');
-            }
-
-            ['sabbath', 'thirdday', 'feast'].forEach(type => {
-                const actEl = document.getElementById(`${type}-activities`);
-                const dutyEl = document.getElementById(`${type}-duties`);
-                const sched = appState[`${type}Schedule`];
-                if (sched) {
-                    if (actEl) {
-                        actEl.innerHTML = (sched.activities || []).map(a => `<div class="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-800">${a}</div>`).join('') || `<p class="text-xs text-slate-400 italic">No activities</p>`;
-                    }
-                    if (dutyEl) {
-                        dutyEl.innerHTML = (sched.duties || []).map(d => {
-                            const p = d.split(' : ');
-                            return `<div class="flex justify-between p-2.5 bg-white border border-slate-100 rounded-xl text-xs"><span class="font-bold text-indigo-950">${p[0]}</span><span class="text-slate-600">${p[1] || ''}</span></div>`;
-                        }).join('') || `<p class="text-xs text-slate-400 italic">No duties listed</p>`;
-                    }
-                }
-            });
-        }
-
-        function handleDateChange(val) {
-            currentSelectedDate = val;
-            renderAllViews();
-        }
-
-        function changeDate(offset) {
-            const d = new Date(currentSelectedDate + 'T00:00:00');
-            d.setDate(d.getDate() + offset);
-            currentSelectedDate = d.toISOString().split('T')[0];
-            renderAllViews();
-        }
-
-        function changeMonth(offset) {
-            currentCalendarMonth += offset;
-            if (currentCalendarMonth > 11) { currentCalendarMonth = 0; currentCalendarYear++; }
-            if (currentCalendarMonth < 0) { currentCalendarMonth = 11; currentCalendarYear--; }
-            renderMonthlyCalendar();
-        }
-
-        function loadLocalCache() {
-            try {
-                const raw = localStorage.getItem(OFFLINE_CACHE_KEY);
-                if (raw) {
-                    const cached = JSON.parse(raw);
-                    if (cached && typeof cached === 'object') {
-                        if (cached.database) appState.database = { ...appState.database, ...cached.database };
-                        if (cached.calendarEventsDb) appState.calendarEventsDb = { ...appState.calendarEventsDb, ...cached.calendarEventsDb };
-                        if (cached.blessingsList) appState.blessingsList = cached.blessingsList;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        function saveLocalCache() {
-            try {
-                localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify(appState));
-            } catch (e) {}
-        }
-
-        async function loadKeyFromCloud(keyName) {
-            const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 2500);
-
-            try {
-                const response = await fetch(`${CLOUD_URL}/get/${keyName}`, {
-                    method: 'GET',
-                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
-                    signal: controller.signal
-                });
-                clearTimeout(timer);
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result && result.result) {
-                        try { return JSON.parse(result.result); } catch { return result.result; }
-                    }
-                }
-            } catch(e) {}
-            return null;
-        }
-
-        async function loadDataFromCloud() {
-            const spinner = document.getElementById('loading-spinner');
-            if (spinner) spinner.classList.remove('hidden');
-
-            loadLocalCache();
-            renderAllViews();
-
-            try {
-                const [calData, dateData] = await Promise.allSettled([
-                    loadKeyFromCloud('calendar_events'),
-                    loadKeyFromCloud(`daily_${currentSelectedDate}`)
-                ]).then(results => results.map(r => r.status === 'fulfilled' ? r.value : null));
-
-                if (calData && typeof calData === 'object') {
-                    appState.calendarEventsDb = { ...appState.calendarEventsDb, ...calData };
-                }
-                if (dateData) {
-                    appState.database[currentSelectedDate] = dateData;
-                }
-                saveLocalCache();
-            } catch (e) {
-            } finally {
-                if (spinner) spinner.classList.add('hidden');
-                renderAllViews();
-            }
-        }
-
-        function closeLightbox() {
-            document.getElementById('imageLightboxModal')?.classList.add('hidden');
-        }
-
-        function exportToIcsCalendar() {
-            alert("Exporting calendar file...");
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            const isTrusted = checkDeviceTrust();
-            if (isTrusted) {
-                if (sessionStorage.getItem('planner_unlocked') === 'true') {
-                    document.getElementById('pin-login-screen').classList.add('hidden');
-                    document.getElementById('app-wrapper').classList.remove('hidden');
-                    applyGuestModeUI(sessionStorage.getItem('guest_short_term') === 'true');
-                    renderAllViews();
-                } else {
-                    document.getElementById('pin-login-screen').classList.remove('hidden');
-                }
-            }
-        });
-    </script>
-</body>
-</html>
+        const DEVICE_STORAGE_KEY = "zion_trusted_device_
