@@ -46,15 +46,41 @@
     <datalist id="dl-evangelists"></datalist>
     <datalist id="dl-duties"></datalist>
 
-    <!-- PIN LOGIN SCREEN -->
-    <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4">
+    <!-- LAYER 1: DEVICE AUTHORIZATION GATE -->
+    <div id="device-enroll-screen" class="fixed inset-0 bg-slate-950 z-[110] flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-slate-800">
+            <div class="inline-flex p-4 bg-indigo-50 text-indigo-950 rounded-2xl text-3xl shadow-sm">
+                🛡️
+            </div>
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Device Authorization</h1>
+                <p class="text-xs text-slate-500 mt-1">This browser is not registered. Enter the 12-digit church authorization key to trust this device.</p>
+            </div>
+
+            <div class="space-y-2">
+                <input type="text" id="device-passkey-input" maxlength="14" placeholder="XXXX-XXXX-XXXX" 
+                    class="w-full text-center tracking-widest font-mono text-base font-bold border-2 border-slate-200 rounded-xl p-3 text-slate-900 focus:border-indigo-800 outline-none uppercase"
+                    oninput="formatPasskeyInput(this)">
+                <p id="device-error-msg" class="text-xs font-semibold text-rose-600 hidden">Invalid authorization key.</p>
+            </div>
+
+            <button type="button" onclick="verifyDevicePasskey()" class="w-full bg-indigo-950 hover:bg-indigo-900 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-xs tracking-wide">
+                Authorize Device
+            </button>
+
+            <p class="text-[11px] text-slate-400">Device approval is permanent on this browser unless site cookies/storage are cleared.</p>
+        </div>
+    </div>
+
+    <!-- LAYER 2: PIN LOGIN SCREEN -->
+    <div id="pin-login-screen" class="fixed inset-0 bg-indigo-950 z-[100] flex items-center justify-center p-4 hidden">
         <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-8 text-center space-y-5 border border-indigo-900/20">
             <div class="inline-flex p-4 bg-indigo-50 text-indigo-900 rounded-2xl text-4xl shadow-sm cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double click for admin">
                 📖
             </div>
             <div>
                 <h1 class="text-2xl font-bold text-indigo-950">Zion Church Planner (INDY)</h1>
-                <p class="text-xs text-slate-500 mt-1">Enter PIN or open Short Term extension</p>
+                <p class="text-xs text-slate-500 mt-1">Enter 4-digit PIN or open Visiting Teams Portal</p>
             </div>
 
             <div id="pin-input-container" class="flex justify-center space-x-3">
@@ -72,12 +98,12 @@
 
             <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams Portal</span>
+                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams</span>
                 <div class="flex-grow border-t border-slate-200"></div>
             </div>
 
             <button type="button" onclick="openShortTermGuestPortal()" class="w-full bg-amber-500 hover:bg-amber-600 text-indigo-950 font-extrabold py-3.5 rounded-xl shadow-md transition-all text-xs flex items-center justify-center gap-2">
-                ✈️ Short Term Guest Portal (Visiting Teams Only)
+                ✈️ Visiting Short Term Portal (Guest Access)
             </button>
         </div>
     </div>
@@ -103,10 +129,12 @@
                         ⚙️ Admin
                     </button>
                     
+                    <!-- Guest Exit Button -->
                     <button id="guest-exit-btn" onclick="exitGuestMode()" class="hidden bg-rose-700 hover:bg-rose-800 text-white px-3 py-1.5 rounded-xl text-xs font-bold shadow transition-all flex items-center gap-1">
                         🚪 Exit Guest Mode
                     </button>
 
+                    <!-- Hamburger Drawer Toggle -->
                     <button id="hamburger-menu-btn" type="button" onclick="toggleHamburgerMenu()" class="p-2 text-indigo-100 hover:text-white hover:bg-indigo-800 rounded-xl transition-all focus:outline-none" title="Menu">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
@@ -115,7 +143,7 @@
                 </div>
             </div>
 
-            <!-- PRIMARY TABS SLIDER BAR -->
+            <!-- PRIMARY TABS SLIDER BAR (LOCAL MEMBERS ONLY) -->
             <div id="primary-tabs-bar" class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold">📅 Daily View</button>
@@ -123,7 +151,6 @@
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🕊️ Sabbath</button>
                     <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🌅 Third-Day</button>
                     <button id="tab-feast-btn" onclick="switchTab('feast')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white">🎉 Feast Worship</button>
-                    <button id="tab-shortterm-btn" onclick="switchTab('shortterm')" class="px-3 py-1 rounded-lg text-amber-300 hover:text-white font-bold bg-amber-500/20">✈️ Short Term</button>
                 </div>
             </div>
         </nav>
@@ -149,9 +176,6 @@
                         </button>
                         <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3">
                             <span>🔧</span> Zion Maintenance
-                        </button>
-                        <button onclick="switchTab('shortterm'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 transition-all flex items-center gap-3">
-                            <span>✈️</span> Short Term Extension
                         </button>
                     </div>
                 </div>
@@ -342,7 +366,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 7: SHORT TERM EXTENSION -->
+                <!-- TAB 7: SHORT TERM EXTENSION (VISITING PORTAL EXCLUSIVE) -->
                 <div id="view-shortterm" class="space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200 space-y-6">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-100 pb-4">
@@ -351,7 +375,7 @@
                                     <span class="text-2xl">✈️</span>
                                     <h1 class="text-2xl font-black text-indigo-950 tracking-tight">Visiting Short Term Portal</h1>
                                 </div>
-                                <p class="text-xs text-slate-500 mt-0.5">Manage visiting itinerary, pairings, lodging, and visiting rosters.</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Explore visiting itinerary, pair assignments, lodging locations, and church rosters.</p>
                             </div>
                         </div>
 
@@ -370,7 +394,7 @@
                             </div>
                         </div>
 
-                        <!-- SUB-VIEW 1: DAILY PLAN (WITH DATE CYCLING) -->
+                        <!-- SUB-VIEW 1: DAILY PLAN (ADVANCE DATE CYCLER) -->
                         <div id="st-subview-plan" class="space-y-4">
                             <div class="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                                 <div>
@@ -671,14 +695,14 @@
                     <div id="monthly-admin-list" class="space-y-2 max-h-[50vh] overflow-y-auto pr-1"></div>
                 </div>
 
-                <!-- SHORT TERM ADMIN -->
+                <!-- SHORT TERM ADMIN (MASTER CONTROL) -->
                 <div id="ap-shortterm" class="admin-panel-section space-y-6 hidden master-only">
                     <!-- SHORT TERM: DAILY PLAN BUILDER -->
                     <div class="space-y-3 bg-white p-4 border rounded-xl shadow-xs">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-2">
                             <div>
                                 <h4 class="font-bold text-xs uppercase tracking-wider text-slate-700">1. Daily Plan / Itinerary (Advance Scheduler)</h4>
-                                <p class="text-[11px] text-slate-500">Select a target date to edit or paste batch events in bulk.</p>
+                                <p class="text-[11px] text-slate-500">Select a target date to edit or paste multi-day batch events in bulk.</p>
                             </div>
                             <div class="flex items-center gap-2 self-end sm:self-auto">
                                 <button type="button" onclick="openBatchModalForCurrentTab('stdaily')" class="px-2 py-1 text-[11px] font-bold rounded-md bg-amber-500 text-slate-900 hover:bg-amber-400">⚡ Batch Upload Schedule</button>
@@ -694,7 +718,7 @@
                         <textarea id="input-st-activities" rows="4" placeholder="e.g. 11:00 AM - Preach (To-Go Lunch) | Assigned Routes&#10;7:00 PM - Dinner in Zion | Main Zion" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
                         
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
-                            <label class="text-xs font-bold text-slate-700 block">Plan Chart Image (For Current Selected Date):</label>
+                            <label class="text-xs font-bold text-slate-700 block">Plan Chart Image (For Currently Selected Date):</label>
                             <div class="flex flex-wrap items-center gap-3">
                                 <label class="cursor-pointer bg-indigo-900 hover:bg-indigo-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-all flex items-center gap-1.5 shadow-sm">
                                     📁 Select Image from Device
@@ -826,7 +850,7 @@
 
                 <!-- MASTER SETTINGS -->
                 <div id="ap-settings" class="admin-panel-section space-y-4 hidden master-only">
-                    <p class="text-xs text-slate-500">Configure global rosters, groups, and short term settings.</p>
+                    <p class="text-xs text-slate-500">Configure global rosters, groups, and device security.</p>
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Evangelists / Leaders (One per line)</label>
                         <textarea id="input-master-evangelists" rows="3" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
@@ -842,6 +866,11 @@
                     <div>
                         <label class="block text-xs font-bold text-slate-700 mb-1">Master Duties & Roles (One per line)</label>
                         <textarea id="input-master-duties" rows="4" class="w-full border border-slate-300 rounded-lg p-2 font-mono text-xs outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200">
+                        <button type="button" onclick="revokeAllDevices()" class="bg-rose-800 hover:bg-rose-700 text-white font-bold px-3 py-2 rounded-lg text-xs shadow transition-all">
+                            ⚠️ Invalidate All Device Authorizations (Force Re-enrollment)
+                        </button>
                     </div>
                 </div>
 
@@ -859,6 +888,10 @@
         const MASTER_ADMIN_PASSWORD = "Grace2026";
         const LIMITED_ADMIN_PASSWORD = "Team2026";
         
+        // SHA-256 target hash of "ZION-1948-1985"
+        const ENROLLMENT_HASH = "80f1244e8249826d95ccb61b96db575bf3d827f311c12513904a6225a071ee9e";
+        const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
+
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
 
@@ -909,6 +942,60 @@
         function closeLightbox() {
             document.getElementById('imageLightboxModal').classList.add('hidden');
             document.getElementById('lightboxImg').src = '';
+        }
+
+        // DEVICE PASSKEY PARSING & AUTHENTICATION (LAYER 1)
+        function formatPasskeyInput(input) {
+            let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+            let parts = [];
+            for (let i = 0; i < val.length; i += 4) {
+                parts.push(val.substring(i, i + 4));
+            }
+            input.value = parts.join('-').substring(0, 14);
+        }
+
+        async function sha256(str) {
+            const buffer = new TextEncoder().encode(str);
+            const hash = await crypto.subtle.digest('SHA-256', buffer);
+            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function verifyDevicePasskey() {
+            const raw = document.getElementById('device-passkey-input').value.trim();
+            const hash = await sha256(raw);
+            const errEl = document.getElementById('device-error-msg');
+
+            if (hash === ENROLLMENT_HASH) {
+                errEl.classList.add('hidden');
+                const fingerprint = `${navigator.userAgent}_${screen.width}x${screen.height}_${Date.now()}`;
+                const signature = await sha256(fingerprint);
+                
+                localStorage.setItem(DEVICE_STORAGE_KEY, signature);
+                
+                document.getElementById('device-enroll-screen').classList.add('hidden');
+                document.getElementById('pin-login-screen').classList.remove('hidden');
+                document.querySelectorAll('.pin-digit')[0]?.focus();
+            } else {
+                errEl.classList.remove('hidden');
+                document.getElementById('device-passkey-input').classList.add('animate-shake');
+                setTimeout(() => document.getElementById('device-passkey-input').classList.remove('animate-shake'), 400);
+            }
+        }
+
+        async function checkDeviceTrust() {
+            const token = localStorage.getItem(DEVICE_STORAGE_KEY);
+            const enrollScreen = document.getElementById('device-enroll-screen');
+            const pinScreen = document.getElementById('pin-login-screen');
+
+            if (!token) {
+                enrollScreen.classList.remove('hidden');
+                pinScreen.classList.add('hidden');
+                document.getElementById('device-passkey-input')?.focus();
+                return false;
+            }
+
+            enrollScreen.classList.add('hidden');
+            return true;
         }
 
         const PERMANENT_SABBATH_DUTIES = [
@@ -1196,6 +1283,7 @@
                 applyGuestModeUI(false);
                 await loadDataFromCloud();
                 checkExistingAdminSession();
+                switchTab('daily');
                 
                 if (appState.persistentAnnouncement && appState.persistentAnnouncement.trim()) {
                     openAnnouncementPopupModal();
@@ -1269,8 +1357,13 @@
                 applyGuestModeUI(isGuest);
                 await loadDataFromCloud();
                 checkExistingAdminSession();
-                if (isGuest) switchTab('shortterm');
+                if (isGuest) {
+                    switchTab('shortterm');
+                } else {
+                    switchTab('daily');
+                }
             } else {
+                document.getElementById('pin-login-screen').classList.remove('hidden');
                 document.querySelectorAll('.pin-digit')[0]?.focus();
             }
         }
@@ -1308,6 +1401,15 @@
             return null;
         }
 
+        async function revokeAllDevices() {
+            if (!confirm("Are you sure? This will invalidate all trusted devices globally on their next reload.")) return;
+            const newEpoch = Date.now().toString();
+            await saveKeyToCloud('global_device_epoch', newEpoch);
+            localStorage.removeItem(DEVICE_STORAGE_KEY);
+            alert("All devices invalidated. Reloading application.");
+            location.reload();
+        }
+
         function linkifyText(text) {
             if (!text) return "";
             return text.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" rel="noopener noreferrer" class="underline font-bold text-amber-950 hover:text-amber-700 break-all">${url}</a>`);
@@ -1341,6 +1443,16 @@
             handleDateChange(lastKnownLocalDate);
 
             try {
+                // Cloud epoch check for device revocation
+                const cloudEpoch = await loadKeyFromCloud('global_device_epoch');
+                const localEpoch = localStorage.getItem('local_device_epoch');
+                if (cloudEpoch && cloudEpoch !== localEpoch) {
+                    localStorage.removeItem(DEVICE_STORAGE_KEY);
+                    localStorage.setItem('local_device_epoch', cloudEpoch);
+                    location.reload();
+                    return;
+                }
+
                 const pAnnounce = await loadKeyFromCloud('persistent_announcement');
                 if (pAnnounce) appState.persistentAnnouncement = pAnnounce;
 
@@ -2815,11 +2927,15 @@
             return new Date(dateObj.getTime() - (offset*60*1000)).toISOString().split('T')[0];
         }
 
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', async () => {
             const todayObj = new Date();
             currentCalendarYear = todayObj.getFullYear();
             currentCalendarMonth = todayObj.getMonth();
-            checkPinSession();
+
+            const isTrusted = await checkDeviceTrust();
+            if (isTrusted) {
+                checkPinSession();
+            }
         });
 
         async function handleDateChange(dateString) {
@@ -2921,8 +3037,11 @@
         }
 
         function switchTab(viewName) {
-            if (isShortTermGuestMode && viewName !== 'shortterm') {
+            // Strict role-based isolation
+            if (isShortTermGuestMode) {
                 viewName = 'shortterm';
+            } else if (viewName === 'shortterm' && currentAdminRole !== 'master') {
+                viewName = 'daily';
             }
 
             ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
@@ -2934,11 +3053,7 @@
             document.getElementById(`view-${viewName}`)?.classList.remove('hidden');
             const targetBtn = document.getElementById(`tab-${viewName}-btn`);
             if (targetBtn) {
-                if (viewName === 'shortterm') {
-                    targetBtn.className = "px-3 py-1 rounded-lg bg-amber-500 text-indigo-950 font-bold shadow-md";
-                } else {
-                    targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold";
-                }
+                targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold";
             }
             
             window.scrollTo({ top: 0, behavior: 'smooth' });
