@@ -886,8 +886,8 @@
         const MASTER_ADMIN_PASSWORD = "Grace2026";
         const LIMITED_ADMIN_PASSWORD = "Team2026";
         
-        // Target SHA-256 hash of "ZION-1948-1985"
-        const ENROLLMENT_HASH = "db443579be6a8947f61ef5fc0a9e7019672ebff1aaee0c5f49e7b233a3915f0c";
+        // Passkey Configuration & Device Storage Key
+        const ENROLLMENT_PASSKEY = "ZION-1948-1985";
         const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
 
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
@@ -942,7 +942,7 @@
             document.getElementById('lightboxImg').src = '';
         }
 
-        // DEVICE PASSKEY PARSING & AUTHENTICATION (LAYER 1)
+        // DEVICE PASSKEY PARSING & DIRECT STRING VERIFICATION (LAYER 1)
         function formatPasskeyInput(input) {
             let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             let parts = [];
@@ -952,35 +952,33 @@
             input.value = parts.join('-').substring(0, 14);
         }
 
-        async function sha256(str) {
-            const buffer = new TextEncoder().encode(str);
-            const hash = await crypto.subtle.digest('SHA-256', buffer);
-            return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-
-        async function verifyDevicePasskey() {
-            const raw = document.getElementById('device-passkey-input').value.trim();
-            const hash = await sha256(raw);
+        function verifyDevicePasskey() {
+            const input = document.getElementById('device-passkey-input');
             const errEl = document.getElementById('device-error-msg');
+            
+            // Normalize: strip dashes, whitespace, and case
+            const cleanInput = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
+            const cleanTarget = ENROLLMENT_PASSKEY.replace(/[^A-Z0-9]/gi, '').toUpperCase();
 
-            if (hash === ENROLLMENT_HASH) {
+            if (cleanInput === cleanTarget) {
                 errEl.classList.add('hidden');
-                const fingerprint = `${navigator.userAgent}_${screen.width}x${screen.height}_${Date.now()}`;
-                const signature = await sha256(fingerprint);
                 
-                localStorage.setItem(DEVICE_STORAGE_KEY, signature);
-                
+                // Set persistent device signature token
+                const token = "auth_" + btoa(navigator.userAgent.slice(0, 20) + "_" + Date.now());
+                localStorage.setItem(DEVICE_STORAGE_KEY, token);
+
+                // Transition to Layer 2 (PIN keypad)
                 document.getElementById('device-enroll-screen').classList.add('hidden');
                 document.getElementById('pin-login-screen').classList.remove('hidden');
                 document.querySelectorAll('.pin-digit')[0]?.focus();
             } else {
                 errEl.classList.remove('hidden');
-                document.getElementById('device-passkey-input').classList.add('animate-shake');
-                setTimeout(() => document.getElementById('device-passkey-input').classList.remove('animate-shake'), 400);
+                input.classList.add('animate-shake');
+                setTimeout(() => input.classList.remove('animate-shake'), 400);
             }
         }
 
-        async function checkDeviceTrust() {
+        function checkDeviceTrust() {
             const token = localStorage.getItem(DEVICE_STORAGE_KEY);
             const enrollScreen = document.getElementById('device-enroll-screen');
             const pinScreen = document.getElementById('pin-login-screen');
@@ -2567,360 +2565,15 @@
         }
 
         // ==========================================
-        // UNIVERSAL BATCH MODAL SYSTEM
+        // INITIALIZATION
         // ==========================================
-        function toggleBatchModal() {
-            document.getElementById('universal-batch-modal').classList.toggle('hidden');
-        }
-
-        function openBatchModalForCurrentTab(targetType = null) {
-            currentBatchTarget = targetType || currentActiveAdminTab;
-            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'stdaily', 'stteams', 'stlodging', 'stroster', 'shortterm'];
-            if (!supportedTabs.includes(currentBatchTarget)) {
-                alert("Batch update is not available for this tab.");
-                return;
-            }
-
-            if (currentBatchTarget === 'shortterm') {
-                currentBatchTarget = 'stdaily';
-            }
-
-            const title = document.getElementById('batch-modal-title');
-            const instructions = document.getElementById('batch-modal-instructions');
-            const input = document.getElementById('batch-modal-input');
-            input.value = "";
-
-            if (currentBatchTarget === 'monthly') {
-                title.innerText = "⚡ Batch Update Monthly Calendar";
-                instructions.innerHTML = `Paste events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code>`;
-                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
-            } else if (currentBatchTarget === 'stdaily') {
-                title.innerText = "⚡ Batch Upload Short Term Daily Schedule";
-                instructions.innerHTML = `Paste schedule for dates in advance.<br><b>Format 1 (Single/Current Day):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code><br><b>Format 2 (Multi-Day Batch):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">YYYY-MM-DD | Time, Activity, Location</code> or header <code class="bg-slate-100 text-slate-800 px-1 rounded">[YYYY-MM-DD]</code>`;
-                input.placeholder = "2026-08-21 | 11:00 AM, Preach (To-Go Lunch), Assigned Routes\n2026-08-21 | 7:00 PM, Dinner in Zion, Main Zion\n\n[2026-08-22]\n9:00 AM, Morning Worship, Main Sanctuary\n10:30 AM, Preach, Assigned Routes\n1:00 PM, Lunch, Fellowship Hall\n3:00 PM, Afternoon Worship, Main Sanctuary\n4:00 PM, Preach, Assigned Routes\n6:00 PM, Dinner, Fellowship Hall\n8:00 PM, Evening Worship, Main Sanctuary\n\n[2026-08-23]\n10:00 AM, Preach, Assigned Routes\n12:00 PM, Joint Preaching (To-Go Lunch), Assigned Routes\n5:30 PM, Dinner in Zion, Main Zion";
-            } else if (currentBatchTarget === 'stteams') {
-                title.innerText = "⚡ Batch Upload Short Term Preaching Teams";
-                instructions.innerHTML = `Paste teams (up to 10).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Indy Member, Visiting Member, Time, Location</code>`;
-                input.placeholder = "B.Kiimon, Visiting Brother 1, 11:00 AM - 4:00 PM, Downtown\nB.Ryan, Visiting Brother 2, 11:00 AM - 4:00 PM, Carmel";
-            } else if (currentBatchTarget === 'stlodging') {
-                title.innerText = "⚡ Batch Upload Lodging Matrix";
-                instructions.innerHTML = `Paste host homes (up to 5).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Host Name (Phone | MapURL), Guest 1 / Guest 2 / Guest 3</code>`;
-                input.placeholder = "D.James (720-949-8770 | https://maps.google.com/?q=Noblesville), D.Jack / B.Geonhee\nB.Jemis (616-260-3298 | https://maps.google.com/?q=Indianapolis), B.Tyler / B.Ethan";
-            } else if (currentBatchTarget === 'stroster') {
-                title.innerText = "⚡ Batch Upload Visiting Rosters";
-                instructions.innerHTML = `Paste roster per Zion.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Zion Name: Member 1, Member 2, Member 3</code>`;
-                input.placeholder = "Columbus Zion: Bro John, Sis Mary, Bro Luke\nNaperville Zion: Bro Mark, Sis Anna";
-            } else if (currentBatchTarget === 'blessings') {
-                title.innerText = "⚡ Batch Update Blessings & Inventory";
-                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code>`;
-                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full";
-            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
-                const tabTitle = currentBatchTarget.charAt(0).toUpperCase() + currentBatchTarget.slice(1);
-                title.innerText = `⚡ Batch Update ${tabTitle} Worship Duties`;
-                instructions.innerHTML = `Paste roles line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code>`;
-                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Sound : B.Kiimon";
-            }
-
-            toggleBatchModal();
-        }
-
-        async function processUniversalBatchData() {
-            const rawText = document.getElementById('batch-modal-input').value;
-            if (!rawText.trim()) return;
-
-            const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
-            let updatedCount = 0;
-
-            if (currentBatchTarget === 'stdaily') {
-                const data = getShortTermGroupData();
-                if (!data.dailyPlans) data.dailyPlans = {};
-
-                let activeContextDate = currentAdminStPlanDate || currentStPlanDate || getLocalDateString(new Date());
-
-                lines.forEach(line => {
-                    let cleaned = line.trim();
-                    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
-                        const dateExtract = cleaned.slice(1, -1).trim();
-                        if (dateExtract) activeContextDate = dateExtract;
-                        return;
-                    }
-
-                    let targetDate = activeContextDate;
-                    let payload = cleaned;
-
-                    if (cleaned.includes('|') && /^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
-                        const parts = cleaned.split('|');
-                        targetDate = parts[0].trim();
-                        payload = parts.slice(1).join('|').trim();
-                    }
-
-                    const parts = payload.split(',').map(p => p.trim());
-                    if (parts.length >= 2) {
-                        if (!data.dailyPlans[targetDate]) {
-                            data.dailyPlans[targetDate] = { activities: [], planImage: "" };
-                        }
-
-                        data.dailyPlans[targetDate].activities.push({
-                            time: parts[0] || 'TBD',
-                            activity: parts[1] || '',
-                            location: parts[2] || 'Main Zion',
-                            image: ""
-                        });
-                        updatedCount++;
-                    }
-                });
-
-                if (updatedCount > 0) {
-                    populateAdminShortTermUI();
-                    renderShortTermContent();
-                    await saveKeyToCloud('short_term_data', appState.shortTermData);
-                    toggleBatchModal();
-                    alert(`Imported ${updatedCount} daily schedule items across configured dates!`);
-                } else {
-                    alert("Could not parse schedule. Format: Time, Activity, Location OR YYYY-MM-DD | Time, Activity, Location");
-                }
-            } else if (currentBatchTarget === 'stteams') {
-                let parsedTeams = [];
-                lines.forEach(line => {
-                    const parts = line.split(',').map(p => p.trim());
-                    if (parts.length >= 2 && parsedTeams.length < 10) {
-                        parsedTeams.push({
-                            indy: parts[0] || '',
-                            visiting: parts[1] || '',
-                            time: parts[2] || '11:00 AM - 4:00 PM',
-                            location: parts[3] || 'Main Zion',
-                            image: ""
-                        });
-                        updatedCount++;
-                    }
-                });
-
-                if (parsedTeams.length > 0) {
-                    appState.shortTermData.teams = parsedTeams;
-                    populateAdminShortTermUI();
-                    renderShortTermContent();
-                    await saveKeyToCloud('short_term_data', appState.shortTermData);
-                    toggleBatchModal();
-                    alert(`Imported ${updatedCount} preaching teams!`);
-                } else {
-                    alert("Could not parse teams. Format: Indy Lead, Visiting, Time, Location");
-                }
-            } else if (currentBatchTarget === 'stlodging') {
-                let parsedLodging = [];
-                lines.forEach(line => {
-                    if (parsedLodging.length >= 5) return;
-                    let host = "";
-                    let mapUrl = "";
-                    let address = "";
-                    let guests = [];
-
-                    const commaIdx = line.indexOf(',');
-                    if (commaIdx !== -1) {
-                        const hostPart = line.substring(0, commaIdx).trim();
-                        const guestsPart = line.substring(commaIdx + 1).trim();
-
-                        guests = guestsPart.split(/[/,]/).map(g => g.trim()).filter(Boolean).slice(0, 8);
-
-                        if (hostPart.includes('http')) {
-                            const urlMatch = hostPart.match(/https?:\/\/[^\s\)\|\,]+/);
-                            if (urlMatch) mapUrl = urlMatch[0];
-                        }
-
-                        host = hostPart.replace(/\([^)]*\)/g, '').replace(/https?:\/\/[^\s\)\|\,]+/g, '').replace(/[\|\:]/g, '').trim();
-                        address = hostPart.includes('|') ? hostPart.split('|')[0].replace(/[()]/g, '').trim() : '';
-
-                        parsedLodging.push({ host: host || "Host House", address: address || "See Map", mapUrl, guests, image: "" });
-                        updatedCount++;
-                    }
-                });
-
-                if (parsedLodging.length > 0) {
-                    while (parsedLodging.length < 5) {
-                        parsedLodging.push({ host: `Host Home ${parsedLodging.length + 1}`, address: "", mapUrl: "", guests: [], image: "" });
-                    }
-                    appState.shortTermData.lodging = parsedLodging;
-                    populateAdminShortTermUI();
-                    renderShortTermContent();
-                    await saveKeyToCloud('short_term_data', appState.shortTermData);
-                    toggleBatchModal();
-                    alert(`Imported ${updatedCount} lodging homes!`);
-                } else {
-                    alert("Could not parse lodging. Format: Host (Details | MapURL), Guest 1 / Guest 2");
-                }
-            } else if (currentBatchTarget === 'stroster') {
-                lines.forEach(line => {
-                    if (line.includes(':')) {
-                        const colonIdx = line.indexOf(':');
-                        const zion = line.substring(0, colonIdx).trim();
-                        const members = line.substring(colonIdx + 1).split(/[,/]/).map(m => m.trim()).filter(Boolean).slice(0, 10);
-                        if (zion) {
-                            appState.shortTermZionRosters[zion] = members;
-                            updatedCount++;
-                        }
-                    }
-                });
-
-                if (updatedCount > 0) {
-                    populateAdminShortTermUI();
-                    renderShortTermContent();
-                    await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
-                    toggleBatchModal();
-                    alert(`Imported rosters for ${updatedCount} visiting Zion locations!`);
-                } else {
-                    alert("Could not parse roster. Format: Zion Name: Member 1, Member 2");
-                }
-            } else if (currentBatchTarget === 'monthly') {
-                const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
-                lines.forEach(line => {
-                    let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
-                    if (!cleaned || !cleaned.includes(':')) return;
-
-                    const colonIdx = cleaned.indexOf(':');
-                    const datePart = cleaned.substring(0, colonIdx).trim().toLowerCase();
-                    const eventsPart = cleaned.substring(colonIdx + 1).trim();
-
-                    let matchedMonth = currentCalendarMonth + 1;
-                    let matchedDay = null;
-
-                    mNames.forEach((mName, idx) => {
-                        if (datePart.includes(mName)) {
-                            matchedMonth = idx + 1;
-                            const dayMatch = datePart.match(/\d+/);
-                            if (dayMatch) matchedDay = parseInt(dayMatch[0]);
-                        }
-                    });
-
-                    if (!matchedDay && datePart.includes('/')) {
-                        const parts = datePart.split('/');
-                        matchedMonth = parseInt(parts[0]);
-                        matchedDay = parseInt(parts[1]);
-                    } else if (!matchedDay) {
-                        const dayMatch = datePart.match(/\d+/);
-                        if (dayMatch) matchedDay = parseInt(dayMatch[0]);
-                    }
-
-                    if (matchedDay) {
-                        const dateKey = `${currentCalendarYear}-${String(matchedMonth).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
-                        if (eventsPart && eventsPart.toLowerCase() !== '(blank)') {
-                            appState.calendarEventsDb[dateKey] = eventsPart;
-                            updatedCount++;
-                        }
-                    }
-                });
-
-                if (updatedCount > 0) {
-                    renderMonthlyCalendar();
-                    renderMonthlyAdminListUI();
-                    await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
-                    toggleBatchModal();
-                    alert(`Successfully imported ${updatedCount} monthly events!`);
-                } else {
-                    alert("Could not parse dates. Please use 'Month Day: Events' format.");
-                }
-            } else if (currentBatchTarget === 'blessings') {
-                let parsedBlessings = [];
-                lines.forEach(line => {
-                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
-                    if (parts.length >= 2) {
-                        const item = parts[0];
-                        const name = parts[1];
-                        const status = parts[2] ? parts[2] : 'Full';
-                        parsedBlessings.push(`${name} : ${item} : ${status}`);
-                        updatedCount++;
-                    }
-                });
-
-                if (parsedBlessings.length > 0) {
-                    appState.blessingsList = parsedBlessings;
-                    renderBlessings();
-                    renderBlessingsBuilderUI();
-                    await saveKeyToCloud('blessings_list', appState.blessingsList);
-                    toggleBatchModal();
-                    alert(`Successfully imported ${updatedCount} blessing items!`);
-                } else {
-                    alert("Could not parse blessings. Please use 'Item : Name : Status' format.");
-                }
-            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
-                let parsedDuties = [];
-                lines.forEach(line => {
-                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
-                    if (parts.length >= 2) {
-                        const role = parts[0];
-                        const name = parts[1];
-                        parsedDuties.push(`${name || 'Unassigned'} : ${role}`);
-                        updatedCount++;
-                    }
-                });
-
-                if (parsedDuties.length > 0) {
-                    if (currentBatchTarget === 'sabbath') {
-                        appState.sabbathSchedule.duties = parsedDuties;
-                        renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties);
-                        await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
-                    } else if (currentBatchTarget === 'thirdday') {
-                        appState.thirddaySchedule.duties = parsedDuties;
-                        renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties);
-                        await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
-                    } else if (currentBatchTarget === 'feast') {
-                        appState.feastSchedule.duties = parsedDuties;
-                        renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties);
-                        await saveKeyToCloud('feast_schedule', appState.feastSchedule);
-                    }
-                    renderSabbathAndFeast(currentBatchTarget);
-                    toggleBatchModal();
-                    alert(`Successfully imported ${updatedCount} duties for ${currentBatchTarget}!`);
-                } else {
-                    alert("Could not parse duties. Please use 'Role : Name' format.");
-                }
-            }
-        }
-
-        function renderBlessings() {
-            const container = document.getElementById('blessings-container');
-            if (!container) return;
-
-            let mappedList = {};
-            (appState.blessingsList || []).forEach(b => {
-                const chunks = b.split(':');
-                const name = chunks[0] ? chunks[0].trim() : '';
-                const item = chunks[1] ? chunks[1].trim() : '';
-                let status = chunks[2] ? chunks[2].trim().toLowerCase() : 'full';
-                if (item) mappedList[item] = { name, status };
-            });
-
-            container.innerHTML = DEFAULT_BLESSINGS.map(bDef => {
-                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status.toLowerCase() };
-                let status = itemData.status;
-
-                let colorClass = "bg-emerald-100 text-emerald-800 border-emerald-200";
-                if (status === 'low') colorClass = "bg-amber-100 text-amber-800 border-amber-200";
-                if (status === 'empty') colorClass = "bg-rose-100 text-rose-800 border-rose-200";
-
-                return `
-                    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm flex flex-col justify-between">
-                        <div class="flex divide-x divide-slate-100 flex-1">
-                            <div class="w-1/2 p-3 font-bold text-indigo-950 text-xs flex items-center break-words">${bDef.item}</div>
-                            <div class="w-1/2 p-3 text-xs font-semibold text-slate-700 flex items-center break-words bg-slate-50/50">${itemData.name || '<span class="text-slate-400 italic">Unassigned</span>'}</div>
-                        </div>
-                        <div class="bg-slate-50 px-3 py-2 border-t border-slate-100 flex justify-between items-center">
-                            <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">Status:</span>
-                            <span class="text-xs px-2.5 py-0.5 rounded-full border font-semibold uppercase ${colorClass}">${status}</span>
-                        </div>
-                    </div>`;
-            }).join('');
-        }
-
-        function getLocalDateString(dateObj) {
-            let offset = dateObj.getTimezoneOffset();
-            return new Date(dateObj.getTime() - (offset*60*1000)).toISOString().split('T')[0];
-        }
-
-        window.addEventListener('DOMContentLoaded', async () => {
+        window.addEventListener('DOMContentLoaded', () => {
             const todayObj = new Date();
             currentCalendarYear = todayObj.getFullYear();
             currentCalendarMonth = todayObj.getMonth();
 
-            const isTrusted = await checkDeviceTrust();
+            // Synchronous direct-token device verification
+            const isTrusted = checkDeviceTrust();
             if (isTrusted) {
                 checkPinSession();
             }
