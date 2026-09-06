@@ -89,7 +89,7 @@
     <div id="app-wrapper" class="hidden">
         <nav class="bg-indigo-900 text-white shadow-md sticky top-0 z-50">
             <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
-                <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double-click to access Admin">
+                <div class="flex items-center space-x-2 cursor-pointer select-none" ondblclick="revealAdminButton()" title="Double-click for Admin">
                     <span class="text-2xl">📖</span>
                     <span class="font-bold text-lg tracking-wide" id="app-nav-title">Zion Church Planner (INDY)</span>
                 </div>
@@ -106,7 +106,7 @@
                 </div>
             </div>
 
-            <!-- PRIMARY TABS -->
+            <!-- PRIMARY NAVIGATION BAR -->
             <div id="primary-tabs-bar" class="bg-indigo-950/80 border-t border-indigo-800/60 px-4 py-1.5 overflow-x-auto">
                 <div class="max-w-6xl mx-auto flex space-x-2 whitespace-nowrap text-xs font-medium">
                     <button id="tab-daily-btn" onclick="switchTab('daily')" class="px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer">📅 Daily View</button>
@@ -114,6 +114,7 @@
                     <button id="tab-sabbath-btn" onclick="switchTab('sabbath')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer">🕊️ Sabbath</button>
                     <button id="tab-thirdday-btn" onclick="switchTab('thirdday')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer">🌅 Third-Day</button>
                     <button id="tab-feast-btn" onclick="switchTab('feast')" class="px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer">🎉 Feast Worship</button>
+                    <button id="tab-shortterm-btn" onclick="switchTab('shortterm')" class="px-3 py-1 rounded-lg text-amber-300 hover:text-white cursor-pointer">✈️ Visiting Short Term</button>
                 </div>
             </div>
         </nav>
@@ -123,14 +124,14 @@
             <div class="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-2xl p-6 flex flex-col justify-between space-y-6" onclick="event.stopPropagation()">
                 <div class="space-y-4">
                     <div class="flex justify-between items-center border-b pb-3">
-                        <h3 class="font-bold text-slate-900 text-lg">📂 Secondary Tabs</h3>
+                        <h3 class="font-bold text-slate-900 text-lg">📂 Additional Tabs</h3>
                         <button type="button" onclick="toggleHamburgerMenu()" class="text-2xl text-slate-400 hover:text-slate-600 font-bold cursor-pointer">&times;</button>
                     </div>
                     <div class="space-y-2">
                         <button onclick="switchTab('blessings'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">✨ Blessings & Inventory</button>
                         <button onclick="switchTab('cooking'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🍲 Cooking Schedule</button>
                         <button onclick="switchTab('cleaning'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🧹 Cleaning Tasks</button>
-                        <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🔧 Maintenance</button>
+                        <button onclick="switchTab('maintenance'); toggleHamburgerMenu();" class="w-full text-left px-4 py-3 rounded-xl font-semibold text-slate-700 hover:bg-indigo-50 hover:text-indigo-900 transition-all flex items-center gap-3 cursor-pointer">🔧 Maintenance Ticket</button>
                     </div>
                 </div>
                 <div class="space-y-2 border-t pt-4">
@@ -143,7 +144,7 @@
         <main class="max-w-6xl mx-auto px-4 py-6">
             <div id="loading-spinner" class="text-center py-3 hidden">
                 <div class="inline-block animate-spin rounded-full h-6 w-6 border-4 border-indigo-900 border-t-transparent"></div>
-                <p class="text-slate-500 text-[11px] mt-1">Syncing...</p>
+                <p class="text-slate-500 text-[11px] mt-1">Syncing cloud...</p>
             </div>
 
             <div id="main-content" class="space-y-6">
@@ -192,7 +193,6 @@
                             <p class="text-slate-500 text-xs font-semibold">💡 Click on any day box below to view events or jump to that day!</p>
                         </div>
                         <div class="flex items-center space-x-2">
-                            <button onclick="exportToIcsCalendar()" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-900 border border-indigo-200 px-3 py-2 rounded-lg text-xs font-bold shadow-sm cursor-pointer">📅 Export .ics</button>
                             <button onclick="changeMonth(-1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm cursor-pointer">← Prev</button>
                             <button onclick="changeMonth(1)" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-bold shadow-sm cursor-pointer">Next →</button>
                         </div>
@@ -249,7 +249,7 @@
                     </div>
                 </div>
 
-                <!-- TAB 7: SHORT TERM (VISITING ONLY) -->
+                <!-- TAB 7: SHORT TERM (VISITING PORTAL) -->
                 <div id="view-shortterm" class="space-y-6 hidden">
                     <div class="bg-white rounded-3xl p-6 shadow-sm border border-amber-200 space-y-6">
                         <div class="border-b pb-3 flex justify-between items-center">
@@ -291,7 +291,7 @@
                                 <div id="st-plan-container" class="space-y-3"></div>
                             </div>
                             <div class="st-content-image hidden">
-                                <div id="st-plan-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center"></div>
+                                <div id="st-plan-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">No chart image uploaded.</div>
                             </div>
                         </div>
 
@@ -301,7 +301,7 @@
                                 <div id="st-teams-container" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
                             </div>
                             <div class="st-content-image hidden">
-                                <div id="st-teams-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center"></div>
+                                <div id="st-teams-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">No teams chart uploaded.</div>
                             </div>
                         </div>
 
@@ -311,7 +311,7 @@
                                 <div id="st-lodging-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
                             </div>
                             <div class="st-content-image hidden">
-                                <div id="st-lodging-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center"></div>
+                                <div id="st-lodging-image-display" class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center text-xs text-slate-400">No lodging chart uploaded.</div>
                             </div>
                         </div>
 
@@ -338,6 +338,12 @@
                     <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                         <h1 class="text-2xl font-bold text-center">Cleaning Responsibilities</h1>
                         <div id="cleaning-groups-grid" class="grid grid-cols-1 md:grid-cols-3 gap-6"></div>
+                        <div class="pt-4 border-t border-slate-100 space-y-4">
+                            <div class="bg-indigo-950 text-white py-2 px-4 rounded-xl text-center font-bold tracking-wider text-sm">
+                                ★ SPECIAL AREAS
+                            </div>
+                            <div id="cleaning-special-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -430,19 +436,163 @@
         const LIMITED_ADMIN_PASSWORD = "Team2026";
         const ENROLLMENT_PASSKEY = "ZION-1948-1985";
         const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
-        const OFFLINE_CACHE_KEY = "zion_indy_cache_v8";
+        const OFFLINE_CACHE_KEY = "zion_indy_cache_v9";
 
         const CLOUD_URL = "https://clever-python-151784.upstash.io";
         const CLOUD_TOKEN = "gQAAAAAAAlDoAAIgcDEyNjI1YTg0MGFiNDM0NzIzYWRjYTliZThmOTA3ZWViMA";
 
+        const DEFAULT_BLESSINGS = [
+            { item: "Toilet Paper", status: "Full", name: "D. James" },
+            { item: "Multi-purpose Cleaner Refill", status: "Full", name: "B Jemis" },
+            { item: "Dry Sweeping Cloth", status: "Full", name: "" },
+            { item: "Trash Bag 30 Gallon", status: "Full", name: "B.Ryan" },
+            { item: "Tri-fold Paper Towels", status: "Full", name: "S Saira & B Luis" },
+            { item: "Window Cleaner Refill", status: "Full", name: "" },
+            { item: "Bleach", status: "Full", name: "B Jeff" },
+            { item: "Trash bag 13 Gallon", status: "Full", name: "S. Cesilia" },
+            { item: "Air Freshener", status: "Full", name: "S.Chelda" },
+            { item: "Hand Soap Refills", status: "Full", name: "B Micco" },
+            { item: "Mini Trash Bags (Bathroom)", status: "Low", name: "B Kiimon" },
+            { item: "Ground Cofee", status: "Full", name: "S Veronica" },
+            { item: "Forks", status: "Full", name: "D. Helen" },
+            { item: "Spoons", status: "Full", name: "S.Sherice" },
+            { item: "Dispenser Napkins", status: "Full", name: "D.Madai" },
+            { item: "Plate Regular", status: "Full", name: "S.Candies" },
+            { item: "Dish soap", status: "Full", name: "S.LaNia" },
+            { item: "Kitchen paper towel", status: "Low", name: "S.Patricia" },
+            { item: "Ziplock (snack)", status: "Full", name: "S.Elizabeth" },
+            { item: "Ziploc (quart)", status: "Low", name: "S.Elizabeth" },
+            { item: "Ziplock (gallon)", status: "Low", name: "S.Elizabeth" },
+            { item: "Tea", status: "Full", name: "S.Mercy" },
+            { item: "Stirrers", status: "Full", name: "S.Mercy" },
+            { item: "Ibuprofen", status: "Full", name: "S.Jessica P." },
+            { item: "Zyrtec / Claritin", status: "Full", name: "S.Bethany" },
+            { item: "Cold Medication", status: "Full", name: "S.Bethany" },
+            { item: "Knives", status: "Full", name: "D. Helen/Sherice" },
+            { item: "Long Grain Rice", status: "Full", name: "D Alan / D Samantha" },
+            { item: "Butter Sticks", status: "Full", name: "S.Robin" },
+            { item: "Small/ Large coffee filters", status: "Full", name: "S.Caniah" },
+            { item: "Sweetner and sugar packets", status: "Full", name: "S.Caniah" },
+            { item: "Cone Cups for Water", status: "Full", name: "" },
+            { item: "Sanitizer Refill (Big One)", status: "Full", name: "S. Suriha" },
+            { item: "Floor Cleaner", status: "Full", name: "" },
+            { item: "Pepto Bismol (Tabs)", status: "Full", name: "" },
+            { item: "Honey", status: "Full", name: "" },
+            { item: "K- Cups", status: "Low", name: "" },
+            { item: "Toilet Bowl Cleaner", status: "Full", name: "" },
+            { item: "Gloves for cleaning", status: "Empty", name: "" },
+            { item: "Snack plate/trays", status: "Empty", name: "" }
+        ];
+
+        let appState = {
+            persistentAnnouncement: "",
+            database: {
+                "2026-09-04": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
+                "2026-09-06": { activities: ["10:00 AM - 5:00 PM - Feast Cleaning"], preaching: [], duties: [] },
+                "2026-09-07": { activities: ["Labor Day"], preaching: [], duties: [] },
+                "2026-09-09": { activities: ["4:30 PM - Preaching Meeting", "7:00 PM - Preaching Meeting"], preaching: [], duties: [] },
+                "2026-09-10": { activities: ["4:30 PM - Preaching Meeting", "7:00 PM - Preaching Meeting"], preaching: [], duties: [] },
+                "2026-09-11": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
+                "2026-09-12": { activities: ["Feast of Trumpets"], preaching: [], duties: [] },
+                "2026-09-13": { activities: [], preaching: [], duties: [{ role: "Kitchen", name: "S.Saira", group: "Adult Sisters" }] },
+                "2026-09-18": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
+                "2026-09-20": { activities: [], preaching: [], duties: [{ role: "Kitchen", name: "S.Candies", group: "Adult Sisters" }] },
+                "2026-09-21": { activities: ["Day of Atonement"], preaching: [], duties: [] },
+                "2026-09-25": { activities: ["7:00 PM - Sabbath Day Preparation & Dinner"], preaching: [], duties: [] },
+                "2026-09-26": { activities: ["Feast of Tabernacles"], preaching: [], duties: [] },
+                "2026-09-27": { activities: ["Family Event (Open House)"], preaching: [], duties: [] }
+            },
+            calendarEventsDb: {
+                "2026-09-04": "Sabbath Day Preparation (7:00pm Dinner)",
+                "2026-09-06": "Feast Cleaning",
+                "2026-09-07": "Labor Day",
+                "2026-09-09": "Preaching Meeting 4:30pm & 7:00pm",
+                "2026-09-10": "Preaching Meeting 4:30pm & 7:00pm",
+                "2026-09-11": "Sabbath Day Preparation (7:00pm Dinner)",
+                "2026-09-12": "Trumpets",
+                "2026-09-13": "Cooking: S.Saira",
+                "2026-09-18": "Sabbath Day Preparation (7:00pm Dinner)",
+                "2026-09-20": "Cooking: S.Candies",
+                "2026-09-21": "Day of Atonement",
+                "2026-09-25": "Sabbath Day Preparation (7:00pm Dinner)",
+                "2026-09-26": "Tabernacles",
+                "2026-09-27": "Family Event (Open House)"
+            },
+            blessingsList: DEFAULT_BLESSINGS.map(b => `${b.item} : ${b.name} : ${b.status}`),
+            sabbathSchedule: {
+                activities: [
+                    "10:30 AM - F.I.F.A. Tournament (Japan vs Cameroon)",
+                    "11:30 AM - Special Video",
+                    "12:30 PM - Lunch",
+                    "1:15 PM - Sabbath School",
+                    "4:00 PM - Group by Group",
+                    "6:00 PM - Dinner",
+                    "6:50 PM - F.I.F.A. Tournament (South Korea vs Morocco)"
+                ],
+                duties: [
+                    "Morning Presider : B.Ezequiel", "Morning Prayer of Thanks : B.Ezequiel", "Morning Closing Prayer : D.Chris",
+                    "Afternoon Presider : B.Ryan", "Afternoon Closing Prayer : B.Ryan", "Evening Presider : B.Jemis"
+                ]
+            },
+            thirddaySchedule: {
+                activities: [],
+                duties: ["Evening Presider : B.Jemis", "Evening Closing Prayer : D.Madai", "Evening Usher : S.Veronica"]
+            },
+            feastSchedule: {
+                activities: [],
+                duties: ["Morning Presider : B.Ezequiel", "Morning Prayer of Thanks : B.Ezequiel", "Afternoon Presider : B.Ryan"]
+            },
+            cookingSchedule: [
+                { week: "1st week", dinner: "Adult Sisters (D.Madai)", snacks: "Adult Brothers" },
+                { week: "2nd Week", dinner: "Adult Sisters (D.Helen)", snacks: "Young Adult Brothers&sisters" },
+                { week: "3rd Week", dinner: "Adult Brothers", snacks: "Adult Sisters (D.Madai)" },
+                { week: "4th Week", dinner: "Young Adult", snacks: "Adult Sisters (D.Helen)" },
+                { week: "5th Week", dinner: "Young Adult", snacks: "Young Adult Brother&Sisters" }
+            ],
+            cleaningGroups: [
+                { title: "ADULT BROTHERS", color: "border-emerald-500 bg-emerald-50", tasks: ["Landscaping", "Men's Restroom (Downstairs)", "Fellowship Area"] },
+                { title: "ADULT SISTERS — D. HELEN", color: "border-rose-400 bg-rose-50", tasks: ["Flower Area", "Downstairs Rooms", "Lobby Windows", "Front Desk"] },
+                { title: "ADULT SISTERS — D. MADAI", color: "border-purple-500 bg-purple-50", tasks: ["Sanctuary", "Kids' Room", "Women's Restroom (Downstairs)", "Serving Area"] }
+            ],
+            cleaningSpecials: [
+                { title: "TOOL ROOM", evangelists: "B. Ryan & B. Humberto", icon: "🛠️", color: "bg-amber-100 text-amber-900 border-amber-200" },
+                { title: "AUDIO BOOTH", evangelists: "B. Kiimon", icon: "🎛️", color: "bg-blue-100 text-blue-900 border-blue-200" },
+                { title: "ALTAR & BAPTISM", evangelists: "S. Veronica & D. Madai", icon: "🫧", color: "bg-rose-100 text-rose-900 border-rose-200" },
+                { title: "OFFICE", evangelists: "S. Ellie, S.CecLia", icon: "🖥️", color: "bg-emerald-100 text-emerald-900 border-emerald-200" }
+            ],
+            shortTermData: {
+                dailyPlans: {
+                    "2026-08-21": { activities: [{ time: "11:00 AM", activity: "Preach (To-Go Lunch)", location: "Assigned Routes" }, { time: "7:00 PM", activity: "Dinner in Zion", location: "Main Zion" }] },
+                    "2026-08-22": { activities: [{ time: "9:00 AM", activity: "Worship", location: "Main Sanctuary" }, { time: "10:30 AM", activity: "Preach", location: "Assigned Routes" }, { time: "1:00 PM", activity: "Lunch", location: "Fellowship Hall" }, { time: "3:00 PM", activity: "Worship", location: "Main Sanctuary" }, { time: "4:00 PM", activity: "Preach", location: "Assigned Routes" }, { time: "6:00 PM", activity: "Dinner", location: "Fellowship Hall" }] },
+                    "2026-08-23": { activities: [{ time: "10:00 AM", activity: "Preach", location: "Assigned Routes" }, { time: "12:00 PM", activity: "Joint Preaching", location: "Assigned Routes" }, { time: "5:30 PM", activity: "Dinner in Zion", location: "Main Zion" }] }
+                },
+                teams: [
+                    { indy: "B.Kiimon", visiting: "Guest Leader 1", time: "11:00 AM - 4:00 PM", location: "Downtown Indy" },
+                    { indy: "B.Ryan", visiting: "Guest Leader 2", time: "11:00 AM - 4:00 PM", location: "Carmel / North" }
+                ],
+                lodging: [
+                    { host: "D.James (720-949-8770)", address: "337 N 11th St #339 B, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=337+N+11th+St+%23339+B,+Noblesville,+IN+46060", guests: ["D.Jack", "B.Geonhee"] },
+                    { host: "B.Jemis (616-260-3298)", address: "7649 Solana Dr Apt# 201, Indianapolis, IN 46240", mapUrl: "https://maps.google.com/?q=7649+Solana+Dr+Apt%23+201,+Indianapolis,+IN+46240", guests: ["B.Tyler", "B.Ethan", "B.Romeo", "B.Ian"] },
+                    { host: "B.Luis", address: "6448 Park Central Way Apt C, Indianapolis, IN 46260", mapUrl: "https://maps.google.com/?q=6448+Park+Central+Way+Apt+C,+Indianapolis,+IN+46260", guests: ["D.Keith", "D.Carlton", "B.Nick"] },
+                    { host: "D.Samantha (816-398-9465)", address: "905 Wild Opera Ct, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=905+Wild+Opera+Ct,+Noblesville,+IN+46060", guests: ["S.Lauren", "S.Perla", "S.Katerri"] },
+                    { host: "S.Suriha (260-750-9666)", address: "1614 Millers Ct, Noblesville, IN 46060", mapUrl: "https://maps.google.com/?q=1614+Millers+Ct,+Noblesville,+IN+46060", guests: ["S.Amanda", "S.Samantha"] }
+                ],
+                shortTermZionRosters: {
+                    "Columbus Zion": ["Bro John", "Sis Mary"],
+                    "Oak Lawn Zion": ["Bro David", "Sis Sarah"],
+                    "Naperville Zion": ["Bro Luke", "Sis Rachel"],
+                    "Cincinnati Zion": ["Bro Paul", "Sis Grace"]
+                }
+            }
+        };
+
         let currentSelectedDate = "2026-09-06";
         let currentCalendarYear = 2026;
-        let currentCalendarMonth = 8; // September
+        let currentCalendarMonth = 8;
         let currentAdminRole = null; 
         let isShortTermGuestMode = false;
         let currentStPlanDate = "2026-08-21";
         let currentAdminStPlanDate = "2026-08-21";
-        let activeShortTermDisplayMode = 'text';
 
         function formatPasskeyInput(input) {
             let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -551,7 +701,6 @@
 
         function exitGuestMode() {
             sessionStorage.clear();
-            isShortTermGuestMode = false;
             location.reload();
         }
 
@@ -701,7 +850,10 @@
         }
 
         function switchTab(tabId) {
-            if (isShortTermGuestMode) tabId = 'shortterm';
+            // Respect role routing
+            if (isShortTermGuestMode) {
+                tabId = 'shortterm';
+            }
             
             const tabs = ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'];
             tabs.forEach(t => {
@@ -1035,6 +1187,17 @@
             } catch (e) {}
         }
 
+        async function saveKeyToCloud(keyName, dataPayload) {
+            saveLocalCache();
+            try {
+                await fetch(`${CLOUD_URL}/set/${keyName}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
+                    body: JSON.stringify(dataPayload)
+                });
+            } catch (err) {}
+        }
+
         async function loadKeyFromCloud(keyName) {
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 2500);
@@ -1085,10 +1248,6 @@
 
         function closeLightbox() {
             document.getElementById('imageLightboxModal')?.classList.add('hidden');
-        }
-
-        function exportToIcsCalendar() {
-            alert("Exporting calendar file...");
         }
 
         window.addEventListener('DOMContentLoaded', () => {
