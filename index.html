@@ -93,12 +93,12 @@
             <p id="pin-error-msg" class="text-xs font-semibold text-rose-600 hidden">Incorrect PIN. Please try again.</p>
 
             <button type="button" onclick="submitPinCheck()" class="w-full bg-indigo-900 hover:bg-indigo-800 text-white font-bold py-3.5 rounded-xl shadow-md transition-all text-sm cursor-pointer">
-                Unlock Planner / Portal
+                Unlock Main Planner
             </button>
 
             <div class="relative flex py-1 items-center">
                 <div class="flex-grow border-t border-slate-200"></div>
-                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Quick Access</span>
+                <span class="flex-shrink mx-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Visiting Teams</span>
                 <div class="flex-grow border-t border-slate-200"></div>
             </div>
 
@@ -888,7 +888,6 @@
         const MASTER_ADMIN_PASSWORD = "Grace2026";
         const LIMITED_ADMIN_PASSWORD = "Team2026";
         
-        // Passkey Configuration & Device Storage Key
         const ENROLLMENT_PASSKEY = "ZION-1948-1985";
         const DEVICE_STORAGE_KEY = "zion_trusted_device_sig";
 
@@ -944,7 +943,6 @@
             document.getElementById('lightboxImg').src = '';
         }
 
-        // DEVICE PASSKEY PARSING & DIRECT STRING VERIFICATION (LAYER 1)
         function formatPasskeyInput(input) {
             let val = input.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
             let parts = [];
@@ -958,18 +956,14 @@
             const input = document.getElementById('device-passkey-input');
             const errEl = document.getElementById('device-error-msg');
             
-            // Normalize: strip dashes, whitespace, and case
             const cleanInput = input.value.replace(/[^A-Z0-9]/gi, '').toUpperCase();
             const cleanTarget = ENROLLMENT_PASSKEY.replace(/[^A-Z0-9]/gi, '').toUpperCase();
 
             if (cleanInput === cleanTarget) {
                 errEl.classList.add('hidden');
-                
-                // Set persistent device signature token
                 const token = "auth_" + btoa(navigator.userAgent.slice(0, 20) + "_" + Date.now());
                 localStorage.setItem(DEVICE_STORAGE_KEY, token);
 
-                // Transition to Layer 2 (PIN keypad)
                 document.getElementById('device-enroll-screen').classList.add('hidden');
                 document.getElementById('pin-login-screen').classList.remove('hidden');
                 document.querySelectorAll('.pin-digit')[0]?.focus();
@@ -1272,7 +1266,6 @@
         async function submitPinCheck() {
             let enteredPin = Array.from(document.querySelectorAll('.pin-digit')).map(i => i.value).join('');
             
-            // Added support for PIN 1964 as requested for visitors portal
             if (enteredPin === "1964") {
                 openShortTermGuestPortal();
                 return;
@@ -1353,6 +1346,36 @@
             document.getElementById('pin-login-screen').classList.remove('hidden');
             document.querySelectorAll('.pin-digit').forEach(i => i.value = '');
             document.querySelectorAll('.pin-digit')[0].focus();
+        }
+
+        async function checkPinSession() {
+            if (sessionStorage.getItem('planner_unlocked') === 'true') {
+                const isGuest = sessionStorage.getItem('guest_short_term') === 'true';
+                document.getElementById('pin-login-screen').classList.add('hidden');
+                document.getElementById('app-wrapper').classList.remove('hidden');
+                applyGuestModeUI(isGuest);
+                await loadDataFromCloud();
+                checkExistingAdminSession();
+                if (isGuest) {
+                    switchTab('shortterm');
+                } else {
+                    switchTab('daily');
+                }
+            } else {
+                checkDeviceTrust();
+            }
+        }
+
+        async function saveKeyToCloud(keyName, dataPayload) {
+            try {
+                await fetch(`${CLOUD_URL}/set/${keyName}`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${CLOUD_TOKEN}` },
+                    body: JSON.stringify(dataPayload)
+                });
+            } catch (err) {
+                console.error(`Save error ${keyName}:`, err);
+            }
         }
 
         async function loadKeyFromCloud(keyName) {
@@ -2108,71 +2131,743 @@
             }
         }
 
-        function renderMonthlyCalendar() {
-            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-            document.getElementById('monthly-calendar-title').innerText = `${mNames[currentCalendarMonth]} ${currentCalendarYear}`;
-            const gridContainer = document.getElementById('calendar-grid-cells');
-            if (!gridContainer) return;
-            gridContainer.innerHTML = ""; 
-            const firstDayIndex = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
-            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+        function addPreachingBuilderRow(e1 = "", e2 = "", e3 = "", timeVal = "", loc = "") {
+            const container = document.getElementById('preaching-builder-rows');
+            const row = document.createElement('div');
+            row.className = "flex flex-wrap gap-1.5 items-center p-2.5 bg-white rounded-xl border border-indigo-100 shadow-sm preaching-row w-full";
+            
+            row.innerHTML = `
+                <input type="text" list="dl-evangelists" placeholder="Leader 1..." value="${e1}" class="e1-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 2..." value="${e2}" class="e2-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" list="dl-evangelists" placeholder="Leader 3..." value="${e3}" class="e3-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-semibold">
+                <input type="text" placeholder="Time (11:00 AM - 1:30 PM)" value="${timeVal}" class="time-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                <input type="text" placeholder="Location" value="${loc || 'Main Zion'}" class="loc-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                <button type="button" onclick="this.closest('.preaching-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕</button>
+            `;
+            container.appendChild(row);
+        }
 
-            for (let i = 0; i < firstDayIndex; i++) {
-                gridContainer.appendChild(document.createElement('div'));
+        function harvestCurrentPreachingGroupRows() {
+            if (!currentPGroup) return;
+            if (!appState.database[currentSelectedDate]) {
+                appState.database[currentSelectedDate] = { activities: [], preaching: [], duties: [] };
             }
+            const dateObj = appState.database[currentSelectedDate];
+            const otherGroups = (dateObj.preaching || []).filter(p => (p.group || "").trim().toLowerCase() !== currentPGroup.trim().toLowerCase());
+            
+            let harvested = [];
+            document.querySelectorAll('.preaching-row').forEach(r => {
+                const e1 = r.querySelector('.e1-input').value.trim();
+                const e2 = r.querySelector('.e2-input').value.trim();
+                const e3 = r.querySelector('.e3-input').value.trim();
+                const time = r.querySelector('.time-input').value.trim() || 'TBD';
+                const loc = r.querySelector('.loc-input').value.trim() || 'Main Zion';
+
+                let teamMembers = [e1, e2, e3].map(m => m.replace(/&/g, '').trim()).filter(Boolean);
+                if (teamMembers.length > 0) {
+                    harvested.push({ team: teamMembers.join(' & '), time, location: loc, group: currentPGroup });
+                }
+            });
+
+            dateObj.preaching = [...otherGroups, ...harvested];
+        }
+
+        function switchPreachingGroupScope(newGroup) {
+            harvestCurrentPreachingGroupRows();
+            currentPGroup = newGroup;
+            loadPreachingRowsForGroup(newGroup);
+        }
+
+        function loadPreachingRowsForGroup(selectedGroup) {
+            const container = document.getElementById('preaching-builder-rows');
+            container.innerHTML = "";
+            currentPGroup = selectedGroup;
+            
+            const dayData = appState.database[currentSelectedDate] || { preaching: [] };
+            const groupTeams = (dayData.preaching || []).filter(p => (p.group || "").trim().toLowerCase() === (selectedGroup || "").trim().toLowerCase());
+
+            if (groupTeams.length > 0) {
+                groupTeams.forEach(p => {
+                    const members = (p.team || '').split(' & ').map(m => m.trim());
+                    addPreachingBuilderRow(members[0] || "", members[1] || "", members[2] || "", p.time || "", p.location || "");
+                });
+            } else {
+                addPreachingBuilderRow();
+            }
+        }
+
+        function addDutyBuilderRow(roleVal = "", m1 = "", m2 = "", m3 = "", m4 = "", m5 = "") {
+            const container = document.getElementById('duties-builder-rows');
+            const row = document.createElement('div');
+            row.className = "p-3 bg-white rounded-xl border border-slate-200 shadow-sm duty-row w-full space-y-2";
+
+            row.innerHTML = `
+                <div class="flex items-center gap-2">
+                    <input type="text" list="dl-duties" placeholder="Role (e.g. Presider)..." value="${roleVal}" class="role-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none font-bold text-indigo-950">
+                    <button type="button" onclick="this.closest('.duty-row').remove()" class="text-rose-500 hover:text-rose-700 text-xs font-bold px-2 py-1">✕ Remove</button>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-5 gap-1.5">
+                    <input type="text" list="dl-evangelists" placeholder="Member 1..." value="${m1}" class="m1-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 2..." value="${m2}" class="m2-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 3..." value="${m3}" class="m3-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 4..." value="${m4}" class="m4-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                    <input type="text" list="dl-evangelists" placeholder="Member 5..." value="${m5}" class="m5-input border border-slate-200 rounded p-1.5 text-xs outline-none font-semibold">
+                </div>
+            `;
+            container.appendChild(row);
+        }
+
+        function harvestCurrentDutyGroupRows() {
+            if (!currentDGroup) return;
+            if (!appState.database[currentSelectedDate]) {
+                appState.database[currentSelectedDate] = { activities: [], preaching: [], duties: [] };
+            }
+            const dateObj = appState.database[currentSelectedDate];
+            const otherDuties = (dateObj.duties || []).filter(d => {
+                if (typeof d === 'object') {
+                    return (d.group || "").trim().toLowerCase() !== currentDGroup.trim().toLowerCase();
+                }
+                return true;
+            });
+
+            let harvested = [];
+            document.querySelectorAll('.duty-row').forEach(r => {
+                const role = r.querySelector('.role-input').value.trim();
+                const m1 = r.querySelector('.m1-input').value.trim();
+                const m2 = r.querySelector('.m2-input').value.trim();
+                const m3 = r.querySelector('.m3-input').value.trim();
+                const m4 = r.querySelector('.m4-input').value.trim();
+                const m5 = r.querySelector('.m5-input').value.trim();
+
+                const members = [m1, m2, m3, m4, m5]
+                    .map(m => m.replace(/&/g, '').trim())
+                    .filter(Boolean);
+
+                if (role && members.length > 0) {
+                    harvested.push({ role, name: members.join(' & '), group: currentDGroup });
+                }
+            });
+
+            dateObj.duties = [...otherDuties, ...harvested];
+        }
+
+        function switchDutyGroupScope(newGroup) {
+            harvestCurrentDutyGroupRows();
+            currentDGroup = newGroup;
+            loadDutyRowsForGroup(newGroup);
+        }
+
+        function loadDutyRowsForGroup(selectedGroup) {
+            const container = document.getElementById('duties-builder-rows');
+            container.innerHTML = "";
+            currentDGroup = selectedGroup;
+
+            const dayData = appState.database[currentSelectedDate] || { duties: [] };
+            const groupDuties = (dayData.duties || []).filter(d => {
+                if (typeof d === 'object') {
+                    return (d.group || "").trim().toLowerCase() === (selectedGroup || "").trim().toLowerCase();
+                }
+                return false;
+            });
+
+            if (groupDuties.length > 0) {
+                groupDuties.forEach(d => {
+                    const members = (d.name || '').split(' & ').map(m => m.trim());
+                    addDutyBuilderRow(d.role || "", members[0] || "", members[1] || "", members[2] || "", members[3] || "", members[4] || "");
+                });
+            } else {
+                addDutyBuilderRow();
+            }
+        }
+
+        function renderBlessingsBuilderUI() {
+            const container = document.getElementById('blessings-builder-rows');
+            if (!container) return;
+            container.innerHTML = "";
+
+            let mappedList = {};
+            (appState.blessingsList || []).forEach(b => {
+                const chunks = b.split(':');
+                const name = chunks[0] ? chunks[0].trim() : '';
+                const item = chunks[1] ? chunks[1].trim() : '';
+                const status = chunks[2] ? chunks[2].trim() : 'Full';
+                if (item) mappedList[item] = { name, status };
+            });
+
+            DEFAULT_BLESSINGS.forEach(bDef => {
+                const itemData = mappedList[bDef.item] || { name: bDef.name, status: bDef.status };
+                const row = document.createElement('div');
+                row.className = "flex flex-wrap gap-2 items-center p-2.5 bg-slate-50 border border-slate-200 rounded-xl blessing-row w-full";
+                row.setAttribute('data-item', bDef.item);
+
+                const st = (itemData.status || 'Full').toLowerCase();
+
+                row.innerHTML = `
+                    <span class="font-bold text-xs text-slate-800 flex-1 min-w-[140px] leading-tight">${bDef.item}</span>
+                    <input type="text" list="dl-evangelists" placeholder="Member..." value="${itemData.name}" class="b-name-input border border-slate-300 rounded p-1.5 text-xs w-48 outline-none bg-white font-semibold">
+                    <select class="b-status-input border border-slate-300 rounded p-1.5 text-xs outline-none bg-white font-bold">
+                        <option value="Full" ${st === 'full' ? 'selected' : ''}>Full (Green)</option>
+                        <option value="Low" ${st === 'low' ? 'selected' : ''}>Low (Yellow)</option>
+                        <option value="Empty" ${st === 'empty' ? 'selected' : ''}>Empty (Red)</option>
+                    </select>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderMonthlyAdminListUI() {
+            const container = document.getElementById('monthly-admin-list');
+            if (!container) return;
+            container.innerHTML = "";
+
+            const totalDaysInMonth = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
             for (let day = 1; day <= totalDaysInMonth; day++) {
                 const dateKey = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                const cell = document.createElement('div');
-                cell.className = "bg-white border border-slate-200 rounded-xl p-2 min-h-[105px] flex flex-col justify-between transition-all hover:border-indigo-400 hover:bg-indigo-50/10 cursor-pointer shadow-sm";
-                cell.setAttribute('onclick', `openCalendarViewModal('${dateKey}')`);
+                const eventText = appState.calendarEventsDb[dateKey] || "";
 
-                const topRow = document.createElement('div');
-                topRow.className = "flex justify-between items-center";
-                topRow.innerHTML = `<span class="font-bold text-sm text-slate-400">${day}</span>`;
-                cell.appendChild(topRow);
-
-                const eventsContainer = document.createElement('div');
-                eventsContainer.className = "text-[11px] text-indigo-950 font-medium overflow-hidden max-h-[70px] mt-1 space-y-1";
-                const cellContentText = appState.calendarEventsDb[dateKey] || "";
-                if (cellContentText) {
-                    cellContentText.split(',').forEach(item => {
-                        const bullet = document.createElement('div');
-                        bullet.className = "bg-indigo-50 border border-indigo-100/60 rounded px-1 py-0.5 truncate";
-                        bullet.innerText = `• ${item.trim()}`;
-                        eventsContainer.appendChild(bullet);
-                    });
-                }
-                cell.appendChild(eventsContainer);
-                gridContainer.appendChild(cell);
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-2 p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs";
+                row.innerHTML = `
+                    <span class="font-bold text-indigo-950 w-24">${mNames[currentCalendarMonth].slice(0, 3)} ${day}:</span>
+                    <input type="text" data-datekey="${dateKey}" value="${eventText}" placeholder="Events (e.g. 2:00pm Preaching)" class="monthly-event-input border border-slate-300 rounded p-1.5 text-xs flex-1 outline-none">
+                `;
+                container.appendChild(row);
             }
         }
 
-        function openCalendarViewModal(dateKey) {
-            const dateObj = new Date(dateKey + 'T00:00:00');
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('cv-modal-date-title').innerText = dateObj.toLocaleDateString('en-US', options);
+        function renderPermanentRosterUI(containerId, dutiesArray, existingDutiesList = []) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = "";
 
-            const eventsText = appState.calendarEventsDb[dateKey] || "";
-            const contentContainer = document.getElementById('cv-modal-events-content');
-            contentContainer.innerHTML = "";
+            let mappedExisting = {};
+            (existingDutiesList || []).forEach(d => {
+                const idx = d.indexOf(':');
+                if (idx !== -1) {
+                    mappedExisting[d.substring(idx + 1).trim()] = d.substring(0, idx).trim();
+                }
+            });
 
-            if (eventsText.trim() === "") {
-                contentContainer.innerHTML = `<p class="text-slate-400 text-sm italic py-4 text-center">No events mapped for this day.</p>`;
-            } else {
-                eventsText.split(',').forEach(item => {
-                    const lineCard = document.createElement('div');
-                    lineCard.className = "p-3 bg-indigo-50 border border-indigo-100 rounded-xl text-indigo-950 font-semibold text-sm shadow-sm leading-relaxed";
-                    lineCard.innerText = item.trim();
-                    contentContainer.appendChild(lineCard);
+            dutiesArray.forEach(role => {
+                const assignedName = mappedExisting[role] || "";
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs permanent-duty-row";
+                row.setAttribute('data-role', role);
+
+                row.innerHTML = `
+                    <span class="font-bold text-slate-800 w-1/2 pr-2 leading-tight">${role}</span>
+                    <input type="text" list="dl-evangelists" placeholder="Leader..." value="${assignedName}" class="perm-name-input border border-slate-300 rounded p-1.5 text-xs w-1/2 outline-none font-semibold bg-white">
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function renderCookingBuilderUI() {
+            const container = document.getElementById('cooking-builder-rows');
+            if (!container) return;
+            container.innerHTML = "";
+
+            (appState.cookingSchedule || []).forEach((row) => {
+                const div = document.createElement('div');
+                div.className = "flex flex-col sm:flex-row gap-2 items-center p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs cooking-builder-row";
+                div.setAttribute('data-week', row.week);
+
+                div.innerHTML = `
+                    <span class="font-bold text-indigo-900 w-full sm:w-24">${row.week}</span>
+                    <div class="flex-1 w-full flex items-center gap-1">
+                        <span class="text-slate-400 font-semibold">Dinner:</span>
+                        <input type="text" value="${row.dinner || ''}" class="c-dinner-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none">
+                    </div>
+                    <div class="flex-1 w-full flex items-center gap-1">
+                        <span class="text-slate-400 font-semibold">Snacks:</span>
+                        <input type="text" value="${row.snacks || ''}" class="c-snack-input border border-slate-300 rounded p-1.5 text-xs w-full outline-none">
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function renderCleaningBuilderUI() {
+            const groupsContainer = document.getElementById('cleaning-groups-builder-rows');
+            const specialsContainer = document.getElementById('cleaning-specials-builder-rows');
+
+            if (groupsContainer) {
+                groupsContainer.innerHTML = (appState.cleaningGroups || []).map((g, idx) => `
+                    <div class="p-2.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2 text-xs cleaning-group-builder-row" data-idx="${idx}">
+                        <div class="font-bold text-slate-800">${g.title}</div>
+                        <input type="text" value="${(g.tasks || []).join(', ')}" class="cg-tasks-input border border-slate-300 rounded p-1 text-xs w-full outline-none">
+                    </div>
+                `).join('');
+            }
+
+            if (specialsContainer) {
+                specialsContainer.innerHTML = (appState.cleaningSpecials || []).map((s, idx) => `
+                    <div class="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs cleaning-special-builder-row" data-idx="${idx}">
+                        <span class="font-bold text-indigo-950 w-1/3">${s.icon || '📍'} ${s.title}</span>
+                        <input type="text" value="${s.evangelists || ''}" class="cs-evangelists-input border border-slate-300 rounded p-1 text-xs w-2/3 outline-none">
+                    </div>
+                `).join('');
+            }
+        }
+
+        function clearSearch(inputId, filterFunc) {
+            const input = document.getElementById(inputId);
+            if (input) {
+                input.value = "";
+                filterFunc("");
+            }
+        }
+
+        function filterBlessingsView(query) {
+            const q = query.trim().toLowerCase();
+            const container = document.getElementById('blessings-container');
+            if (!container) return;
+            Array.from(container.children).forEach(card => {
+                if (card.tagName === 'P') return;
+                card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+            });
+        }
+
+        function filterSabbathView(query) {
+            const q = query.trim().toLowerCase();
+            ['sabbath-activities', 'sabbath-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
+
+        function filterThirdDayView(query) {
+            const q = query.trim().toLowerCase();
+            ['thirdday-activities', 'thirdday-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
+
+        function filterFeastView(query) {
+            const q = query.trim().toLowerCase();
+            ['feast-activities', 'feast-duties'].forEach(cId => {
+                const c = document.getElementById(cId);
+                if (!c) return;
+                Array.from(c.children).forEach(card => {
+                    if (card.tagName === 'P') return;
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            });
+        }
+
+        function filterCookingView(query) {
+            const q = query.trim().toLowerCase();
+            const body = document.getElementById('cooking-schedule-body');
+            if (!body) return;
+            Array.from(body.children).forEach(row => {
+                row.style.display = (q === "" || row.innerText.toLowerCase().includes(q)) ? "" : "none";
+            });
+        }
+
+        function filterCleaningView(query) {
+            const q = query.trim().toLowerCase();
+            const groupGrid = document.getElementById('cleaning-groups-grid');
+            const specialGrid = document.getElementById('cleaning-special-grid');
+
+            if (groupGrid) {
+                Array.from(groupGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            }
+            if (specialGrid) {
+                Array.from(specialGrid.children).forEach(card => {
+                    card.style.display = (q === "" || card.innerText.toLowerCase().includes(q)) ? "" : "none";
+                });
+            }
+        }
+
+        function filterMonthlyCalendar(query) {
+            const q = query.trim().toLowerCase();
+            const gridContainer = document.getElementById('calendar-grid-cells');
+            if (!gridContainer) return;
+            Array.from(gridContainer.children).forEach(cell => {
+                if (q === "") {
+                    cell.style.opacity = "1";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
+                } else if (cell.innerText.toLowerCase().includes(q)) {
+                    cell.style.opacity = "1";
+                    cell.classList.add('ring-2', 'ring-indigo-500');
+                } else {
+                    cell.style.opacity = "0.3";
+                    cell.classList.remove('ring-2', 'ring-indigo-500');
+                }
+            });
+        }
+
+        function exportToIcsCalendar() {
+            const mNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+            const currentMonthName = mNames[currentCalendarMonth];
+            const targetMonthPrefix = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}`;
+            
+            let icsLines = [
+                "BEGIN:VCALENDAR",
+                "VERSION:2.0",
+                `PRODID:-//Zion Church Planner (INDY) - ${currentMonthName} ${currentCalendarYear}//EN`,
+                "CALSCALE:GREGORIAN"
+            ];
+
+            let eventsExported = 0;
+
+            if (appState.calendarEventsDb) {
+                Object.keys(appState.calendarEventsDb).forEach((dateKey) => {
+                    if (dateKey.startsWith(targetMonthPrefix)) {
+                        const eventString = appState.calendarEventsDb[dateKey];
+                        if (eventString && eventString.trim()) {
+                            const formattedDateStr = dateKey.replace(/-/g, '');
+                            eventString.split(',').forEach((item, idx) => {
+                                icsLines.push("BEGIN:VEVENT");
+                                icsLines.push(`UID:cal-${formattedDateStr}-${idx}@graceplanner.org`);
+                                icsLines.push(`DTSTAMP:${formattedDateStr}T000000Z`);
+                                icsLines.push(`DTSTART;VALUE=DATE:${formattedDateStr}`);
+                                icsLines.push(`SUMMARY:${item.trim().replace(/,/g, '\\,')}`);
+                                icsLines.push("END:VEVENT");
+                                eventsExported++;
+                            });
+                        }
+                    }
                 });
             }
 
-            document.getElementById('calendar-view-modal').classList.remove('hidden');
+            icsLines.push("END:VCALENDAR");
+
+            if (eventsExported === 0) {
+                alert(`No events found for ${currentMonthName} ${currentCalendarYear}.`);
+                return;
+            }
+
+            const blob = new Blob([icsLines.join("\r\n")], { type: 'text/calendar;charset=utf-8;' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Church_Calendar_${currentMonthName}_${currentCalendarYear}.ics`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
         }
 
-        function closeCalendarViewModal() {
-            document.getElementById('calendar-view-modal').classList.add('hidden');
+        // ==========================================
+        // UNIVERSAL BATCH UPDATE MODAL
+        // ==========================================
+        function toggleBatchModal() {
+            document.getElementById('universal-batch-modal').classList.toggle('hidden');
+        }
+
+        function openBatchModalForCurrentTab(targetType = null) {
+            currentBatchTarget = targetType || currentActiveAdminTab;
+            const supportedTabs = ['monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'stdaily', 'stteams', 'stlodging', 'stroster', 'shortterm'];
+            if (!supportedTabs.includes(currentBatchTarget)) {
+                alert("Batch update is not available for this tab.");
+                return;
+            }
+
+            if (currentBatchTarget === 'shortterm') {
+                currentBatchTarget = 'stdaily';
+            }
+
+            const title = document.getElementById('batch-modal-title');
+            const instructions = document.getElementById('batch-modal-instructions');
+            const input = document.getElementById('batch-modal-input');
+            input.value = "";
+
+            if (currentBatchTarget === 'monthly') {
+                title.innerText = "⚡ Batch Update Monthly Calendar";
+                instructions.innerHTML = `Paste events line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Month Day: Event 1, Event 2</code>`;
+                input.placeholder = "August 9: WM Meeting in NPV, 2:00-5:30pm Preaching\nAugust 10: Preaching, 7:00pm Dinner";
+            } else if (currentBatchTarget === 'stdaily') {
+                title.innerText = "⚡ Batch Upload Short Term Daily Schedule";
+                instructions.innerHTML = `Paste schedule for dates in advance.<br><b>Format 1 (Single/Current Day):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Time, Activity, Location</code><br><b>Format 2 (Multi-Day Batch):</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">YYYY-MM-DD | Time, Activity, Location</code> or header <code class="bg-slate-100 text-slate-800 px-1 rounded">[YYYY-MM-DD]</code>`;
+                input.placeholder = "2026-08-21 | 11:00 AM, Preach (To-Go Lunch), Assigned Routes\n2026-08-21 | 7:00 PM, Dinner in Zion, Main Zion\n\n[2026-08-22]\n9:00 AM, Morning Worship, Main Sanctuary\n10:30 AM, Preach, Assigned Routes\n1:00 PM, Lunch, Fellowship Hall\n3:00 PM, Afternoon Worship, Main Sanctuary\n4:00 PM, Preach, Assigned Routes\n6:00 PM, Dinner, Fellowship Hall\n8:00 PM, Evening Worship, Main Sanctuary\n\n[2026-08-23]\n10:00 AM, Preach, Assigned Routes\n12:00 PM, Joint Preaching (To-Go Lunch), Assigned Routes\n5:30 PM, Dinner in Zion, Main Zion";
+            } else if (currentBatchTarget === 'stteams') {
+                title.innerText = "⚡ Batch Upload Short Term Preaching Teams";
+                instructions.innerHTML = `Paste teams (up to 10).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Indy Member, Visiting Member, Time, Location</code>`;
+                input.placeholder = "B.Kiimon, Visiting Brother 1, 11:00 AM - 4:00 PM, Downtown\nB.Ryan, Visiting Brother 2, 11:00 AM - 4:00 PM, Carmel";
+            } else if (currentBatchTarget === 'stlodging') {
+                title.innerText = "⚡ Batch Upload Lodging Matrix";
+                instructions.innerHTML = `Paste host homes (up to 5).<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Host Name (Phone | MapURL), Guest 1 / Guest 2 / Guest 3</code>`;
+                input.placeholder = "D.James (720-949-8770 | https://maps.google.com/?q=Noblesville), D.Jack / B.Geonhee\nB.Jemis (616-260-3298 | https://maps.google.com/?q=Indianapolis), B.Tyler / B.Ethan";
+            } else if (currentBatchTarget === 'stroster') {
+                title.innerText = "⚡ Batch Upload Visiting Rosters";
+                instructions.innerHTML = `Paste roster per Zion.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Zion Name: Member 1, Member 2, Member 3</code>`;
+                input.placeholder = "Columbus Zion: Bro John, Sis Mary, Bro Luke\nNaperville Zion: Bro Mark, Sis Anna";
+            } else if (currentBatchTarget === 'blessings') {
+                title.innerText = "⚡ Batch Update Blessings & Inventory";
+                instructions.innerHTML = `Paste items line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Item Name : Assigned Member : Status (Full, Low, Empty)</code>`;
+                input.placeholder = "Toilet Paper : D. James : Full\nMulti-purpose Cleaner Refill : B Jemis : Full";
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                const tabTitle = currentBatchTarget.charAt(0).toUpperCase() + currentBatchTarget.slice(1);
+                title.innerText = `⚡ Batch Update ${tabTitle} Worship Duties`;
+                instructions.innerHTML = `Paste roles line-by-line.<br><b>Format:</b> <code class="bg-slate-100 text-slate-800 px-1 rounded">Role Name : Assigned Leader</code>`;
+                input.placeholder = "Morning Presider : B.Ezequiel\nMorning Sound : B.Kiimon";
+            }
+
+            toggleBatchModal();
+        }
+
+        async function processUniversalBatchData() {
+            const rawText = document.getElementById('batch-modal-input').value;
+            if (!rawText.trim()) return;
+
+            const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+            let updatedCount = 0;
+
+            if (currentBatchTarget === 'stdaily') {
+                const data = getShortTermGroupData();
+                if (!data.dailyPlans) data.dailyPlans = {};
+
+                let activeContextDate = currentAdminStPlanDate || currentStPlanDate || getLocalDateString(new Date());
+
+                lines.forEach(line => {
+                    let cleaned = line.trim();
+                    if (cleaned.startsWith('[') && cleaned.endsWith(']')) {
+                        const dateExtract = cleaned.slice(1, -1).trim();
+                        if (dateExtract) activeContextDate = dateExtract;
+                        return;
+                    }
+
+                    let targetDate = activeContextDate;
+                    let payload = cleaned;
+
+                    if (cleaned.includes('|') && /^\d{4}-\d{2}-\d{2}/.test(cleaned)) {
+                        const parts = cleaned.split('|');
+                        targetDate = parts[0].trim();
+                        payload = parts.slice(1).join('|').trim();
+                    }
+
+                    const parts = payload.split(',').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        if (!data.dailyPlans[targetDate]) {
+                            data.dailyPlans[targetDate] = { activities: [], planImage: "" };
+                        }
+
+                        data.dailyPlans[targetDate].activities.push({
+                            time: parts[0] || 'TBD',
+                            activity: parts[1] || '',
+                            location: parts[2] || 'Main Zion',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} daily schedule items across configured dates!`);
+                } else {
+                    alert("Could not parse schedule. Format: Time, Activity, Location OR YYYY-MM-DD | Time, Activity, Location");
+                }
+            } else if (currentBatchTarget === 'stteams') {
+                let parsedTeams = [];
+                lines.forEach(line => {
+                    const parts = line.split(',').map(p => p.trim());
+                    if (parts.length >= 2 && parsedTeams.length < 10) {
+                        parsedTeams.push({
+                            indy: parts[0] || '',
+                            visiting: parts[1] || '',
+                            time: parts[2] || '11:00 AM - 4:00 PM',
+                            location: parts[3] || 'Main Zion',
+                            image: ""
+                        });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedTeams.length > 0) {
+                    appState.shortTermData.teams = parsedTeams;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} preaching teams!`);
+                } else {
+                    alert("Could not parse teams. Format: Indy Lead, Visiting, Time, Location");
+                }
+            } else if (currentBatchTarget === 'stlodging') {
+                let parsedLodging = [];
+                lines.forEach(line => {
+                    if (parsedLodging.length >= 5) return;
+                    let host = "";
+                    let mapUrl = "";
+                    let address = "";
+                    let guests = [];
+
+                    const commaIdx = line.indexOf(',');
+                    if (commaIdx !== -1) {
+                        const hostPart = line.substring(0, commaIdx).trim();
+                        const guestsPart = line.substring(commaIdx + 1).trim();
+
+                        guests = guestsPart.split(/[/,]/).map(g => g.trim()).filter(Boolean).slice(0, 8);
+
+                        if (hostPart.includes('http')) {
+                            const urlMatch = hostPart.match(/https?:\/\/[^\s\)\|\,]+/);
+                            if (urlMatch) mapUrl = urlMatch[0];
+                        }
+
+                        host = hostPart.replace(/\([^)]*\)/g, '').replace(/https?:\/\/[^\s\)\|\,]+/g, '').replace(/[\|\:]/g, '').trim();
+                        address = hostPart.includes('|') ? hostPart.split('|')[0].replace(/[()]/g, '').trim() : '';
+
+                        parsedLodging.push({ host: host || "Host House", address: address || "See Map", mapUrl, guests, image: "" });
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedLodging.length > 0) {
+                    while (parsedLodging.length < 5) {
+                        parsedLodging.push({ host: `Host Home ${parsedLodging.length + 1}`, address: "", mapUrl: "", guests: [], image: "" });
+                    }
+                    appState.shortTermData.lodging = parsedLodging;
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_data', appState.shortTermData);
+                    toggleBatchModal();
+                    alert(`Imported ${updatedCount} lodging homes!`);
+                } else {
+                    alert("Could not parse lodging. Format: Host (Details | MapURL), Guest 1 / Guest 2");
+                }
+            } else if (currentBatchTarget === 'stroster') {
+                lines.forEach(line => {
+                    if (line.includes(':')) {
+                        const colonIdx = line.indexOf(':');
+                        const zion = line.substring(0, colonIdx).trim();
+                        const members = line.substring(colonIdx + 1).split(/[,/]/).map(m => m.trim()).filter(Boolean).slice(0, 10);
+                        if (zion) {
+                            appState.shortTermZionRosters[zion] = members;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    populateAdminShortTermUI();
+                    renderShortTermContent();
+                    await saveKeyToCloud('short_term_zion_rosters', appState.shortTermZionRosters);
+                    toggleBatchModal();
+                    alert(`Imported rosters for ${updatedCount} visiting Zion locations!`);
+                } else {
+                    alert("Could not parse roster. Format: Zion Name: Member 1, Member 2");
+                }
+            } else if (currentBatchTarget === 'monthly') {
+                const mNames = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+                lines.forEach(line => {
+                    let cleaned = line.replace(/^[\*\-•\s]+/, '').trim();
+                    if (!cleaned || !cleaned.includes(':')) return;
+
+                    const colonIdx = cleaned.indexOf(':');
+                    const datePart = cleaned.substring(0, colonIdx).trim().toLowerCase();
+                    const eventsPart = cleaned.substring(colonIdx + 1).trim();
+
+                    let matchedMonth = currentCalendarMonth + 1;
+                    let matchedDay = null;
+
+                    mNames.forEach((mName, idx) => {
+                        if (datePart.includes(mName)) {
+                            matchedMonth = idx + 1;
+                            const dayMatch = datePart.match(/\d+/);
+                            if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                        }
+                    });
+
+                    if (!matchedDay && datePart.includes('/')) {
+                        const parts = datePart.split('/');
+                        matchedMonth = parseInt(parts[0]);
+                        matchedDay = parseInt(parts[1]);
+                    } else if (!matchedDay) {
+                        const dayMatch = datePart.match(/\d+/);
+                        if (dayMatch) matchedDay = parseInt(dayMatch[0]);
+                    }
+
+                    if (matchedDay) {
+                        const dateKey = `${currentCalendarYear}-${String(matchedMonth).padStart(2, '0')}-${String(matchedDay).padStart(2, '0')}`;
+                        if (eventsPart && eventsPart.toLowerCase() !== '(blank)') {
+                            appState.calendarEventsDb[dateKey] = eventsPart;
+                            updatedCount++;
+                        }
+                    }
+                });
+
+                if (updatedCount > 0) {
+                    renderMonthlyCalendar();
+                    renderMonthlyAdminListUI();
+                    await saveKeyToCloud('calendar_events', appState.calendarEventsDb);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} monthly events!`);
+                } else {
+                    alert("Could not parse dates. Please use 'Month Day: Events' format.");
+                }
+            } else if (currentBatchTarget === 'blessings') {
+                let parsedBlessings = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const item = parts[0];
+                        const name = parts[1];
+                        const status = parts[2] ? parts[2] : 'Full';
+                        parsedBlessings.push(`${name} : ${item} : ${status}`);
+                        updatedCount++;
+                    }
+                });
+
+                if (parsedBlessings.length > 0) {
+                    appState.blessingsList = parsedBlessings;
+                    renderBlessings();
+                    renderBlessingsBuilderUI();
+                    await saveKeyToCloud('blessings_list', appState.blessingsList);
+                    toggleBatchModal();
+                    alert(`Successfully imported ${updatedCount} blessing items!`);
+                } else {
+                    alert("Could not parse blessings. Please use 'Item : Name : Status' format.");
+                }
+            } else if (currentBatchTarget === 'sabbath' || currentBatchTarget === 'thirdday' || currentBatchTarget === 'feast') {
+                let parsedDuties = [];
+                lines.forEach(line => {
+                    const parts = line.replace(/^[\*\-•\s]+/, '').split(':').map(p => p.trim());
+                    if (parts.length >= 2) {
+                        const role = parts[0];
+                        const name = parts[1];
+                        parsedDuties.push(`${name || 'Unassigned'} : ${role}`);
+                    }
+                });
+
+                if (parsedDuties.length > 0) {
+                    if (currentBatchTarget === 'sabbath') {
+                        appState.sabbathSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('sabbath-permanent-roster', PERMANENT_SABBATH_DUTIES, appState.sabbathSchedule.duties);
+                        await saveKeyToCloud('sabbath_schedule', appState.sabbathSchedule);
+                    } else if (currentBatchTarget === 'thirdday') {
+                        appState.thirddaySchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('thirdday-permanent-roster', PERMANENT_THIRD_DAY_DUTIES, appState.thirddaySchedule.duties);
+                        await saveKeyToCloud('thirdday_schedule', appState.thirddaySchedule);
+                    } else if (currentBatchTarget === 'feast') {
+                        appState.feastSchedule.duties = parsedDuties;
+                        renderPermanentRosterUI('feast-permanent-roster', PERMANENT_FEAST_DUTIES, appState.feastSchedule.duties);
+                        await saveKeyToCloud('feast_schedule', appState.feastSchedule);
+                    }
+                    renderSabbathAndFeast(currentBatchTarget);
+                    toggleBatchModal();
+                    alert(`Successfully imported duties for ${currentBatchTarget}!`);
+                } else {
+                    alert("Could not parse duties. Please use 'Role : Name' format.");
+                }
+            }
         }
 
         window.addEventListener('DOMContentLoaded', () => {
@@ -2185,6 +2880,130 @@
                 checkPinSession();
             }
         });
+
+        async function handleDateChange(dateString) {
+            currentSelectedDate = dateString;
+            const picker = document.getElementById('date-picker');
+            if (picker) picker.value = dateString;
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('display-date-sub').innerText = new Date(dateString + 'T00:00:00').toLocaleDateString('en-US', options);
+
+            const dateData = await loadKeyFromCloud(`daily_${dateString}`);
+            if (dateData) appState.database[dateString] = dateData;
+
+            renderDashboardData();
+        }
+
+        function changeDate(offset) {
+            let d = new Date(currentSelectedDate + 'T00:00:00');
+            d.setDate(d.getDate() + offset);
+            handleDateChange(getLocalDateString(d));
+        }
+
+        function changeMonth(offset) {
+            currentCalendarMonth += offset;
+            if (currentCalendarMonth > 11) { currentCalendarMonth = 0; currentCalendarYear += 1; }
+            else if (currentCalendarMonth < 0) { currentCalendarMonth = 11; currentCalendarYear -= 1; }
+            renderMonthlyCalendar();
+        }
+
+        function renderDashboardData() {
+            const dayData = appState.database[currentSelectedDate] || { activities: [], preaching: [], duties: [] };
+
+            renderDailyAnnouncements();
+
+            document.getElementById('activities-container').innerHTML = dayData.activities && dayData.activities.length ? dayData.activities.map(act => {
+                const p = act.split(' - ');
+                return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${p[0]||''}</span><span class="text-sm font-medium text-slate-700">${p[1]||act}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No activities listed.</p>`;
+
+            document.getElementById('preaching-container').innerHTML = dayData.preaching && dayData.preaching.length ? dayData.preaching.map(p => `
+                <div class="p-3.5 bg-indigo-50/60 border border-indigo-100 rounded-xl text-sm shadow-sm space-y-1">
+                    <div class="flex justify-between items-center">
+                        <span class="font-extrabold text-indigo-950">${p.team}</span>
+                        <span class="text-xs bg-indigo-200 text-indigo-900 font-bold px-2 py-0.5 rounded">${p.time}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-600">
+                        <span>📍 ${p.location}</span>
+                        ${p.group ? `<span class="bg-white px-2 py-0.5 rounded border border-indigo-100 font-semibold text-[11px] text-indigo-800">${p.group}</span>` : ''}
+                    </div>
+                </div>
+            `).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No preaching teams assigned.</p>`;
+
+            document.getElementById('duties-container').innerHTML = dayData.duties && dayData.duties.length ? dayData.duties.map(d => {
+                if (typeof d === 'object') {
+                    return `
+                        <div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm">
+                            <div class="flex justify-between items-center mb-0.5">
+                                <span class="font-bold text-slate-400 uppercase text-[10px]">${d.role}</span>
+                                ${d.group ? `<span class="bg-white px-1.5 py-0.2 rounded border text-[10px] text-slate-500 font-semibold">${d.group}</span>` : ''}
+                            </div>
+                            <span class="text-slate-800 font-semibold">${d.name}</span>
+                        </div>
+                    `;
+                }
+                const idx = d.indexOf(':');
+                return `<div class="p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm shadow-sm"><span class="font-bold text-slate-400 block uppercase text-[10px]">${idx!==-1?d.substring(0,idx):'Assignment'}</span><span class="text-slate-700 font-medium">${idx!==-1?d.substring(idx+1):d}</span></div>`;
+            }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No duties listed.</p>`;
+        }
+
+        function renderSabbathAndFeast(type) {
+            let source = appState.sabbathSchedule;
+            if (type === 'thirdday') source = appState.thirddaySchedule;
+            if (type === 'feast') source = appState.feastSchedule;
+            
+            if (!source) source = { activities: [], duties: [] };
+
+            const actContainer = document.getElementById(`${type}-activities`);
+            if (actContainer) {
+                actContainer.innerHTML = source.activities && source.activities.length ? source.activities.map(a => {
+                    const parts = a.split(' - ');
+                    return `<div class="flex items-start p-3 bg-slate-50 border border-slate-100 rounded-xl shadow-sm"><span class="bg-indigo-100 text-indigo-800 text-xs font-bold px-2 py-0.5 rounded mr-3 mt-0.5 whitespace-nowrap">${parts[0]||''}</span><span class="text-sm font-medium text-slate-700">${parts[1]||a}</span></div>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No details saved.</p>`;
+            }
+
+            const dutyContainer = document.getElementById(`${type}-duties`);
+            if (dutyContainer) {
+                dutyContainer.innerHTML = source.duties && source.duties.length ? source.duties.map(d => {
+                    const idx = d.indexOf(':');
+                    const name = idx !== -1 ? d.substring(0, idx).trim() : 'Unassigned';
+                    const duty = idx !== -1 ? d.substring(idx + 1).trim() : d;
+                    return `<div class="grid grid-cols-3 bg-white border border-slate-200 rounded-xl overflow-hidden divide-x divide-slate-100 shadow-sm"><div class="col-span-1 p-3 bg-indigo-50/40 font-bold text-indigo-950 text-xs flex items-center leading-tight">${duty}</div><div class="col-span-2 p-3 text-xs font-semibold text-slate-700 flex items-center">${name}</div></div>`;
+                }).join('') : `<p class="text-slate-400 text-xs italic py-4 text-center">No assignment details saved.</p>`;
+            }
+        }
+
+        function switchTab(viewName) {
+            if (isShortTermGuestMode) {
+                viewName = 'shortterm';
+            } else if (viewName === 'shortterm' && currentAdminRole !== 'master') {
+                viewName = 'daily';
+            }
+
+            ['daily', 'monthly', 'blessings', 'sabbath', 'thirdday', 'feast', 'shortterm', 'cooking', 'cleaning', 'maintenance'].forEach(t => {
+                document.getElementById(`view-${t}`)?.classList.add('hidden');
+                const btn = document.getElementById(`tab-${t}-btn`);
+                if (btn) btn.className = "px-3 py-1 rounded-lg text-indigo-200 hover:text-white cursor-pointer";
+            });
+
+            document.getElementById(`view-${viewName}`)?.classList.remove('hidden');
+            const targetBtn = document.getElementById(`tab-${viewName}-btn`);
+            if (targetBtn) {
+                targetBtn.className = "px-3 py-1 rounded-lg bg-indigo-700 text-white font-bold cursor-pointer";
+            }
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (viewName === 'daily') renderDashboardData();
+            if (viewName === 'monthly') renderMonthlyCalendar();
+            if (viewName === 'blessings') renderBlessings();
+            if (viewName === 'sabbath') renderSabbathAndFeast('sabbath');
+            if (viewName === 'thirdday') renderSabbathAndFeast('thirdday');
+            if (viewName === 'feast') renderSabbathAndFeast('feast');
+            if (viewName === 'shortterm') renderShortTermContent();
+            if (viewName === 'cooking') renderCookingSchedule();
+            if (viewName === 'cleaning') renderCleaningSchedule();
+        }
     </script>
 </body>
 </html>
